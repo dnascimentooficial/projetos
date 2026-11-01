@@ -4,6 +4,7 @@ import io
 import math
 import numbers
 import re
+import warnings
 import zipfile
 
 import pandas as pd
@@ -72,9 +73,12 @@ def _ler_tabela(conteudo: bytes, parametros: dict, onde: str) -> pd.DataFrame:
     puladas = parametros.get("linha_cabecalho", 1) - 1  # linhas de titulo antes do cabecalho
     try:
         if formato in _MOTOR_EXCEL:
-            tabela = pd.read_excel(
-                io.BytesIO(conteudo), sheet_name=parametros["aba"], header=puladas, dtype=object,
-                engine=_MOTOR_EXCEL[formato])
+            with warnings.catch_warnings():
+                # Rodape de impressao fora do padrao (ha em planilhas do INEP): nao afeta os dados lidos.
+                warnings.filterwarnings("ignore", message="Cannot parse header or footer", category=UserWarning)
+                tabela = pd.read_excel(
+                    io.BytesIO(conteudo), sheet_name=parametros["aba"], header=puladas, dtype=object,
+                    engine=_MOTOR_EXCEL[formato])
         elif formato == "csv":
             tabela = pd.read_csv(
                 io.BytesIO(conteudo), sep=parametros.get("separador", ";"),

@@ -1,4 +1,5 @@
 import io
+import warnings
 import zipfile
 from dataclasses import replace
 
@@ -197,6 +198,29 @@ def test_coluna_inteira_no_yaml_casa_cabecalho(ficha_planilha, territorios):
     ficha, serie = com_parametros(ficha_planilha, colunas=[{"coluna": 2030, "ano": 2030}])
     with pytest.raises(ErroLayout, match="'2030'"):
         padronizar_planilha(conteudo, ficha, serie, "c1", territorios)
+
+
+def xlsx_com_rodape_ilegivel() -> bytes:
+    """Como a TX_REND_REG_2015.xlsx do INEP: rodape de impressao sem os codigos &L, &C ou &R."""
+    origem = zipfile.ZipFile(io.BytesIO(xlsx_sintetico()))
+    saida = io.BytesIO()
+    with zipfile.ZipFile(saida, "w") as destino:
+        for item in origem.infolist():
+            conteudo = origem.read(item)
+            if item.filename == "xl/worksheets/sheet1.xml":
+                rodape = "<headerFooter><oddFooter>Pagina 1</oddFooter></headerFooter></worksheet>"
+                conteudo = conteudo.replace(b"</worksheet>", rodape.encode())
+            destino.writestr(item, conteudo)
+    return saida.getvalue()
+
+
+def test_rodape_de_impressao_ilegivel_nao_atrapalha_a_leitura(ficha_planilha, territorios):
+    """O aviso do openpyxl sobre o rodape e ruido (nao afeta os dados): nao pode virar falha nem sujar a saida."""
+    esperado = padronizar_planilha(xlsx_sintetico(), ficha_planilha, ficha_planilha.series[0], "c1", territorios)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        df = padronizar_planilha(xlsx_com_rodape_ilegivel(), ficha_planilha, ficha_planilha.series[0], "c1", territorios)
+    pd.testing.assert_frame_equal(df, esperado)
 
 
 # Planilhas .xls (formato antigo do IBGE): mesma tabela de teste, gravada em BIFF8.

@@ -914,3 +914,104 @@ quando o cabeçalho tem várias linhas. Os nomes dos arquivos dentro dos zips an
 | 2017 | 222.515.082 | `e20edd41` | 2.448 | 199 | 8.286.663 | 2.045.356 | 6.241.307 |
 | 2018 | 205.366.920 | `6bce5a85` | 2.537 | 199 | 8.450.755 | 2.077.481 | 6.373.274 |
 | 2019 | 239.663.783 | `18f8d16e` | 2.608 | 198 | 8.603.824 | 2.080.146 | 6.523.678 |
+
+## Ensaio real de 2026-11
+
+Tarefa C1 da conclusão da base. Data: 2026-11-01. Primeira execução do pipeline inteiro com dados reais de uma vez: `coletar` (rede) das fichas verificadas, `consolidar`, `validar` e
+`publicar --ensaio`, numa cópia temporária do projeto fora do repositório (`python -m nordeste --raiz <cópia> ...`, pacote instalado em modo editável apontando para o código do repositório). As
+duas séries grandes do INEP, `matriculas_basica/educacenso` e `superior/censup`, ficaram de fora (dependem da coleta enxuta, Tarefa C2): na cópia, e só nela, essas duas séries tiveram
+`verificado` posto em `false`, de modo que o `coletar` as pulou. `pobreza` e `extrema_pobreza` seguem `verificado: false` e foram puladas como sempre. Os arquivos baixados não são versionados.
+
+### Execução
+
+| Passo | Código de saída | Tempo |
+|---|---|---|
+| `coletar` (todas as fichas, 4 séries puladas) | 0 | 3 min 03 s |
+| `consolidar` | 0 | 25 s |
+| `validar` | 0 | 8 s |
+| `publicar --ensaio` | 0 | 7 s |
+
+Segunda rodada completa (`coletar` de novo, `consolidar`, `validar`, `publicar --ensaio`): todos com código 0, `coletas.csv` sem linhas novas (mesmos 26 registros, mesmos sha256), `base.csv` e `validacao.csv`
+byte a byte iguais aos da primeira. O ensaio é idempotente com dados reais.
+
+- `falhas_coleta.csv`: só o cabeçalho (nenhuma série falhou; as 26 séries de rede coletaram na primeira tentativa).
+- `pendencias.csv`: quatro séries, todas esperadas: `extrema_pobreza/pnadc` e `pobreza/pnadc` (não verificadas, linha de pobreza não confirmada) e `matriculas_basica/educacenso` e `superior/censup` (fora desta tarefa).
+  Nenhum indicador ficou pendente por insumo e nenhuma série tem layout inesperado.
+- `validacao.csv`: **nenhuma regra bloqueante** (R01 a R10 sem disparo; a R01 não dispara porque nenhuma coleta é de origem `fixture`), nenhum A02 (não há base publicada para comparar), nenhum A03 (nenhuma série em curso
+  passou da próxima publicação prevista em 2026-11-01) e **três A01**, explicados abaixo.
+- `derivacoes.csv`: 18 registros (um por série de cada indicador, `pib_per_capita` com os 5 insumos de PIB e população).
+- `mudancas.csv`: tudo `novo` (primeira base). `cobertura.csv`: 417 linhas (indicador, série, território), sem lacuna além das já registradas (2010 na PNAD antiga; 2020 a 2022 nas contagens da PNAD Contínua;
+  2007 do PIB per capita).
+
+### Linhas da base de trabalho
+
+Total: 7.131 linhas (6.131 `observado`, 556 `derivado`, 330 `estimativa_oficial`, 114 `indisponivel`) e 15.129 linhas de métricas em `derivados.csv`.
+
+| Indicador | Série | Linhas | Anos | Derivadas | Estimativa oficial | Indisponível |
+|---|---|---|---|---|---|---|
+| `abandono_em` | `indicadores_inep` | 285 | 2007–2025 | 0 | 0 | 0 |
+| `desocupacao` | `pnad` | 210 | 2001–2014 | 0 | 0 | 15 |
+| `desocupacao` | `pnadc` | 221 | 2012–2025 | 11 | 0 | 0 |
+| `desocupados` | `pnadc` | 221 | 2012–2025 | 11 | 0 | 42 |
+| `forca_trabalho` | `pnadc` | 221 | 2012–2025 | 11 | 0 | 42 |
+| `gini` | `pnad` | 210 | 2001–2014 | 0 | 0 | 15 |
+| `gini` | `pnadc` | 210 | 2012–2025 | 0 | 0 | 0 |
+| `ideb` | `ideb` | 495 | 2005–2025 | 0 | 0 | 0 |
+| `idhm` | `censo` | 80 | 2000–2010 | 0 | 0 | 0 |
+| `idhm` | `pnadc` | 780 | 2012–2024 | 0 | 0 | 0 |
+| `informais` | `pnadc` | 160 | 2016–2025 | 10 | 0 | 0 |
+| `informalidade` | `pnadc` | 160 | 2016–2025 | 10 | 0 | 0 |
+| `massa_renda_dom_pc` | `pnadc` | 224 | 2012–2025 | 14 | 0 | 0 |
+| `matriculas_basica` | `censo_escolar_pre2007` | 704 | 2005–2006 | 44 | 0 | 0 |
+| `ocupados` | `pnadc` | 160 | 2016–2025 | 10 | 0 | 0 |
+| `pib_nominal` | `scr_ref2010` | 352 | 2002–2023 | 22 | 0 | 0 |
+| `pib_participacao` | `scr_ref2010` | 330 | 2002–2023 | 0 | 0 | 0 |
+| `pib_per_capita` | `scr_ref2010` | 336 | 2002–2023 (sem 2007) | 336 | 0 | 0 |
+| `pib_volume` | `scr_ref2010` | 330 | 2002–2023 | 0 | 0 | 0 |
+| `populacao` | `censo_2000_2010` | 32 | 2000, 2010 | 2 | 0 | 0 |
+| `populacao` | `censo_2022` | 16 | 2022 | 1 | 0 | 0 |
+| `populacao` | `estimativa_pos_censo2022` | 48 | 2024–2026 | 3 | 45 | 0 |
+| `populacao` | `estimativa_pre_censo2022` | 304 | 2001–2021 (sem 2007 e 2010) | 19 | 285 | 0 |
+| `populacao_pnadc` | `pnadc` | 224 | 2012–2025 | 14 | 0 | 0 |
+| `renda_dom_pc` | `pnadc` | 224 | 2012–2025 | 14 | 0 | 0 |
+| `rendimento_trabalho` | `pnadc` | 210 | 2012–2025 | 0 | 0 | 0 |
+| `superior` | `censup_pre2009` | 384 | 2001–2008 | 24 | 0 | 0 |
+
+As linhas `derivado` são o Brasil fora do Nordeste (soma ou razão dos insumos) e o `pib_per_capita` inteiro (calculado pelo projeto). As `indisponivel` são os anos sem pesquisa (2010 da PNAD antiga) e as
+contagens regionais que a PNAD Contínua não publicou em 2020 a 2022. Nenhuma linha é interpolada ou projetada.
+
+### Os três avisos A01
+
+Aviso A01 é "variação acima do limiar da ficha entre observações consecutivas da mesma série e território"; não bloqueia e pede explicação. Nos três casos a variação está **no arquivo da fonte** (o projeto
+só padroniza; os valores foram conferidos lendo o arquivo bruto direto, fora do padronizador), e nenhum é erro de leitura.
+
+1. **`abandono_em` / `indicadores_inep`: 32 casos, limiar 50%.** Por transição: 2019→2020 em 10 territórios, 2020→2021 em 9, 2021→2022 em 4, 2022→2023 em 5, 2024→2025 em 4; todos na rede `total`.
+   - Leitura do arquivo bruto: Bahia 7,1% (2019), 1,0% (2020), 10,6% (2021), 11,7% (2022), 4,8% (2023), 2,7% (2025); Brasil 4,8, 2,3, 5,0, 5,7 e 3,4 (2019 a 2023) e 2,2 (2025), iguais aos da base. No mesmo arquivo de 2020,
+     a aprovação total do ensino fundamental da Bahia sobe de 86,7% (2019) para 97,2%, e a do Brasil de 94,2% (2022) para 95,8% (2023): o movimento aparece nas três taxas do INEP, não só na de abandono do médio.
+   - 2020 e 2021: é o par de anos do ensino remoto da pandemia (o abandono despenca em 2020 e volta em 2021); a ficha do `ideb` já registra a nota da pandemia. A explicação do contexto não vem de nota do INEP lida aqui, e sim
+     da coincidência com o período; o valor, porém, é o oficial.
+   - 2022→2023 e 2024→2025: quedas fortes e generalizadas (Bahia 11,7 para 4,8; Nordeste e Brasil também). O documento do INEP "Taxas de Rendimento Escolar" (2023,
+     `https://download.inep.gov.br/publicacoes/institucionais/estatisticas_e_indicadores/taxas_de_rendimento_escolar_2023.pdf`, sha256 `06836ea9`, 8 páginas, baixado com a CA da RNP) define a taxa de abandono como
+     ABA / (APR + REP + ABA) × 100, a mesma fórmula de todos os anos, e não anuncia mudança de método. Não foi encontrada nota do INEP que atribua a queda a uma causa; fica registrada como **variação da fonte, de causa
+     não documentada**, que a série trata como observação oficial. Quem for comparar 2023 em diante com os anos anteriores deve ler a série com essa ressalva.
+   - Em taxas pequenas (0,3% a 3%) uma diferença de décimos já passa de 50%; é o caso de Pernambuco (0,3 para 1,4) e do Rio Grande do Norte (0,6 para 14,7).
+2. **`matriculas_basica` / `censo_escolar_pre2007`: 6 casos, limiar 50%**, todos de 2005 para 2006 e em redes pequenas: creche estadual do PI (66 para 0) e do RN (147 para 649), ensino fundamental federal do RN (36 para 67),
+   pré-escola estadual do PI (2.866 para 891), pré-escola federal do CO (40 para 0) e da PB (75 para 212). Com poucas matrículas na rede, a variação de dezenas já passa de 50%. Os totais do território e da etapa variam bem menos
+   (PI, pré-escola total: 109.619 para 110.199, a redução da rede estadual aparece na municipal, de 75.842 para 78.368; RN, creche total: 40.953 para 44.657) e a regra R07 (soma das UFs e das regiões) passa. Característica da
+   fonte (redistribuição de matrículas entre redes, redes minúsculas), não erro.
+3. **`superior` / `censup_pre2009`: 1 caso, limiar 50%**: universidades de Alagoas, de 1 (2004) para 2 (2005). A contagem tem valores de 1 a 3 por UF, e uma universidade a mais é 100%. A série de Alagoas continua 1, 1, 1, 1, 2, 2, 3, 3
+   (2001 a 2008), crescente e sem reversão. Variação real da contagem, não erro.
+
+### Mudança de código desta tarefa
+
+Uma: a leitura de planilhas (`padronizacao/planilha.py`) silencia o aviso do openpyxl "Cannot parse header or footer so it will be ignored". A planilha `TX_REND_REG_2015.xlsx` (taxas de rendimento de 2015, regiões, do INEP)
+traz o rodapé de impressão em formato fora do padrão do Excel; o aviso é só sobre cabeçalho e rodapé de impressão e não afeta nenhum dado lido, mas saía no stderr do `consolidar` e, sob `python -W error`, derrubava a
+série `abandono_em` com "não foi possível ler" (virava pendência). Teste: `test_rodape_de_impressao_ilegivel_nao_atrapalha_a_leitura` (planilha sintética com rodapé sem os códigos `&L`, `&C`, `&R`, lida com avisos como erro).
+Depois da correção, o ensaio completo roda com `python -W error` sem saída de aviso e com a mesma base, byte a byte.
+
+### O que o ensaio não exercitou
+
+- `matriculas_basica/educacenso` e `superior/censup` (Tarefa C2). Por isso `matriculas_basica` e `superior` foram ensaiados só com as séries antigas (2005 e 2006; 2001 a 2008), e a leitura conjunta das séries do mesmo
+  indicador, com as junções 2006/2007 e 2008/2009, fica para o ensaio após a C2.
+- `pobreza` e `extrema_pobreza` (não verificadas, fora da coleta).
+- Comparação com base publicada (A02) e `publicar` sem ensaio: não há base publicada; a primeira publicação real é da Tarefa C8.
