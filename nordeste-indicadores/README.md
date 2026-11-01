@@ -42,7 +42,8 @@ python -m nordeste publicar  [--ensaio]
 - `coletar` baixa os arquivos brutos de cada série verificada para `dados/brutos/` e registra a coleta (data,
   URL, SHA-256, origem) em `dados/relatorios/coletas.csv`. Com `--indicador ID`, só as séries desse indicador.
   Nas séries grandes do INEP, prefira `coletar --indicador ID`, um indicador por vez: a coleta de rede de
-  `educacenso` e `censup` é sequencial e leva de 50 a 60 minutos cada. Se a rede cair no meio, as partes que já
+  `educacenso` e `censup` é sequencial e leva de 35 a 60 minutos cada (a de `educacenso` levou 35 minutos, a
+  ~0,9 MB/s, em 2026-11-01). Se a rede cair no meio, as partes que já
   chegaram ficam em `dados/trabalho/partes/` e o próximo `coletar` baixa só as que faltam (ver
   [Séries com partes](#séries-com-partes-o-pacote-reduzido)).
 - `consolidar` padroniza as coletas, deriva o Brasil fora do Nordeste e os indicadores calculados e grava o

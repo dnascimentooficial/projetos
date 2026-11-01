@@ -776,7 +776,10 @@ Atualização de 2026-11-01, pacote reduzido. O coletor passou a guardar de cada
 com `curl`, oito conexões em paralelo), o pacote bruto caiu de 1.857 MB para 28,3 MB (`educacenso`) e de 1.937 MB para 25,1 MB
 (`censup`), e a padronização das 90 e das 44 partes deu as mesmas linhas com o pacote reduzido e com o de zips inteiros
 (`pandas.testing.assert_frame_equal`). `coletar` dessas séries sobre os arquivos locais: pico de 148 MB e 351 MB; `consolidar`
-das seis séries do INEP juntas (`ideb` e `abandono_em` coletados pela rede): 299 s e 439 MB.
+das seis séries do INEP juntas (`ideb` e `abandono_em` coletados pela rede): 299 s e 439 MB. A coleta sequencial do `educacenso` pela rede, enfim
+exercitada de ponta a ponta (`python -m nordeste --raiz <tmp> coletar --indicador matriculas_basica`), levou 2.073 s (~0,9 MB/s)
+com pico de 147 MB e gerou o mesmo pacote (sha256 `43bd033c`) montado sobre os arquivos locais. A do `censup` pela rede não foi
+repetida.
 
 Mecanismos de leitura usados, todos já existentes (nenhuma mudança de código): `partes` com `filtro_linhas` (incluindo o valor vazio, para escolher a linha de total
 quando o município ou a UF está em branco, e o ano do arquivo, conferido na própria planilha), `nomes_territorio` (`Total Bahia` como BA, `R. G. do Norte` como RN, siglas de UF como
