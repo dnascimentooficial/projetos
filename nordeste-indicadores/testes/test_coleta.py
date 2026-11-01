@@ -22,8 +22,9 @@ HOJE = date(2026, 11, 1)
 class RespostaFalsa:
     """Dublê de requests.Response, com leitura inteira (`content`) ou em blocos (`iter_content`, com stream=True)."""
 
-    def __init__(self, conteudo: bytes):
+    def __init__(self, conteudo: bytes, headers: dict | None = None):
         self.content = conteudo
+        self.headers = requests.structures.CaseInsensitiveDict(headers or {})
 
     def raise_for_status(self):
         pass
@@ -541,17 +542,18 @@ def test_parte_guardada_invalida_e_baixada_de_novo(projeto, fichas, monkeypatch,
         coletar_serie(f, s, projeto, offline=False, hoje=HOJE,
                       sessao=SessaoPorUrl({URL_UFS: b"zip das ufs"}, falham=[URL_BRASIL]))
     guardadas = projeto.partes_em_coleta / "amostra_per_capita" / "scr_ref2010"
-    hoje = HOJE
+    hoje, conteudo_ufs = HOJE, b"zip das ufs"
     if motivo == "vencida":
         hoje = date(2026, 11, 9)  # 8 dias depois
     elif motivo == "receita mudou":
         partes = [{**p, "arquivo_no_zip": "ufs.xlsx"} if p["url"] == URL_UFS else p for p in s.parametros["partes"]]
         s = replace(s, parametros={**s.parametros, "partes": partes})
+        conteudo_ufs = _zip_com_membro("ufs.xlsx", b"planilha")  # com arquivo_no_zip, o baixado tem de ser o zip
     elif motivo == "arquivo corrompido":
         next(guardadas.glob("*.parte")).write_bytes(b"zip das uf")
     else:
         next(guardadas.glob("*.json")).unlink()
-    sessao = SessaoPorUrl({URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"})
+    sessao = SessaoPorUrl({URL_UFS: conteudo_ufs, URL_BRASIL: b"zip do brasil"})
     coletar_serie(f, s, projeto, offline=False, hoje=hoje, sessao=sessao)
     assert sessao.urls == [URL_UFS, URL_BRASIL]
 
@@ -589,3 +591,77 @@ def test_coletor_reduz_zip_baixado_ao_membro_declarado(projeto, fichas):
     assert ufs["sha256_original"] == hashlib.sha256(zip_ufs).hexdigest() and ufs["bytes_original"] == len(zip_ufs)
     with zipfile.ZipFile(io.BytesIO(ler_pacote(bruto)[URL_UFS])) as reduzido:
         assert reduzido.namelist() == ["ufs/ufs.xls"] and reduzido.read("ufs/ufs.xls") == b"planilha " * 50
+
+
+# ---------------------------------------------------------------------------
+# Download incompleto ou que nao e o zip esperado: erro de coleta, nunca parte guardada
+# ---------------------------------------------------------------------------
+
+class SessaoComCabecalhos(SessaoFalsa):
+    """Responde `conteudo` com os `cabecalhos` de cada chamada (o ultimo se repete)."""
+
+    def __init__(self, conteudo: bytes, cabecalhos: list[dict]):
+        super().__init__(conteudo=conteudo)
+        self.cabecalhos = cabecalhos
+
+    def get(self, url, **kwargs):
+        self.chamadas += 1
+        return RespostaFalsa(self.conteudo, self.cabecalhos[min(self.chamadas, len(self.cabecalhos)) - 1])
+
+
+def test_baixar_para_arquivo_menor_que_o_content_length_e_erro_e_apaga_o_parcial(tmp_path):
+    sessao = SessaoComCabecalhos(b"0123456789", [{"Content-Length": "4096"}])
+    destino = tmp_path / "parte.baixando"
+    with pytest.raises(ErroColeta, match=r"a\.zip.*10 de 4096 bytes"):
+        baixar_para_arquivo("https://x/a.zip", destino, tentativas_extras=1, sessao=sessao, esperar=lambda s: None)
+    assert sessao.chamadas == 2 and not destino.exists()
+
+
+def test_baixar_para_arquivo_incompleto_tenta_de_novo(tmp_path):
+    sessao = SessaoComCabecalhos(b"0123456789", [{"Content-Length": "4096"}, {"Content-Length": "10"}])
+    destino = tmp_path / "parte.baixando"
+    assert baixar_para_arquivo("https://x/a.zip", destino, sessao=sessao, esperar=lambda s: None)[1] == 10
+    assert sessao.chamadas == 2 and destino.read_bytes() == b"0123456789"
+
+
+@pytest.mark.parametrize("cabecalhos", [{}, {"Content-Length": "4096", "Content-Encoding": "gzip"}])
+def test_baixar_para_arquivo_sem_content_length_comparavel_aceita_o_que_veio(tmp_path, cabecalhos):
+    """Com Content-Encoding, o Content-Length conta os bytes comprimidos, nao os entregues."""
+    sessao = SessaoComCabecalhos(b"0123456789", [cabecalhos])
+    destino = tmp_path / "parte.baixando"
+    assert baixar_para_arquivo("https://x/a.zip", destino, sessao=sessao)[1] == 10 and sessao.chamadas == 1
+
+
+def _zip_com_membro(nome: str, conteudo: bytes) -> bytes:
+    import io
+    import zipfile
+    saida = io.BytesIO()
+    with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr(nome, conteudo)
+    return saida.getvalue()
+
+
+ZIP_UFS = _zip_com_membro("ufs/ufs.xls", b"planilha " * 50)
+
+
+@pytest.mark.parametrize("conteudo", [
+    pytest.param(ZIP_UFS[:len(ZIP_UFS) // 2], id="zip truncado"),
+    pytest.param("<html><body>Servidor em manutenção</body></html>".encode(), id="HTML com status 200"),
+    pytest.param(_zip_com_membro("ufs/outro.xls", b"planilha"), id="membro ausente"),
+])
+def test_parte_que_nao_traz_o_membro_declarado_falha_e_nao_e_guardada(projeto, fichas, conteudo):
+    f, s = _serie_com_partes(fichas)
+    partes = [{**p, "arquivo_no_zip": "ufs/ufs.xls", "formato": "xls"} if p["url"] == URL_UFS else p
+              for p in s.parametros["partes"]]
+    s = replace(s, parametros={**s.parametros, "partes": partes})
+    with pytest.raises(ErroColeta, match=r"1 de 2 partes falharam.*ufs\.zip.*ufs/ufs\.xls"):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE,
+                      sessao=SessaoPorUrl({URL_UFS: conteudo, URL_BRASIL: b"zip do brasil"}))
+    guardadas = projeto.partes_em_coleta / "amostra_per_capita" / "scr_ref2010"
+    assert len(list(guardadas.glob("*.json"))) == 1 and len(list(guardadas.glob("*.parte"))) == 1  # so a do Brasil
+    assert not list(guardadas.glob("*.baixando")) and ler_registro(projeto.registro_coletas).empty
+
+    # a proxima coleta baixa de novo a parte ruim (nao a reaproveita) e so ela
+    sessao = SessaoPorUrl({URL_UFS: ZIP_UFS, URL_BRASIL: b"zip do brasil"})
+    coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=sessao)
+    assert sessao.urls == [URL_UFS]

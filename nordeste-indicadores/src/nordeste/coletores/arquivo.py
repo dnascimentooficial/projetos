@@ -6,12 +6,14 @@ da URL nas partes. Data, ordem e atributos fixos: o mesmo conteudo da fonte gera
 mesmo sha256 (uma coleta por serie, como no Ipeadata com `codigos`).
 
 Reducao: quando todas as partes de uma URL declaram `arquivo_no_zip`, o pacote nao guarda o zip baixado, e sim um
-zip reduzido com so os membros declarados, com os bytes comprimidos copiados do original (nada e recomprimido, e o
-zip reduzido nunca e maior que o original). Um membro .xlsx lido so por partes com `aba` (texto) e `formato: xlsx`
-e ainda podado: ficam as abas declaradas e as partes do pacote OOXML que elas alcancam (estilos, textos
-compartilhados, tema), tambem copiadas sem recompressao. O nome do membro nao muda, entao o padronizador `planilha`
-le o pacote como antes. Se o zip estiver ilegivel, faltar um membro ou a poda nao for segura (aba ausente,
-estrutura inesperada), o arquivo segue inteiro e o erro de layout aparece no padronizador, como antes.
+zip reduzido com so os membros declarados, com os bytes comprimidos copiados do original (nada e recomprimido).
+Um membro .xlsx lido so por partes com `aba` (texto) e `formato: xlsx` e ainda podado: ficam as abas declaradas e
+as partes do pacote OOXML que elas alcancam (estilos, textos compartilhados, tema), tambem copiadas sem
+recompressao; o podado so entra se for menor que o membro comprimido original (senao vai o membro cru). Assim o
+zip reduzido nunca e maior que o original. O nome do membro nao muda, entao o padronizador `planilha` le o pacote
+como antes. Se a poda nao for segura (aba ausente, estrutura inesperada), o membro segue inteiro e o erro de layout
+aparece no padronizador, como antes. Se o arquivo baixado nao for um zip legivel ou nao tiver um membro declarado
+(download cortado, pagina de erro servida com status 200), sobe ErroColeta: a parte nao e guardada.
 
 Cada item do manifesto tem `url`, `nome` (entrada no pacote), `sha256_original` e `bytes_original` (do arquivo
 baixado, para rastrear a fonte) e, se reduzido, `membros`: [{membro, abas?}] (`abas` so quando podado).
@@ -114,7 +116,7 @@ def _copiar_trecho(origem: BinaryIO, inicio: int, tamanho: int, saida: BinaryIO)
     while tamanho:
         bloco = origem.read(min(_BLOCO, tamanho))
         if not bloco:
-            raise ValueError("zip de origem truncado")
+            raise zipfile.BadZipFile("zip de origem truncado")
         saida.write(bloco)
         tamanho -= len(bloco)
 
@@ -126,7 +128,7 @@ def _entrada_crua(origem: BinaryIO, info: zipfile.ZipInfo) -> _Entrada:
     origem.seek(info.header_offset)
     cabecalho = origem.read(zipfile.sizeFileHeader)
     if len(cabecalho) != zipfile.sizeFileHeader or cabecalho[:4] != zipfile.stringFileHeader:
-        raise ValueError(f"cabecalho local invalido: {info.filename}")
+        raise zipfile.BadZipFile(f"cabecalho local invalido: {info.filename}")
     campos = struct.unpack(zipfile.structFileHeader, cabecalho)
     inicio = info.header_offset + zipfile.sizeFileHeader + campos[10] + campos[11]
     return _Entrada(info.filename, info.compress_type, info.CRC, info.compress_size, info.file_size,
@@ -330,17 +332,24 @@ class ParteBaixada:
 
 def _reduzir_zip(original: Path, membros: dict[str, tuple[str, ...] | None], destino: Path,
                  pasta: Path) -> list[dict] | None:
-    """Grava em `destino` o zip so com `membros` (xlsx podados quando possivel); None se for preciso o inteiro."""
-    try:
-        with zipfile.ZipFile(original) as zip_, original.open("rb") as bruto:
-            infos = {info.filename: info for info in zip_.infolist()}
-            if any(membro not in infos or infos[membro].flag_bits & 0x1 for membro in membros):
-                return None
+    """Grava em `destino` o zip so com `membros` (xlsx podados quando menores); None se for preciso o inteiro.
+
+    zipfile.BadZipFile se `original` nao for um zip legivel ou nao tiver algum dos `membros`.
+    """
+    with zipfile.ZipFile(original) as zip_, original.open("rb") as bruto:
+        infos = {info.filename: info for info in zip_.infolist()}
+        ausentes = [membro for membro in membros if membro not in infos]
+        if ausentes:
+            raise zipfile.BadZipFile(f"sem o membro {', '.join(ausentes)}")
+        if any(infos[membro].flag_bits & 0x1 for membro in membros):
+            return None
+        try:
             entradas, manifesto = [], []
             for posicao, (membro, abas) in enumerate(membros.items(), start=1):
                 info = infos[membro]
                 podado = pasta / f"podado_{posicao:03d}.xlsx"
-                if abas and _extrair_e_podar(zip_, info, abas, pasta / f"membro_{posicao:03d}.xlsx", podado):
+                if (abas and _extrair_e_podar(zip_, info, abas, pasta / f"membro_{posicao:03d}.xlsx", podado)
+                        and podado.stat().st_size < info.compress_size):
                     entradas.append(_entrada_arquivo(membro, podado))
                     manifesto.append({"membro": membro, "abas": list(abas)})
                 else:
@@ -348,8 +357,8 @@ def _reduzir_zip(original: Path, membros: dict[str, tuple[str, ...] | None], des
                     manifesto.append({"membro": membro})
             with destino.open("wb") as saida:
                 _gravar_zip(saida, entradas)
-    except (zipfile.BadZipFile, ValueError):
-        return None
+        except ValueError:  # zip reduzido que exigiria zip64: vai o arquivo inteiro
+            return None
     with zipfile.ZipFile(destino) as conferido:
         if conferido.testzip() is not None:
             raise ValueError(f"zip reduzido com CRC invalido a partir de {original.name}")
@@ -371,10 +380,18 @@ def _extrair_e_podar(zip_: zipfile.ZipFile, info: zipfile.ZipInfo, abas: tuple[s
 
 def preparar_parte(url: str, original: Path, sha256_original: str, bytes_original: int, receita: Receita,
                    pasta: Path) -> ParteBaixada:
-    """Reduz o arquivo baixado conforme a receita; o reduzido fica em `pasta`, o original nao e alterado."""
+    """Reduz o arquivo baixado conforme a receita; o reduzido fica em `pasta`, o original nao e alterado.
+
+    ErroColeta se a receita declara membros e o arquivo nao e um zip legivel com todos eles.
+    """
     if receita:
         reduzido = pasta / "reduzido.zip"
-        membros = _reduzir_zip(original, receita, reduzido, pasta)
+        try:
+            membros = _reduzir_zip(original, receita, reduzido, pasta)
+        except zipfile.BadZipFile as erro:
+            raise ErroColeta(
+                f"{url} não é um zip legível com {', '.join(receita)} ({erro}): download incompleto ou página de "
+                "erro no lugar do arquivo; a parte não foi guardada") from erro
         if membros is not None:
             return ParteBaixada(url, reduzido, sha256_original, bytes_original, membros)
     return ParteBaixada(url, original, sha256_original, bytes_original)

@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import re
 import zipfile
 from dataclasses import replace
 
@@ -14,6 +15,7 @@ from openpyxl.drawing.image import Image as ImagemXlsx
 from nordeste.coletores.arquivo import (
     empacotar_partes, ler_manifesto, ler_pacote, receita_em_json, receitas_das_partes,
 )
+from nordeste.coletores.erros import ErroColeta
 from nordeste.padronizacao.planilha import padronizar_planilha
 
 URL = "https://download.inep.gov.br/sinopse/sinopse_2019.zip"
@@ -184,27 +186,69 @@ def test_membro_xls_e_copiado_com_a_compressao_original():
     assert len(ler_pacote(pacote)[URL_XLS]) < len(xls) / 10  # nao vira membro descomprimido
 
 
-@pytest.mark.parametrize("caso", ["aba ausente", "membro ausente", "nao e zip", "xlsx ilegivel"])
-def test_sem_poda_segura_o_arquivo_segue_como_esta_e_o_padronizador_acusa(caso):
+@pytest.mark.parametrize("caso", ["aba ausente", "xlsx ilegivel"])
+def test_sem_poda_segura_o_membro_segue_inteiro_e_o_padronizador_acusa(caso):
     if caso == "aba ausente":
         fonte = _zip_da_fonte()
         parametros = {"partes": [_parte(ABAS_LIDAS[0]), _parte("Aba que não existe")]}
-    elif caso == "xlsx ilegivel":
-        fonte = _zip({MEMBRO: b"isto nao e xlsx", "md5.txt": b"x"})
-        parametros = PARAMETROS
     else:
-        fonte = _zip({"outro.xlsx": b"x"}) if caso == "membro ausente" else b"<html>manutencao</html>"
+        fonte = _zip({MEMBRO: b"isto nao e xlsx", "md5.txt": b"x"})
         parametros = PARAMETROS
     pacote = empacotar_partes({URL: fonte}, parametros)
     (item,) = ler_manifesto(pacote)
-    guardado = ler_pacote(pacote)[URL]
-    if caso in ("aba ausente", "xlsx ilegivel"):  # o membro segue, inteiro e sem poda
-        assert item["membros"] == [{"membro": MEMBRO}]
-        with zipfile.ZipFile(io.BytesIO(guardado)) as reduzido, zipfile.ZipFile(io.BytesIO(fonte)) as inteiro:
-            assert reduzido.namelist() == [MEMBRO] and reduzido.read(MEMBRO) == inteiro.read(MEMBRO)
-    else:  # sem como reduzir: o arquivo baixado vai inteiro, como antes
-        assert "membros" not in item and guardado == fonte
+    assert item["membros"] == [{"membro": MEMBRO}]
+    with zipfile.ZipFile(io.BytesIO(ler_pacote(pacote)[URL])) as reduzido, \
+            zipfile.ZipFile(io.BytesIO(fonte)) as inteiro:
+        assert reduzido.namelist() == [MEMBRO] and reduzido.read(MEMBRO) == inteiro.read(MEMBRO)
     assert item["sha256_original"] == hashlib.sha256(fonte).hexdigest()
+
+
+@pytest.mark.parametrize("caso", ["zip truncado", "HTML com status 200", "membro ausente"])
+def test_arquivo_baixado_sem_o_membro_declarado_e_erro_de_coleta(caso):
+    """Download cortado ou pagina de erro servida com 200: nao vira parte valida (nem inteira, nem reduzida)."""
+    if caso == "zip truncado":
+        fonte = _zip_da_fonte()
+        fonte = fonte[:len(fonte) // 2]
+    elif caso == "HTML com status 200":
+        fonte = "<html><body>Servidor em manutenção</body></html>".encode()
+    else:
+        fonte = _zip({"outro.xlsx": b"x"})
+    with pytest.raises(ErroColeta, match=re.escape(URL)):
+        empacotar_partes({URL: fonte}, PARAMETROS)
+
+
+def test_url_sem_arquivo_no_zip_segue_inteira_mesmo_sem_ser_zip():
+    """Sem `arquivo_no_zip` nao ha o que conferir: o arquivo vai como veio e o padronizador o le."""
+    fonte = b"<html>tabela</html>"
+    pacote = empacotar_partes({URL: fonte}, {"partes": [{"url": URL, "formato": "html"}]})
+    (item,) = ler_manifesto(pacote)
+    assert "membros" not in item and ler_pacote(pacote)[URL] == fonte
+
+
+def _xlsx_sem_compressao(xlsx: bytes) -> bytes:
+    """O mesmo xlsx com as partes OOXML guardadas sem compressao (ha geradores que fazem assim)."""
+    saida = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(xlsx)) as origem, zipfile.ZipFile(saida, "w", zipfile.ZIP_STORED) as destino:
+        for info in origem.infolist():
+            destino.writestr(zipfile.ZipInfo(info.filename, date_time=info.date_time), origem.read(info))
+    return saida.getvalue()
+
+
+def test_xlsx_podado_maior_que_o_membro_comprimido_nao_e_usado():
+    """Poda copia as partes como estao (aqui, sem compressao) e o pacote as guarda sem compressao: se o podado sair
+    maior que o membro comprimido do zip baixado, fica o membro original, copiado cru."""
+    todas = ("Sinopse", "Educação Básica 1.1", "Municípios 1.2", "Ensino Fundamental 1.14", "Municípios 1.15")
+    fonte = _zip({MEMBRO: _xlsx_sem_compressao(_xlsx_grande())})
+    parametros = {"partes": [_parte(aba) for aba in todas]}
+    pacote = empacotar_partes({URL: fonte}, parametros)
+    assert ler_manifesto(pacote)[0]["membros"] == [{"membro": MEMBRO}]
+    guardado = ler_pacote(pacote)[URL]
+    with zipfile.ZipFile(io.BytesIO(guardado)) as reduzido, zipfile.ZipFile(io.BytesIO(fonte)) as inteiro:
+        (info,) = reduzido.infolist()
+        original = inteiro.getinfo(MEMBRO)
+        assert (info.compress_type, info.compress_size, info.CRC) == (
+            zipfile.ZIP_DEFLATED, original.compress_size, original.CRC)
+    assert len(guardado) <= len(fonte)
 
 
 def test_pacote_reduzido_e_deterministico():

@@ -42,12 +42,13 @@ observacoes: >-
   de 2025 renumera as tabelas, e a série precisa ser contínua). (5)
   `defasagem_meses`: as sinopses saem de dois a sete meses depois do fim do ano
   (a de 2025 foi atualizada em julho de 2026); seis meses é uma estimativa. (6)
-  Custo operacional de `educacenso`: o download tem ~2 GB (15 arquivos), o
-  pacote bruto guardado tem ~1,9 GB e o `coletar` e o `consolidar` usam ~4 GB de
-  RAM; a coleta leva de 50 a 60 minutos em sequência, a ~0,5 MB/s. A coleta de
-  rede sequencial desses arquivos grandes não foi exercitada: os layouts foram
-  conferidos sobre os arquivos reais baixados à parte. Rode `coletar
-  --indicador matriculas_basica` isoladamente.
+  Custo operacional de `educacenso`: o download tem ~2 GB (15 arquivos, 1.857
+  MB) e leva de 35 a 60 minutos em sequência (0,9 a 0,5 MB/s); o pacote bruto
+  guardado tem ~28 MB (de cada sinopse, só as três abas lidas). A coleta de
+  rede foi exercitada de ponta a ponta e medida em 2026-11-01: `coletar
+  --indicador matriculas_basica` levou 2.034 s com pico de 144 MB de RAM, e o
+  `consolidar` das séries coletadas, 107 s e 323 MB. Rode `coletar --indicador
+  matriculas_basica` isoladamente.
 sentido: maior_melhor
 limites: {min: 0}
 defasagem_meses: 6

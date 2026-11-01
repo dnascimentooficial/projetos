@@ -758,9 +758,13 @@ def test_superior_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
     assert sorted(coletas.serie_id) == ["censup", "censup_pre2009"] and set(coletas.origem) == {"fixture"}
 
 
-@pytest.mark.parametrize("indicador, serie", [("matriculas_basica", "educacenso"), ("superior", "censup")])
-def test_series_grandes_do_inep_declaram_o_custo_operacional_da_coleta(fichas, indicador, serie):
+@pytest.mark.parametrize("indicador, serie, pacote", [
+    ("matriculas_basica", "educacenso", "~28 MB"), ("superior", "censup", "~25 MB")])
+def test_series_grandes_do_inep_declaram_o_custo_operacional_medido(fichas, indicador, serie, pacote):
+    """Custos medidos com o pacote reduzido (Tarefa C2), nao os da coleta antiga com zips inteiros."""
     texto = " ".join(fichas[indicador].observacoes.split())
-    assert f"`{serie}`" in texto and "~2 GB" in texto and "~1,9 GB" in texto and "~4 GB de RAM" in texto
-    assert "50 a 60 minutos" in texto and "0,5 MB/s" in texto
-    assert "não foi exercitada" in texto and "layouts" in texto
+    assert f"`{serie}`" in texto and "~2 GB" in texto and f"pacote bruto guardado tem {pacote}" in texto
+    assert "MB de RAM" in texto and "35 a 60 minutos" in texto and "0,9 a 0,5 MB/s" in texto
+    assert "exercitada de ponta a ponta" in texto and "isoladamente" in texto
+    for antigo in ("~1,9 GB", "~4 GB de RAM", "não foi exercitada"):
+        assert antigo not in texto, antigo

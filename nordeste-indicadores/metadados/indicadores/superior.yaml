@@ -34,11 +34,14 @@ observacoes: >-
   pendência (e o de 2025 ainda não foi publicado). (4) `defasagem_meses`: o
   Censo da Educação Superior de cada ano sai cerca de dez meses depois do fim
   do ano. (5) Custo operacional de `censup`: o download tem ~2 GB (11
-  arquivos), o pacote bruto guardado tem ~1,9 GB e o `coletar` e o
-  `consolidar` usam ~4 GB de RAM; a coleta leva de 50 a 60 minutos em
-  sequência, a ~0,5 MB/s. A coleta de rede sequencial desses arquivos grandes
-  não foi exercitada: os layouts foram conferidos sobre os arquivos reais
-  baixados à parte. Rode `coletar --indicador superior` isoladamente.
+  arquivos, 1.937 MB) e leva de 35 a 60 minutos em sequência (0,9 a 0,5
+  MB/s); o pacote bruto guardado tem ~25 MB (de cada sinopse, só as abas 1.1 e
+  5.1), e o `coletar` sobre os arquivos reais baixados à parte usou 351 MB de
+  RAM. A coleta de rede do `censup` não foi repetida; a do `educacenso`, com o
+  mesmo coletor e arquivos do mesmo porte, foi exercitada de ponta a ponta
+  (ficha `matriculas_basica`). `censup_pre2009` (8 arquivos, 32 MB): coleta de
+  rede de 71 s, pico de 123 MB de RAM, pacote de 32 MB (cada zip só traz o
+  .xls lido). Rode `coletar --indicador superior` isoladamente.
 sentido: maior_melhor
 limites: {min: 0}
 defasagem_meses: 10

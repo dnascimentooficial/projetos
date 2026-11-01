@@ -15,6 +15,18 @@ TEMPO_LIMITE_S = 120  # por leitura no socket, nao para o download inteiro
 BLOCO_DOWNLOAD = 1 << 20
 
 
+class _DownloadIncompleto(requests.RequestException):
+    """Menos (ou mais) bytes que o Content-Length anunciado: falha como a de rede, com nova tentativa."""
+
+
+def _conferir_tamanho(resposta, recebidos: int) -> None:
+    """Compara o recebido com o Content-Length, quando ha e o corpo nao vem codificado (gzip etc.)."""
+    anunciado = resposta.headers.get("Content-Length")
+    codificacao = resposta.headers.get("Content-Encoding", "identity").strip().lower()
+    if anunciado and anunciado.strip().isdigit() and codificacao == "identity" and int(anunciado) != recebidos:
+        raise _DownloadIncompleto(f"recebidos {recebidos} de {int(anunciado)} bytes anunciados no Content-Length")
+
+
 def _bundle_com_extra(ca_extra: Path, destino: Path) -> Path:
     """Grava em `destino` o bundle de CAs em uso (REQUESTS_CA_BUNDLE, senao certifi) mais `ca_extra`.
 
@@ -86,8 +98,9 @@ def baixar_para_arquivo(
 ) -> tuple[str, int]:
     """Baixa a URL em blocos direto para `destino`, sem carregar o arquivo na memoria; devolve (sha256, bytes).
 
-    Mesmas tentativas e mesma verificacao TLS de `baixar`. Cada tentativa recomeca o arquivo do zero; se todas
-    falharem, `destino` e apagado e sobe ErroColeta.
+    Mesmas tentativas e mesma verificacao TLS de `baixar`. Um download com tamanho diferente do Content-Length
+    (sem Content-Encoding) conta como falha. Cada tentativa recomeca o arquivo do zero; se todas falharem,
+    `destino` e apagado e sobe ErroColeta.
     """
     sessao = sessao or requests.Session()
 
@@ -100,6 +113,7 @@ def baixar_para_arquivo(
                     saida.write(bloco)
                     resumo.update(bloco)
                     tamanho += len(bloco)
+            _conferir_tamanho(resposta, tamanho)
         return resumo.hexdigest(), tamanho
 
     try:

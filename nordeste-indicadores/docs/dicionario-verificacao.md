@@ -781,6 +781,16 @@ exercitada de ponta a ponta (`python -m nordeste --raiz <tmp> coletar --indicado
 com pico de 147 MB e gerou o mesmo pacote (sha256 `43bd033c`) montado sobre os arquivos locais. A do `censup` pela rede não foi
 repetida.
 
+Medição da Tarefa C2 (2026-11-01), depois da incorporação do pacote reduzido à base e das correções da revisão (download menor que o
+`Content-Length`, arquivo que não é zip ou sem o membro declarado viram falha de coleta; xlsx podado só quando menor que o membro original).
+Coleta de rede numa cópia temporária do projeto, com o pico de memória lido de `getrusage` do processo filho:
+`python -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar --indicador matriculas_basica` (`censo_escolar_pre2007` e `educacenso`) levou
+2.034 s (1.857 MB do `educacenso`, ~0,9 MB/s) com pico de 144 MB; o pacote do `educacenso` tem 28.280.513 bytes e o mesmo sha256 `43bd033c` de antes,
+e os 15 `sha256_original` do manifesto são os da tabela do `educacenso`. `coletar --indicador superior` com só o `censup_pre2009` (o `censup` marcado
+como não verificado na cópia) levou 71 s com pico de 123 MB; o pacote tem 31.929.693 bytes (sha256 `1cb64f0e`), quase o tamanho dos 8 zips
+(31.925.742 bytes), porque cada zip só traz o `.xls` lido e `.xls` não é podado; os 8 `sha256_original` são os da tabela do `censup_pre2009`.
+`consolidar` dessas três séries: 107 s e pico de 323 MB; `validar`, código 0. A do `censup` pela rede continua não repetida.
+
 Mecanismos de leitura usados, todos já existentes (nenhuma mudança de código): `partes` com `filtro_linhas` (incluindo o valor vazio, para escolher a linha de total
 quando o município ou a UF está em branco, e o ano do arquivo, conferido na própria planilha), `nomes_territorio` (`Total Bahia` como BA, `R. G. do Norte` como RN, siglas de UF como
 `MA`), `territorios_esperados` em toda parte, colunas por rótulo ou por posição (`Unnamed: n`, quando a célula de cabeçalho está vazia) e `linha_cabecalho` numa linha em branco

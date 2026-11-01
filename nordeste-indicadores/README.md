@@ -15,7 +15,7 @@ está em `docs/specs/2026-10-31-base-historica-design.md`; as conferências feit
 - Dependências (instaladas pelo `pip`): `pandas`, `numpy`, `pyarrow`, `pyyaml`, `requests`, `certifi`,
   `openpyxl`, `xlrd`; para os testes, `pytest`.
 - Recursos para a coleta real completa: as séries do INEP com dezenas de arquivos (`matriculas_basica/educacenso`
-  e `superior/censup`) ainda baixam ~2 GB cada (50 a 60 minutos a ~0,5 MB/s), porque cada zip passa inteiro pelo
+  e `superior/censup`) ainda baixam ~2 GB cada (35 a 60 minutos, a 0,9 a 0,5 MB/s), porque cada zip passa inteiro pelo
   disco para o SHA-256 da fonte ficar registrado. Mas o pacote bruto guardado em `dados/brutos/` tem ~28 MB
   (`educacenso`) e ~25 MB (`censup`), e nem `coletar` nem `consolidar` passam de ~450 MB de RAM. Durante a
   coleta, deixe livre em disco ~400 MB (o maior zip e a planilha extraída dele, apagados assim que reduzidos).
@@ -126,12 +126,16 @@ que traz `manifesto.json` e um arquivo por URL. Desde novembro de 2026 o pacote 
 - de cada URL cujas partes declaram `arquivo_no_zip`, fica um zip reduzido só com os membros declarados, com os
   bytes comprimidos copiados do original (nada é recomprimido; o reduzido nunca é maior que o original);
 - um membro `.xlsx` lido só por partes com `aba` também é podado: ficam as abas declaradas e o que elas usam
-  (estilos, textos compartilhados, tema), com as folhas copiadas byte a byte. O nome do membro não muda, e o
+  (estilos, textos compartilhados, tema), com as folhas copiadas byte a byte. O podado só entra se for menor
+  que o membro comprimido do zip baixado (senão vai o membro como estava). O nome do membro não muda, e o
   padronizador `planilha` lê o pacote como antes;
 - o manifesto registra, por URL, o `sha256_original` e o `bytes_original` do zip baixado (a fonte segue
   rastreável) e, em `membros`, o que foi guardado de cada um (`abas`, quando houve poda);
-- se a redução não é segura (zip ilegível, membro ausente, aba que não existe, estrutura de planilha
-  desconhecida), o arquivo segue como veio e o erro de layout aparece no `consolidar`, como antes.
+- se a poda não é segura (aba que não existe, estrutura de planilha desconhecida), o membro segue inteiro e o
+  erro de layout aparece no `consolidar`, como antes;
+- se o arquivo baixado não é um zip legível ou não tem o membro declarado (download cortado, página de erro
+  servida com status 200), a URL falha na coleta e nada é guardado dela; um download com menos bytes que o
+  `Content-Length` anunciado (sem `Content-Encoding`) também conta como falha e é tentado de novo.
 
 | Série | Baixado | Pacote bruto antes | Pacote bruto agora |
 |---|---|---|---|
@@ -143,6 +147,13 @@ no `censup`) para ~440 MB com as seis séries do INEP juntas, em 5 minutos. O `c
 (`educacenso`) e ~350 MB (`censup`, cujas planilhas têm muito texto compartilhado), porque cada zip vai em blocos
 de 1 MB para o disco em vez de ficar inteiro na memória. A padronização das 90 partes do `educacenso` e das 44 do
 `censup` dá exatamente as mesmas linhas com o pacote reduzido e com o pacote de zips inteiros.
+
+Coleta de rede medida em 2026-11-01, numa cópia temporária do projeto: `coletar --indicador matriculas_basica`
+(`censo_escolar_pre2007` e `educacenso`) levou 2.034 s (~0,9 MB/s) com pico de 144 MB de RAM e gerou o mesmo pacote
+de 28,3 MB (sha256 `43bd033c`) montado antes sobre os arquivos locais; `superior/censup_pre2009` (8 zips, 32 MB)
+levou 71 s com pico de 123 MB, e o pacote tem os mesmos 32 MB, porque cada zip só traz o `.xls` lido (que não é
+podado). O `consolidar` dessas três séries levou 107 s, com pico de 323 MB. A coleta de rede do `censup` não foi
+repetida.
 
 Retomada: cada parte reduzida fica em `dados/trabalho/partes/<indicador>/<série>/` assim que chega. Se uma URL
 falha (depois das três novas tentativas), as outras seguem; a série não é registrada e o próximo `coletar`
