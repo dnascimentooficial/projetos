@@ -98,6 +98,18 @@ def test_layout_que_nao_e_lista_sidra(fichas, territorios):
             padronizar_sidra(conteudo, f, f.serie("scr_ref2010"), "c1", territorios)
 
 
+@pytest.mark.parametrize("linha", [
+    {"NC": "3", "D1C": "26", "V": "1"},  # sem a coluna de periodo
+    {"NC": "3", "D2C": "2002", "V": "1"},  # sem a coluna de territorio
+    ["3", "26", "2002", "1"],  # linha que nao e objeto
+])
+def test_linha_malformada_e_erro_de_layout(fichas, territorios, linha):
+    f = fichas["pib_nominal"]
+    conteudo = json.dumps([CABECALHO, linha]).encode("utf-8")
+    with pytest.raises(ErroLayout, match="SIDRA: linha"):
+        padronizar_sidra(conteudo, f, f.serie("scr_ref2010"), "c1", territorios)
+
+
 def test_valor_irreconhecivel_e_erro(fichas, territorios):
     f = fichas["pib_nominal"]
     with pytest.raises(ErroLayout, match="valor"):

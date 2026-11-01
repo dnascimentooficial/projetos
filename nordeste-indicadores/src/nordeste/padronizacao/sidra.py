@@ -75,7 +75,12 @@ def padronizar_sidra(
         lambda r: any(t in r for t in _ROTULOS_TERRITORIO), "território")
 
     registros = []
-    for linha in linhas:
+    for posicao, linha in enumerate(linhas, start=1):
+        if not isinstance(linha, dict) or col_territorio not in linha or col_periodo not in linha:
+            raise ErroLayout(
+                f"SIDRA: linha {posicao} sem as colunas de território ({col_territorio}) e período "
+                f"({col_periodo}) do cabeçalho ({serie.id})"
+            )
         nivel = _NIVEL_POR_NC.get(linha.get("NC"))
         territorio = (
             territorio_por_codigo(territorios, nivel, linha[col_territorio]) if nivel else None

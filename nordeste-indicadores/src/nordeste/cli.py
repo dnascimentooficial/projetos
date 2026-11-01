@@ -49,22 +49,35 @@ def _fichas(caminhos: Caminhos) -> dict:
     return fichas
 
 
+COLUNAS_FALHAS_COLETA: list[str] = ["indicador_id", "serie_id", "motivo"]
+
+
 def _coletar(caminhos: Caminhos, hoje: date, indicador: str | None, offline: bool) -> int:
+    """Coleta as series e grava relatorios/falhas_coleta.csv (cabecalho sempre; uma linha por serie que falhou).
+
+    Com rede, series `verificado: false` sao puladas com aviso, sem contar como falha. A serie que falha mantem a
+    coleta anterior no registro (e, na publicacao, os dados ja publicados).
+    """
     fichas = _fichas(caminhos)
     if indicador is not None and indicador not in fichas:
         print(f"indicador desconhecido: {indicador}", file=sys.stderr)
         return 1
-    falhas: list[str] = []
+    falhas: list[tuple[str, str, str]] = []
     for ficha in fichas.values():
         if (indicador is not None and ficha.id != indicador) or ficha.calculo is not None:
             continue  # indicador calculado nao tem arquivo bruto: sai do consolidar
         for serie in ficha.series:
+            if not offline and not serie.verificado:
+                print(f"série não verificada, pulada: {ficha.id}/{serie.id}", file=sys.stderr)
+                continue
             try:
                 coletar_serie(ficha, serie, caminhos, offline=offline, hoje=hoje)
             except ErroColeta as erro:
-                falhas.append(f"{ficha.id}/{serie.id}: {erro}")
-    for falha in falhas:
-        print(falha, file=sys.stderr)
+                falhas.append((ficha.id, serie.id, str(erro)))
+    for indicador_id, serie_id, motivo in falhas:
+        print(f"{indicador_id}/{serie_id}: {motivo}", file=sys.stderr)
+    caminhos.relatorios.mkdir(parents=True, exist_ok=True)
+    gravar_csv(pd.DataFrame(falhas, columns=COLUNAS_FALHAS_COLETA), caminhos.relatorios / "falhas_coleta.csv")
     return 1 if falhas else 0
 
 

@@ -49,7 +49,14 @@ python -m nordeste publicar  [--ensaio]
   `base_nordeste_completa.csv`, esta no padrão do Excel brasileiro: UTF-8 com BOM, `;` e vírgula decimal). Com
   `--ensaio`, executa tudo e gera os relatórios sem escrever em `dados/base/`.
 
-Cada comando é idempotente. `coletar` só busca na rede séries com `verificado: true` na ficha.
+Cada comando é idempotente. `coletar` só busca na rede séries com `verificado: true` na ficha: as demais
+(hoje `pobreza` e `extrema_pobreza`) são puladas com um aviso em stderr e não contam como falha. Uma série que
+falha na coleta não derruba as outras: o motivo vai para stderr e para `dados/relatorios/falhas_coleta.csv`
+(`indicador_id`, `serie_id`, `motivo`; o cabeçalho sai sempre, e cada `coletar` reescreve o arquivo), o comando
+sai com 1 e a série segue com a coleta anterior. No `consolidar`, série sem coleta, com arquivo bruto ausente
+(os brutos ficam fora do Git: rode `coletar`) ou com layout inesperado vira pendência em
+`dados/trabalho/pendencias.csv`, assim como o indicador cuja comparação usa um insumo pendente; na publicação,
+as séries pendentes mantêm as linhas já publicadas.
 
 ## A regra R01 e por que não pode ser desligada
 

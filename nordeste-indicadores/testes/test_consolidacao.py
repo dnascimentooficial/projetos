@@ -69,16 +69,43 @@ def test_erro_de_layout_vira_pendencia(projeto_coletado, fichas, territorios):
     (projeto_coletado.raiz / coleta.arquivo).write_text("[]", encoding="utf-8")
 
     base, pend = consolidar(projeto_coletado, fichas, territorios)
-    assert len(pend) == 1
-    assert (pend[0].indicador_id, pend[0].serie_id) == ("pib_nominal", "scr_ref2010")
+    # pib_nominal e o numerador da comparacao do amostra_per_capita: a pendencia se propaga para ele
+    assert [(p.indicador_id, p.serie_id) for p in pend] == [
+        ("pib_nominal", "scr_ref2010"), ("amostra_per_capita", "scr_ref2010")]
     assert pend[0].motivo
     assert "pib_nominal" not in set(base.indicador_id)
     assert {"amostra_per_capita", "amostra_populacao"} <= set(base.indicador_id)
 
 
-def test_outras_excecoes_propagam(projeto_coletado, fichas, territorios):
+def test_arquivo_bruto_ausente_vira_pendencia(projeto_coletado, fichas, territorios):
     registro = ler_registro(projeto_coletado.registro_coletas)
     coleta = ultima_coleta(registro, "pib_nominal", "scr_ref2010")
     (projeto_coletado.raiz / coleta.arquivo).unlink()
-    with pytest.raises(FileNotFoundError):
+    base, pend = consolidar(projeto_coletado, fichas, territorios)
+    assert pend[0].indicador_id == "pib_nominal"
+    assert pend[0].motivo.startswith("arquivo bruto ausente; rode coletar")
+    assert "pib_nominal" not in set(base.indicador_id)
+
+
+def test_outras_excecoes_propagam(projeto_coletado, fichas, territorios, monkeypatch):
+    def quebra(*args, **kwargs):
+        raise RuntimeError("defeito no padronizador")
+    monkeypatch.setattr("nordeste.consolidacao.padronizar", quebra)
+    with pytest.raises(RuntimeError, match="defeito"):
         consolidar(projeto_coletado, fichas, territorios)
+
+
+def test_insumo_pendente_da_comparacao_propaga_para_o_indicador(projeto_coletado, fichas, territorios):
+    registro = ler_registro(projeto_coletado.registro_coletas)
+    coleta = ultima_coleta(registro, "amostra_populacao", "scr_ref2010")
+    (projeto_coletado.raiz / coleta.arquivo).unlink()
+    _, pend = consolidar(projeto_coletado, fichas, territorios)
+    propagada = [p for p in pend if p.indicador_id == "amostra_per_capita"]
+    assert propagada == [Pendencia(
+        "amostra_per_capita", "scr_ref2010", "insumo da comparacao pendente: amostra_populacao/scr_ref2010")]
+
+
+def test_pendencia_propagada_nao_duplica_a_do_proprio_indicador(projeto, fichas, territorios):
+    _, pend = consolidar(projeto, fichas, territorios)  # nada coletado: as tres series sem coleta
+    assert sorted((p.indicador_id, p.motivo) for p in pend) == [
+        ("amostra_per_capita", "sem coleta"), ("amostra_populacao", "sem coleta"), ("pib_nominal", "sem coleta")]

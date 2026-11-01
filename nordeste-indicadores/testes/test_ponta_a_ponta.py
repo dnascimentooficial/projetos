@@ -57,14 +57,61 @@ def test_coletar_indicador_desconhecido_sai_com_1(projeto, capsys):
     assert not projeto.registro_coletas.exists()
 
 
-def test_coletar_sem_offline_nao_coleta_serie_nao_verificada(projeto, capsys):
+def test_coletar_sem_offline_pula_serie_nao_verificada_sem_falhar(projeto, capsys):
     for ficha in projeto.fichas.glob("*.yaml"):  # a amostra tem serie verificada; aqui nenhuma pode estar
         ficha.write_text(ficha.read_text(encoding="utf-8").replace("verificado: true", "verificado: false"),
                          encoding="utf-8")
-    assert main(argumentos(projeto) + ["coletar"]) == 1
+    assert main(argumentos(projeto) + ["coletar"]) == 0
     err = capsys.readouterr().err
-    assert "série não verificada: pib_nominal/scr_ref2010" in err
-    assert len(err.strip().splitlines()) == 3  # uma linha por serie, sem traceback
+    assert "série não verificada, pulada: pib_nominal/scr_ref2010" in err
+    assert len(err.strip().splitlines()) == 3  # um aviso por serie, sem traceback
+    falhas = pd.read_csv(projeto.relatorios / "falhas_coleta.csv", keep_default_na=False)
+    assert list(falhas.columns) == ["indicador_id", "serie_id", "motivo"] and falhas.empty
+    assert not projeto.registro_coletas.exists()
+
+
+def test_coletar_grava_falhas_de_coleta(projeto, capsys):
+    shutil.rmtree(projeto.fixtures / "pib_nominal")
+    assert main(argumentos(projeto) + ["coletar", "--offline"]) == 1
+    falhas = pd.read_csv(projeto.relatorios / "falhas_coleta.csv", keep_default_na=False)
+    assert falhas[["indicador_id", "serie_id"]].values.tolist() == [["pib_nominal", "scr_ref2010"]]
+    assert "sem fixture" in falhas.motivo.iloc[0]
+    # nova coleta sem falha reescreve o relatorio: so o cabecalho
+    assert main(argumentos(projeto) + ["coletar", "--offline", "--indicador", "amostra_populacao"]) == 0
+    falhas = pd.read_csv(projeto.relatorios / "falhas_coleta.csv", keep_default_na=False)
+    assert list(falhas.columns) == ["indicador_id", "serie_id", "motivo"] and falhas.empty
+
+
+def test_consolidar_com_bruto_ausente_registra_pendencia_sem_traceback(projeto, capsys):
+    raiz = argumentos(projeto)
+    main(raiz + ["coletar", "--offline"])
+    coleta = ler_registro(projeto.registro_coletas).query("indicador_id == 'pib_nominal'").iloc[-1]
+    (projeto.raiz / coleta.arquivo).unlink()
+    assert main(raiz + ["consolidar"]) == 0
+    pendencias = pd.read_csv(projeto.trabalho / "pendencias.csv", keep_default_na=False)
+    motivo = pendencias.set_index("indicador_id").motivo
+    assert motivo["pib_nominal"].startswith("arquivo bruto ausente; rode coletar")
+    assert "Traceback" not in capsys.readouterr().err
+
+
+def test_insumo_pendente_mantem_o_brasil_fora_ne_publicado(projeto):
+    raiz = argumentos(projeto)
+    main(raiz + ["coletar", "--offline"]); main(raiz + ["consolidar"])
+    coletas = ler_registro(projeto.registro_coletas)
+    coletas["origem"] = "rede"  # simula dado oficial: a R01 so barra origem fixture
+    coletas.to_csv(projeto.registro_coletas, index=False)
+    assert main(raiz + ["publicar"]) == 0
+    antes = ler_csv(projeto.base / "base_nordeste.csv").query(
+        "indicador_id == 'amostra_per_capita' and territorio_id == 'BR_FORA_NE'")
+    assert not antes.empty
+
+    coleta = coletas.query("indicador_id == 'amostra_populacao'").iloc[-1]
+    (projeto.raiz / coleta.arquivo).unlink()  # o denominador da comparacao fica pendente
+    assert main(raiz + ["consolidar"]) == 0
+    assert main(raiz + ["publicar"]) == 0
+    depois = ler_csv(projeto.base / "base_nordeste.csv").query(
+        "indicador_id == 'amostra_per_capita' and territorio_id == 'BR_FORA_NE'")
+    assert depois.reset_index(drop=True).equals(antes.reset_index(drop=True))
 
 
 def test_consolidar_grava_os_cinco_arquivos(projeto):
@@ -74,7 +121,8 @@ def test_consolidar_grava_os_cinco_arquivos(projeto):
     base = ler_csv(projeto.trabalho / "base.csv")
     assert {"BR", "NE", "BR_FORA_NE"} <= set(base.territorio_id)
     derivados = ler_csv(projeto.trabalho / "derivados.csv")
-    assert {"razao", "variacao_acumulada"} <= set(derivados.metrica)
+    # amostra_per_capita e R$ correntes (tratamento_monetario razao): so metricas do mesmo ano
+    assert "razao" in set(derivados.metrica) and "variacao_acumulada" not in set(derivados.metrica)
     assert "BR_FORA_NE" in set(derivados.referencia)  # calculado sobre a base com o agregado
     pendencias = pd.read_csv(projeto.trabalho / "pendencias.csv", keep_default_na=False)
     assert list(pendencias.columns) == ["indicador_id", "serie_id", "motivo"] and pendencias.empty

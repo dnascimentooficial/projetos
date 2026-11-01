@@ -60,6 +60,13 @@ def test_url_sidra_com_periodos_e_sem_classificacoes():
     assert url_sidra({"tabela": "1", "variavel": "2", "periodos": "2010-2020"}).endswith("/v/2/p/2010-2020")
 
 
+@pytest.mark.parametrize("parametros,faltando", [({}, "tabela"), ({"tabela": "1"}, "variavel"),
+                                                 ({"variavel": "2"}, "tabela"), ({"tabela": "", "variavel": "2"}, "tabela")])
+def test_url_sidra_sem_tabela_ou_variavel_e_erro_de_coleta(parametros, faltando):
+    with pytest.raises(ErroColeta, match=faltando):
+        url_sidra(parametros)
+
+
 def test_baixar_tenta_de_novo_e_desiste():
     esperas = []
     sessao = SessaoFalsa(falhas=10)
