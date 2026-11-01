@@ -461,7 +461,7 @@ tabela não está confirmada.
   todas as fontes 2025" (`liv102275_informativo.pdf`, em `biblioteca.ibge.gov.br`), a nota da tabela e o portal de indicadores ODS
   (`indicadoresods.ibge.gov.br`) não são acessíveis deste ambiente (hosts bloqueados ou fora da lista de rede); `sidra.ibge.gov.br`, `www.ibge.gov.br` e a agência
   de notícias também não. A SIS 2025, que é acessível, usa outra linha. Para promover a `verificado: true`: ler a linha na nota da tabela 5877 (ou numa
-  publicação do IBGE com US$ 8,30 PPC 2021) e conferir 3 valores; a ficha já traz a linha na metodologia. O metadado do Ipeadata declara uma só linha para a série de 2012 a 2025, sem afirmar expressamente que ela é constante no tempo; a nota da tabela deve confirmar isso antes de uma promoção.
+  publicação do IBGE com US$ 8,30 PPC 2021) e conferir 3 valores; a ficha já traz a linha na metodologia. O metadado do Ipeadata declara uma só linha para a série de 2012 a 2024 (a tabela 5877 tem 195 linhas, 13 anos), sem afirmar expressamente que ela é constante no tempo; a nota da tabela deve confirmar isso antes de uma promoção.
 - A ficha `pobreza` é só a medida de pobreza; a extrema pobreza é a ficha `extrema_pobreza` (tabela 5817), porque cada série do projeto vem
   de uma única tabela e uma ficha não junta duas tabelas em subindicadores.
 - Brasil fora do Nordeste: não há (a tabela só traz a proporção e não foi achada contagem de pobres por UF em série anual); comparação com o
