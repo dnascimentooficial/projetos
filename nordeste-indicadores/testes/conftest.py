@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from nordeste.caminhos import Caminhos
+from nordeste.cli import main
 from nordeste.fichas import carregar_fichas
 from nordeste.territorios import carregar_territorios
 
@@ -61,3 +62,26 @@ def territorios(projeto):
 @pytest.fixture
 def fichas(projeto):
     return carregar_fichas(projeto.fichas)
+
+
+@pytest.fixture(scope="session")
+def projeto_consolidado(tmp_path_factory) -> Caminhos:
+    """Dicionario inteiro coletado offline e consolidado uma unica vez por sessao (somente leitura).
+
+    Os testes que so leem a base consolidada (ou os relatorios dela) usam esta fixture; quem precisa
+    escrever no projeto usa `projeto_completo`, que e uma copia nova a cada teste.
+    """
+    raiz = tmp_path_factory.mktemp("dicionario_consolidado")
+    _copiar_do_repositorio(raiz, completo=True)
+    argumentos = ["--raiz", str(raiz), "--hoje", "2026-11-01"]
+    assert main(argumentos + ["coletar", "--offline"]) == 0
+    assert main(argumentos + ["consolidar"]) == 0
+    return Caminhos(raiz)
+
+
+@pytest.fixture
+def copia_consolidada(projeto_consolidado, tmp_path) -> Caminhos:
+    """Copia gravavel do dicionario ja coletado e consolidado (poupa refazer o consolidar a cada teste)."""
+    destino = tmp_path / "projeto"
+    shutil.copytree(projeto_consolidado.raiz, destino)
+    return Caminhos(destino)

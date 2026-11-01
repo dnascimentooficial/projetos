@@ -33,7 +33,12 @@ observacoes: >-
   cinco minutos; os arquivos de 2020 a 2024 têm de 284 a 397 MB e ficam como
   pendência (e o de 2025 ainda não foi publicado). (4) `defasagem_meses`: o
   Censo da Educação Superior de cada ano sai cerca de dez meses depois do fim
-  do ano.
+  do ano. (5) Custo operacional de `censup`: o download tem ~2 GB (11
+  arquivos), o pacote bruto guardado tem ~1,9 GB e o `coletar` e o
+  `consolidar` usam ~4 GB de RAM; a coleta leva de 50 a 60 minutos em
+  sequência, a ~0,5 MB/s. A coleta de rede sequencial desses arquivos grandes
+  não foi exercitada: os layouts foram conferidos sobre os arquivos reais
+  baixados à parte. Rode `coletar --indicador superior` isoladamente.
 sentido: maior_melhor
 limites: {min: 0}
 defasagem_meses: 10

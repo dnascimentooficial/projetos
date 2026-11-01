@@ -41,12 +41,10 @@ def _coletaveis(fichas):
     return [(f, s) for f, s in _series(fichas) if f.calculo is None]
 
 
-@pytest.fixture
-def base(projeto_completo):
-    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
-    assert main(raiz + ["coletar", "--offline"]) == 0
-    assert main(raiz + ["consolidar"]) == 0
-    return pd.read_csv(projeto_completo.trabalho / "base.csv", keep_default_na=False,
+@pytest.fixture(scope="module")
+def base(projeto_consolidado):
+    """Base de trabalho do dicionario inteiro, coletada offline e consolidada uma vez (nao alterar)."""
+    return pd.read_csv(projeto_consolidado.trabalho / "base.csv", keep_default_na=False,
                        na_values={"valor": [""]})
 
 
@@ -153,11 +151,9 @@ def test_pib_participacao_do_brasil_e_100_e_nao_gera_brasil_fora_ne(base):
     assert "BR_FORA_NE" not in set(p.territorio_id)
 
 
-def test_ensaio_do_dicionario_inteiro_so_e_barrado_pela_r01(projeto_completo, capsys):
+def test_ensaio_do_dicionario_inteiro_so_e_barrado_pela_r01(copia_consolidada, capsys):
+    projeto_completo = copia_consolidada  # dicionario inteiro ja coletado offline e consolidado
     raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
-    assert main(raiz + ["coletar", "--offline"]) == 0
-    assert main(raiz + ["consolidar"]) == 0
-    capsys.readouterr()
     assert main(raiz + ["publicar", "--ensaio"]) == 1
     assert "R01" in capsys.readouterr().err
     validacao = pd.read_csv(projeto_completo.relatorios / "validacao.csv")
@@ -226,7 +222,7 @@ def test_pib_per_capita_e_calculado_pelo_projeto(fichas):
     assert "populacao_contas_regionais" not in f.metodologia + f.observacoes
 
 
-def test_pib_per_capita_offline_vem_do_calculo_sobre_as_fixtures(base, projeto_completo):
+def test_pib_per_capita_offline_vem_do_calculo_sobre_as_fixtures(base, projeto_consolidado):
     pc = base[base.indicador_id == "pib_per_capita"]
     assert set(pc.tipo_dado) == {"derivado"} and set(pc.serie_id) == {"scr_ref2010"}
     assert set(pc.ano) == set(range(2002, 2024)) - {2007}  # 2007 sem denominador: sem linha
@@ -234,7 +230,7 @@ def test_pib_per_capita_offline_vem_do_calculo_sobre_as_fixtures(base, projeto_c
     assert len(pc) == 16 * 21
     assert set(pc.valor) == {1000.0}  # 99999 x m / (99999 x m) x 1000, inclusive (13 - 9) / (13 - 9) x 1000
     (coleta_id,) = set(pc.coleta_id)
-    derivacoes = pd.read_csv(projeto_completo.registro_derivacoes, dtype=str, keep_default_na=False)
+    derivacoes = pd.read_csv(projeto_consolidado.registro_derivacoes, dtype=str, keep_default_na=False)
     (insumos,) = derivacoes.loc[derivacoes.coleta_id == coleta_id, "insumos"]
     origem = {c.split(".")[0] + "/" + c.split(".")[1] for c in insumos.split(";")}
     assert origem == {
@@ -268,10 +264,9 @@ def test_insumo_pendente_deixa_o_indicador_calculado_pendente(projeto_completo, 
     ('"2022": censo_2022', '"2022": {serie: censo_2022, ano: 2023}', "posterior"),  # populacao futura
     ('"2023": {serie: censo_2022, ano: 2022}', '"2023": {serie: censo_2000_2010, ano: 2021}', "fora da cobertura"),
 ])
-def test_mapeamento_invalido_na_ficha_barra_a_publicacao_pela_r10(projeto_completo, trecho, troca, mensagem):
+def test_mapeamento_invalido_na_ficha_barra_a_publicacao_pela_r10(copia_consolidada, trecho, troca, mensagem):
+    projeto_completo = copia_consolidada  # dicionario inteiro ja coletado offline e consolidado
     raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
-    assert main(raiz + ["coletar", "--offline"]) == 0
-    assert main(raiz + ["consolidar"]) == 0
     ficha = projeto_completo.fichas / "pib_per_capita.yaml"
     texto = ficha.read_text(encoding="utf-8")
     assert trecho in texto
@@ -757,3 +752,11 @@ def test_superior_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
     assert main(raiz + ["coletar", "--offline", "--indicador", "superior"]) == 0
     coletas = pd.read_csv(projeto_completo.registro_coletas)
     assert sorted(coletas.serie_id) == ["censup", "censup_pre2009"] and set(coletas.origem) == {"fixture"}
+
+
+@pytest.mark.parametrize("indicador, serie", [("matriculas_basica", "educacenso"), ("superior", "censup")])
+def test_series_grandes_do_inep_declaram_o_custo_operacional_da_coleta(fichas, indicador, serie):
+    texto = " ".join(fichas[indicador].observacoes.split())
+    assert f"`{serie}`" in texto and "~2 GB" in texto and "~1,9 GB" in texto and "~4 GB de RAM" in texto
+    assert "50 a 60 minutos" in texto and "0,5 MB/s" in texto
+    assert "não foi exercitada" in texto and "layouts" in texto
