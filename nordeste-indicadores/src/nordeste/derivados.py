@@ -36,82 +36,71 @@ def _diferencas_br_ne(base: pd.DataFrame, indicador_id: str) -> pd.DataFrame:
     return junto[[*chaves, "valor", "insumos"]]
 
 
-def _termo(base: pd.DataFrame, indicador_id: str) -> pd.DataFrame:
-    """Diferenca BR - NE de um termo de razao, sem a coluna de serie (uma linha por grupo e ano)."""
-    termo = _diferencas_br_ne(base, indicador_id)
-    repetidos = termo.duplicated([*_GRUPO, "ano"], keep=False)
-    if repetidos.any():
-        anos = sorted(termo[repetidos].ano.unique().tolist())
-        raise ErroSerie(
-            f"O indicador {indicador_id!r} tem mais de uma serie nos anos {anos}; "
-            "uma razao nao pode misturar series."
-        )
-    return termo.drop(columns="serie_id")
-
-
 def _linhas_soma(base: pd.DataFrame, ficha: Ficha) -> list[dict]:
     return _diferencas_br_ne(base, ficha.id).to_dict("records")
 
 
+def _cobre(ficha: Ficha, serie_id: str, ano: int) -> bool:
+    """A serie esta declarada na ficha do indicador e cobre o ano (fim nulo = em curso)?"""
+    return any(
+        s.id == serie_id and s.inicio <= ano and (s.fim is None or ano <= s.fim)
+        for s in ficha.series
+    )
+
+
 def _linhas_razao(base: pd.DataFrame, ficha: Ficha) -> list[dict]:
     comp = ficha.comparacao
-    junto = _termo(base, comp.numerador).merge(
-        _termo(base, comp.denominador), on=[*_GRUPO, "ano"], suffixes=("_num", "_den"),
+    junto = _diferencas_br_ne(base, comp.numerador).merge(
+        _diferencas_br_ne(base, comp.denominador),
+        on=[*_GRUPO, "ano", "serie_id"], suffixes=("_num", "_den"),
     )
     junto = junto[junto.valor_den != 0]
-    linhas: list[dict] = []
-    for r in junto.to_dict("records"):
-        serie = ficha.serie_do_ano(r["ano"])
-        if serie is None:
-            continue
-        linhas.append({
-            **{c: r[c] for c in _GRUPO}, "ano": r["ano"], "serie_id": serie.id,
+    return [
+        {
+            **{c: r[c] for c in _GRUPO}, "ano": r["ano"], "serie_id": r["serie_id"],
             "valor": r["valor_num"] / r["valor_den"] * comp.fator,
             "insumos": (*r["insumos_num"], *r["insumos_den"]),
-        })
-    return linhas
+        }
+        for r in junto.to_dict("records")
+        if _cobre(ficha, r["serie_id"], r["ano"])
+    ]
+
+
+def _por_grupo_serie_ano(diferencas: pd.DataFrame) -> dict[tuple, dict]:
+    return {
+        (r["subindicador"], r["etapa"], r["rede"], r["serie_id"], r["ano"]): r
+        for r in diferencas.to_dict("records")
+    }
 
 
 def _linhas_razao_encadeada(base: pd.DataFrame, ficha: Ficha) -> list[dict]:
+    """Indice encadeado, uma cadeia por (grupo, serie): so encadeia dentro da mesma serie_id."""
     comp = ficha.comparacao
-    numeradores = {
-        (r["subindicador"], r["etapa"], r["rede"], r["ano"]): r
-        for r in _termo(base, comp.numerador).to_dict("records")
-    }
-    denominadores = {
-        (r["subindicador"], r["etapa"], r["rede"], r["ano"]): r
-        for r in _termo(base, comp.denominador).to_dict("records")
-    }
-    anos_com_dado = [chave[3] for chave in (*numeradores, *denominadores)]
-    if not anos_com_dado:
-        return []
-    ultimo_ano = max(anos_com_dado)
-    grupos = {chave[:3] for chave in denominadores}
+    numeradores = _por_grupo_serie_ano(_diferencas_br_ne(base, comp.numerador))
+    denominadores = _por_grupo_serie_ano(_diferencas_br_ne(base, comp.denominador))
 
     linhas: list[dict] = []
-    for grupo in sorted(grupos):
-        for serie in ficha.series:
-            anos_da_serie = {
-                a for a in range(serie.inicio, ultimo_ano + 1)
-                if (dona := ficha.serie_do_ano(a)) is not None and dona.id == serie.id
-            }
-            ancoras = sorted(a for a in anos_da_serie if (*grupo, a) in denominadores)
-            if not ancoras:
-                continue
-            ano, indice = ancoras[0], 100.0
-            insumos = denominadores[(*grupo, ano)]["insumos"]
-            while True:
-                linhas.append({
-                    **dict(zip(_GRUPO, grupo)), "ano": ano, "serie_id": serie.id,
-                    "valor": indice, "insumos": insumos,
-                })
-                ano += 1
-                num = numeradores.get((*grupo, ano))
-                den = denominadores.get((*grupo, ano - 1))
-                if ano not in anos_da_serie or num is None or den is None or den["valor"] == 0:
-                    break
-                indice = indice * num["valor"] / den["valor"]  # multiplica antes de dividir: 100 * 88 / 80 sai exato
-                insumos = (*num["insumos"], *den["insumos"])
+    for subindicador, etapa, rede, serie_id in sorted({k[:4] for k in denominadores}):
+        grupo = (subindicador, etapa, rede, serie_id)
+        ancoras = sorted(
+            k[4] for k in denominadores if k[:4] == grupo and _cobre(ficha, serie_id, k[4])
+        )
+        if not ancoras:
+            continue
+        ano, indice = ancoras[0], 100.0
+        insumos = denominadores[(*grupo, ano)]["insumos"]
+        while True:
+            linhas.append({
+                "subindicador": subindicador, "etapa": etapa, "rede": rede,
+                "ano": ano, "serie_id": serie_id, "valor": indice, "insumos": insumos,
+            })
+            ano += 1
+            num = numeradores.get((*grupo, ano))
+            den = denominadores.get((*grupo, ano - 1))
+            if num is None or den is None or den["valor"] == 0 or not _cobre(ficha, serie_id, ano):
+                break
+            indice = indice * num["valor"] / den["valor"]  # multiplica antes de dividir: 100 * 88 / 80 sai exato
+            insumos = (*num["insumos"], *den["insumos"])
     return linhas
 
 

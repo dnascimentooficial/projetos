@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import pytest
 
-from nordeste.derivados import ErroSerie, brasil_fora_ne
+from nordeste.derivados import brasil_fora_ne
 from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE
 from nordeste.fichas import Comparacao, Ficha, Serie
 
@@ -170,15 +170,75 @@ def test_razao_ignora_denominador_zero_e_valor_indisponivel():
     assert out.empty
 
 
-def test_razao_termos_com_duas_series_no_mesmo_ano_levantam_erro():
+def _duas_series():
+    return [_serie(2000, 2030, "a"), _serie(2000, 2030, "b")]
+
+
+def test_razao_com_series_sobrepostas_gera_uma_linha_por_serie():
     b = _base([
         _linha("num", "BR", 2002, 100, serie="a"), _linha("num", "NE", 2002, 30, serie="a"),
-        _linha("num", "BR", 2002, 100, serie="b"), _linha("num", "NE", 2002, 30, serie="b"),
-        _linha("den", "BR", 2002, 50), _linha("den", "NE", 2002, 10),
+        _linha("den", "BR", 2002, 50, serie="a"), _linha("den", "NE", 2002, 10, serie="a"),
+        _linha("num", "BR", 2002, 200, serie="b"), _linha("num", "NE", 2002, 40, serie="b"),
+        _linha("den", "BR", 2002, 60, serie="b"), _linha("den", "NE", 2002, 20, serie="b"),
+    ])
+    fichas = {
+        "pc": ficha("pc", "razao", "num", "den", series=_duas_series()),
+        "num": aux("num"), "den": aux("den"),
+    }
+    out, reg = brasil_fora_ne(b, fichas)
+    assert out.set_index("serie_id").valor.to_dict() == {"a": 1.75, "b": 4.0}
+    assert sorted(reg.serie_id) == ["a", "b"]
+    assert reg.coleta_id.nunique() == 2
+
+
+def test_razao_ignora_serie_do_termo_que_a_ficha_nao_declara_ou_nao_cobre():
+    b = _base([
+        _linha("num", "BR", 2002, 100, serie="a"), _linha("num", "NE", 2002, 30, serie="a"),
+        _linha("den", "BR", 2002, 50, serie="a"), _linha("den", "NE", 2002, 10, serie="a"),
+        _linha("num", "BR", 2002, 200, serie="b"), _linha("num", "NE", 2002, 40, serie="b"),
+        _linha("den", "BR", 2002, 60, serie="b"), _linha("den", "NE", 2002, 20, serie="b"),
+        _linha("num", "BR", 2002, 200, serie="c"), _linha("num", "NE", 2002, 40, serie="c"),
+        _linha("den", "BR", 2002, 60, serie="c"), _linha("den", "NE", 2002, 20, serie="c"),
+    ])
+    series = [_serie(2000, 2030, "a"), _serie(2010, None, "b")]
+    fichas = {"pc": ficha("pc", "razao", "num", "den", series=series), "num": aux("num"), "den": aux("den")}
+    out, _ = brasil_fora_ne(b, fichas)
+    assert out.serie_id.tolist() == ["a"]
+
+
+def test_razao_nao_junta_termos_de_series_diferentes():
+    b = _base([
+        _linha("num", "BR", 2002, 100, serie="a"), _linha("num", "NE", 2002, 30, serie="a"),
+        _linha("den", "BR", 2002, 50, serie="b"), _linha("den", "NE", 2002, 10, serie="b"),
+    ])
+    fichas = {
+        "pc": ficha("pc", "razao", "num", "den", series=_duas_series()),
+        "num": aux("num"), "den": aux("den"),
+    }
+    out, _ = brasil_fora_ne(b, fichas)
+    assert out.empty
+
+
+def test_razao_junta_por_grupo():
+    b = _base([
+        _linha("num", "BR", 2002, 100, subindicador="u"), _linha("num", "NE", 2002, 30, subindicador="u"),
+        _linha("den", "BR", 2002, 50, subindicador="u"), _linha("den", "NE", 2002, 10, subindicador="u"),
+        _linha("num", "BR", 2002, 200, subindicador="v"), _linha("num", "NE", 2002, 40, subindicador="v"),
+        _linha("den", "BR", 2002, 60, subindicador="v"), _linha("den", "NE", 2002, 20, subindicador="v"),
     ])
     fichas = {"pc": ficha("pc", "razao", "num", "den"), "num": aux("num"), "den": aux("den")}
-    with pytest.raises(ErroSerie):
-        brasil_fora_ne(b, fichas)
+    out, _ = brasil_fora_ne(b, fichas)
+    assert out.set_index("subindicador").valor.to_dict() == {"u": 1.75, "v": 4.0}
+
+
+def test_razao_nao_junta_termos_de_grupos_diferentes():
+    b = _base([
+        _linha("num", "BR", 2002, 100, subindicador="u"), _linha("num", "NE", 2002, 30, subindicador="u"),
+        _linha("den", "BR", 2002, 50, subindicador="v"), _linha("den", "NE", 2002, 10, subindicador="v"),
+    ])
+    fichas = {"pc": ficha("pc", "razao", "num", "den"), "num": aux("num"), "den": aux("den")}
+    out, _ = brasil_fora_ne(b, fichas)
+    assert out.empty
 
 
 def _fichas_vol(inicio=2002, fim=2030):
@@ -242,20 +302,63 @@ def test_encadeada_respeita_o_fim_da_serie():
 
 
 def test_encadeada_reinicia_em_cada_serie():
-    b = _termos(
-        num={2003: (108, 20), 2011: (130, 30)},
-        den={2002: (100, 20), 2010: (100, 20)},
-    )
+    b = _base([
+        _linha("den", "BR", 2002, 100, serie="a"), _linha("den", "NE", 2002, 20, serie="a"),
+        _linha("num", "BR", 2003, 108, serie="a"), _linha("num", "NE", 2003, 20, serie="a"),
+        _linha("den", "BR", 2010, 100, serie="b"), _linha("den", "NE", 2010, 20, serie="b"),
+        _linha("num", "BR", 2011, 130, serie="b"), _linha("num", "NE", 2011, 30, serie="b"),
+    ])
     series = [_serie(2002, 2009, "a"), _serie(2010, 2030, "b")]
     fichas = {
         "vol": ficha("vol", "razao_encadeada", "num", "den", series=series),
         "num": aux("num"), "den": aux("den"),
     }
-    b["serie_id"] = "x"
     out, reg = brasil_fora_ne(b, fichas)
     por_serie = {s: g.set_index("ano").valor.to_dict() for s, g in out.groupby("serie_id")}
     assert por_serie == {"a": {2002: 100.0, 2003: pytest.approx(110.0)}, "b": {2010: 100.0, 2011: pytest.approx(125.0)}}
     assert sorted(reg.serie_id) == ["a", "b"]
+
+
+def test_encadeada_so_encadeia_dentro_da_mesma_serie():
+    b = _base([
+        _linha("den", "BR", 2002, 100, serie="a"), _linha("den", "NE", 2002, 20, serie="a"),
+        _linha("num", "BR", 2003, 108, serie="b"), _linha("num", "NE", 2003, 20, serie="b"),
+    ])
+    fichas = {
+        "vol": ficha("vol", "razao_encadeada", "num", "den", series=_duas_series()),
+        "num": aux("num"), "den": aux("den"),
+    }
+    out, _ = brasil_fora_ne(b, fichas)
+    assert out.set_index("serie_id").ano.to_dict() == {"a": 2002} and out.valor.tolist() == [100.0]
+
+
+def test_encadeada_series_sobrepostas_geram_uma_cadeia_por_serie():
+    b = _base([
+        _linha("den", "BR", 2002, 100, serie="a"), _linha("den", "NE", 2002, 20, serie="a"),
+        _linha("num", "BR", 2003, 108, serie="a"), _linha("num", "NE", 2003, 20, serie="a"),
+        _linha("den", "BR", 2002, 200, serie="b"), _linha("den", "NE", 2002, 40, serie="b"),
+        _linha("num", "BR", 2003, 340, serie="b"), _linha("num", "NE", 2003, 40, serie="b"),
+    ])
+    fichas = {
+        "vol": ficha("vol", "razao_encadeada", "num", "den", series=_duas_series()),
+        "num": aux("num"), "den": aux("den"),
+    }
+    out, _ = brasil_fora_ne(b, fichas)
+    por_serie = {s: g.set_index("ano").valor.to_dict() for s, g in out.groupby("serie_id")}
+    assert por_serie == {"a": {2002: 100.0, 2003: pytest.approx(110.0)}, "b": {2002: 100.0, 2003: pytest.approx(187.5)}}
+
+
+def test_encadeada_junta_por_grupo():
+    b = _base([
+        _linha("den", "BR", 2002, 100, subindicador="u"), _linha("den", "NE", 2002, 20, subindicador="u"),
+        _linha("num", "BR", 2003, 108, subindicador="u"), _linha("num", "NE", 2003, 20, subindicador="u"),
+        _linha("den", "BR", 2002, 200, subindicador="v"), _linha("den", "NE", 2002, 40, subindicador="v"),
+        _linha("num", "BR", 2003, 340, subindicador="v"), _linha("num", "NE", 2003, 40, subindicador="v"),
+        _linha("num", "BR", 2003, 999, subindicador="w"), _linha("num", "NE", 2003, 1, subindicador="w"),
+    ])
+    out, _ = brasil_fora_ne(b, _fichas_vol())
+    por_grupo = {s: g.set_index("ano").valor.to_dict() for s, g in out.groupby("subindicador")}
+    assert por_grupo == {"u": {2002: 100.0, 2003: pytest.approx(110.0)}, "v": {2002: 100.0, 2003: pytest.approx(187.5)}}
 
 
 def test_encadeada_insumos_da_cadeia():
