@@ -18,13 +18,21 @@ metodologia: >-
   Censo 2010 (SIDRA 202) em 2010; o Censo 2022 (SIDRA 4709) em 2022 e também em
   2023, ano sem estimativa publicada. O IBGE não publica o PIB per capita de
   regiões e UFs em formato legível por máquina; o cálculo foi conferido contra
-  os valores divulgados (diferença de no máximo 0,1% nos pontos conferidos,
+  os valores divulgados (diferença de no máximo 0,05% nos pontos conferidos,
   ver docs/dicionario-verificacao.md). O agregado Brasil fora do Nordeste é a
   razão das diferenças, (PIB do Brasil − PIB do Nordeste) ÷ (população do
   Brasil − população do Nordeste) × 1000, não a média dos per capita.
 observacoes: >-
   2007 fica sem valor: a tabela de estimativas não tem o ano (Contagem da
-  População) e não houve valor publicado para conferir o denominador. Valores
+  População) e não houve valor publicado para conferir o denominador.
+  Conferência: 32 pontos em 2002, 2010, 2013 a 2018 e 2021 a 2023, todos a até
+  0,05% do valor divulgado; 7 deles vêm de fonte primária do IBGE (2023 e
+  Maranhão 2016) e 25 de reproduções do número do IBGE (Ipea, BNB, Ipece,
+  Fapespa, IMESC e imprensa). Os valores divulgados foram lidos em trechos de
+  busca na web, porque os sites de notícias e da biblioteca do IBGE estavam
+  bloqueados no ambiente da conferência. Dos anos de PIB retropolado da
+  referência 2010 (2002 a 2009), só 2002 foi conferido; de 2003 a 2009 supõe-se
+  a estimativa original de cada ano, como em 2002, sem conferência. Valores
   a preços correntes de cada ano; a comparação entre territórios usa a razão
   NE sobre a referência, sem deflacionar. O denominador muda de natureza entre
   anos (estimativa ou censo), como no número do IBGE. As Contas Regionais saem
@@ -66,4 +74,5 @@ series:
       Segue a série do PIB de referência 2010 (2002 em diante); não comparável
       com a referência 2002 (anos 2000 e 2001). A troca de estimativa para censo
       no denominador (2010, 2022 e 2023) acompanha o número divulgado pelo IBGE.
+      Os anos de 2003 a 2009 não foram conferidos contra valor publicado.
     verificado: true

@@ -24,7 +24,7 @@ def test_a01_variacao_abaixo_do_limiar_nao_avisa():
 
 def test_a01_usa_variacao_absoluta_e_cita_exemplos():
     (a,) = _avisos(cenario_com_valores_ne({2002: 200, 2003: 90}), "A01")  # queda tambem avisa
-    assert "pib_per_capita" in a.mensagem and "scr_ref2010" in a.mensagem and "NE" in a.mensagem
+    assert "amostra_per_capita" in a.mensagem and "scr_ref2010" in a.mensagem and "NE" in a.mensagem
 
 
 def test_a01_ignora_ficha_auxiliar():
@@ -35,7 +35,7 @@ def test_a01_ignora_ficha_auxiliar():
 
 def test_a01_respeita_limiar_da_ficha():
     c = cenario_com_valores_ne({2002: 100, 2003: 140})
-    c["fichas"] = {**c["fichas"], "pib_per_capita": dataclasses.replace(c["fichas"]["pib_per_capita"], limiar_salto_pct=10.0)}
+    c["fichas"] = {**c["fichas"], "amostra_per_capita": dataclasses.replace(c["fichas"]["amostra_per_capita"], limiar_salto_pct=10.0)}
     assert len(_avisos(c, "A01")) == 1
 
 
@@ -47,14 +47,14 @@ def test_a01_limita_a_cinco_exemplos_por_serie():
 def test_a01_ignora_valores_nulos_entre_observacoes():
     c = cenario_com_valores_ne({2002: 100, 2003: 200})
     base = c["base"].copy()
-    base.loc[(base.indicador_id == "pib_per_capita") & (base.ano == 2003), ["valor", "tipo_dado"]] = [np.nan, "indisponivel"]
+    base.loc[(base.indicador_id == "amostra_per_capita") & (base.ano == 2003), ["valor", "tipo_dado"]] = [np.nan, "indisponivel"]
     assert _avisos({**c, "base": base}, "A01") == []
 
 
 def test_a01_sem_warning_com_valor_anterior_zero():
     c = cenario()
     base = c["base"].copy()
-    base.loc[(base.indicador_id == "pib_per_capita") & (base.territorio_id == "MA") & (base.ano == 2002), "valor"] = 0.0
+    base.loc[(base.indicador_id == "amostra_per_capita") & (base.territorio_id == "MA") & (base.ano == 2002), "valor"] = 0.0
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         r = validar(**{**c, "base": base})

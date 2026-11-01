@@ -1,9 +1,10 @@
 # Ficha de TESTE da amostra dos testes de mecanica (fixture `projeto` em testes/conftest.py).
-# Nao e ficha do dicionario: guarda o arranjo de uma razao com valor oficial e dois insumos (soma),
-# usado para exercitar coleta, consolidacao, R07, R08, publicacao e CLI. O pib_per_capita real
-# (metadados/indicadores/pib_per_capita.yaml) e calculado pelo projeto (calculo: razao_por_ano).
-id: populacao_contas_regionais
-nome: População das Contas Regionais
+# Nao e ficha do dicionario: guarda o arranjo de uma razao com valor oficial (amostra_per_capita) e dois
+# insumos soma (pib_nominal e amostra_populacao), usado para exercitar coleta, consolidacao, R07, R08,
+# publicacao e CLI. O PIB per capita real (metadados/indicadores/pib_per_capita.yaml) e calculado pelo
+# projeto (calculo: razao_por_ano).
+id: amostra_populacao
+nome: População das Contas Regionais (amostra de teste)
 descricao: >-
   População residente usada pelo IBGE como denominador dos indicadores per
   capita do Sistema de Contas Regionais. Insumo do PIB per capita, não

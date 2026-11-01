@@ -257,15 +257,20 @@ def test_insumo_pendente_deixa_o_indicador_calculado_pendente(projeto_completo, 
     assert "pib_per_capita/scr_ref2010: insumo pendente" in capsys.readouterr().out
 
 
-def test_mapeamento_sobreposto_na_ficha_barra_a_publicacao_pela_r10(projeto_completo):
+@pytest.mark.parametrize("trecho, troca, mensagem", [
+    ('"2010": censo_2000_2010', '"2009-2010": censo_2000_2010', "sobrepoe"),
+    ('"2022": censo_2022', '"2022": {serie: censo_2022, ano: 2023}', "posterior"),  # populacao futura
+    ('"2023": {serie: censo_2022, ano: 2022}', '"2023": {serie: censo_2000_2010, ano: 2021}', "fora da cobertura"),
+])
+def test_mapeamento_invalido_na_ficha_barra_a_publicacao_pela_r10(projeto_completo, trecho, troca, mensagem):
     raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
     assert main(raiz + ["coletar", "--offline"]) == 0
     assert main(raiz + ["consolidar"]) == 0
     ficha = projeto_completo.fichas / "pib_per_capita.yaml"
     texto = ficha.read_text(encoding="utf-8")
-    assert '"2010": censo_2000_2010' in texto
-    ficha.write_text(texto.replace('"2010": censo_2000_2010', '"2009-2010": censo_2000_2010'), encoding="utf-8")
+    assert trecho in texto
+    ficha.write_text(texto.replace(trecho, troca), encoding="utf-8")
     assert main(raiz + ["validar"]) == 1
     validacao = pd.read_csv(projeto_completo.relatorios / "validacao.csv")
     r10 = validacao.query("regra == 'R10'").mensagem
-    assert any("sobrepoe" in m for m in r10)
+    assert any(mensagem in m for m in r10), r10.tolist()

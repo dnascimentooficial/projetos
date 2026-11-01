@@ -262,9 +262,9 @@ GERADORES = {
 
 # Fichas de teste da amostra (testes/amostra/indicadores/): uma razao com valor oficial e seu denominador.
 GERADORES_AMOSTRA = {
-    "populacao_contas_regionais/scr_ref2010.json": lambda: json_sidra(
+    "amostra_populacao/scr_ref2010.json": lambda: json_sidra(
         "População (sintético)", "99998", "Pessoas", _soma),
-    "pib_per_capita/scr_ref2010.json": lambda: json_sidra(
+    "amostra_per_capita/scr_ref2010.json": lambda: json_sidra(
         "PIB per capita (sintético)", "99997", "Reais", _per_capita),
 }
 

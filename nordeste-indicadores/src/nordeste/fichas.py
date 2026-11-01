@@ -200,6 +200,9 @@ def _ler_faixas(series_por_ano: dict) -> tuple[list[FaixaDenominador], list[str]
         if not _texto_ok(serie):
             problemas.append(f"{nome}: serie do denominador obrigatoria (texto nao vazio)")
             continue
+        if ano is not None and ano > anos[0]:  # populacao de um ano posterior seria projecao silenciosa
+            problemas.append(f"{nome}: ano fixo {ano} posterior ao inicio da faixa ({anos[0]})")
+            continue
         faixas.append(FaixaDenominador(*anos, serie, ano))
     faixas.sort(key=lambda f: f.inicio)
     for anterior, atual in zip(faixas, faixas[1:]):
@@ -379,7 +382,8 @@ def _examinar(diretorio: Path) -> tuple[dict[str, Ficha], list[str]]:
 
 
 def _insumos_do_calculo(ficha: Ficha, fichas: dict[str, Ficha], declarados: set[str]) -> list[str]:
-    """Numerador e denominador do calculo existem, nao sao calculados e tem as series mapeadas."""
+    """Numerador e denominador do calculo existem, nao sao calculados, tem as series mapeadas e o ano fixo
+    do denominador esta dentro da cobertura da serie do insumo."""
     calculo = ficha.calculo
     if calculo is None:
         return []
@@ -397,6 +401,17 @@ def _insumos_do_calculo(ficha: Ficha, fichas: dict[str, Ficha], declarados: set[
                 problemas.append(f"calculo.{termo} aponta para outra ficha calculada: {indicador}")
             for serie in sorted(series - {s.id for s in insumo.series}):
                 problemas.append(f"calculo.{termo} aponta para serie inexistente: {indicador}/{serie}")
+    if calculo.denominador in fichas:
+        insumo = fichas[calculo.denominador]
+        for faixa in calculo.faixas:
+            serie = next((s for s in insumo.series if s.id == faixa.serie), None)
+            if faixa.ano is None or serie is None:
+                continue
+            if faixa.ano < serie.inicio or (serie.fim is not None and faixa.ano > serie.fim):
+                problemas.append(
+                    f"calculo.denominador: ano fixo {faixa.ano} da faixa {faixa.inicio}-{faixa.fim} esta fora "
+                    f"da cobertura da serie {serie.id} ({serie.inicio} a {serie.fim if serie.fim is not None else 'em curso'})"
+                )
     return problemas
 
 

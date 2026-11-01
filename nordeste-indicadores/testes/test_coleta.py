@@ -128,15 +128,15 @@ def test_ultima_coleta_e_a_ultima_gravada_nao_a_mais_recente_em_data(tmp_path):
 
 
 def test_offline_usa_fixture_e_marca_origem(projeto, fichas):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     c = coletar_serie(f, f.serie("scr_ref2010"), projeto, offline=True, hoje=HOJE)
     assert c.origem == "fixture" and (projeto.raiz / c.arquivo).exists()
-    assert c.coleta_id.startswith("pib_per_capita.scr_ref2010.2026-11-01.")
-    assert c.arquivo == f"dados/brutos/pib_per_capita/scr_ref2010/{c.sha256[:8]}.json"
+    assert c.coleta_id.startswith("amostra_per_capita.scr_ref2010.2026-11-01.")
+    assert c.arquivo == f"dados/brutos/amostra_per_capita/scr_ref2010/{c.sha256[:8]}.json"
 
 
 def test_mesmo_arquivo_nao_duplica_registro(projeto, fichas):
-    f = fichas["pib_per_capita"]; s = f.serie("scr_ref2010")
+    f = fichas["amostra_per_capita"]; s = f.serie("scr_ref2010")
     a = coletar_serie(f, s, projeto, offline=True, hoje=HOJE)
     b = coletar_serie(f, s, projeto, offline=True, hoje=date(2026, 11, 2))
     assert a == b and len(ler_registro(projeto.registro_coletas)) == 1
@@ -149,13 +149,13 @@ def test_sem_fixture_erro_claro(projeto, fichas):
 
 
 def test_rede_recusa_serie_nao_verificada(projeto, fichas):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     with pytest.raises(ErroColeta, match="não verificada"):
         coletar_serie(f, f.serie("scr_ref2010"), projeto, offline=False, hoje=HOJE)
 
 
 def test_rede_sidra_baixa_grava_e_offline_reaproveita(projeto, fichas):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     s = replace(f.serie("scr_ref2010"), verificado=True,
                 parametros={"tabela": "1", "variavel": "2", "classificacoes": {}})
     sessao = SessaoFalsa(conteudo=b'[{"V": "1"}]')
@@ -167,7 +167,7 @@ def test_rede_sidra_baixa_grava_e_offline_reaproveita(projeto, fichas):
 
 
 def test_offline_ignora_coleta_de_rede_sem_arquivo(projeto, fichas):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     s = replace(f.serie("scr_ref2010"), verificado=True,
                 parametros={"tabela": "1", "variavel": "2"})
     c = coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoFalsa(conteudo=b"[1]"))
@@ -177,7 +177,7 @@ def test_offline_ignora_coleta_de_rede_sem_arquivo(projeto, fichas):
 
 
 def test_rede_arquivo_usa_url_e_sufixo(projeto, fichas):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     s = replace(f.serie("scr_ref2010"), verificado=True, coletor="arquivo",
                 parametros={"url": "http://x.gov.br/dados/planilha.XLSX?v=1"})
     c = coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoFalsa(conteudo=b"xlsx"))
@@ -185,7 +185,7 @@ def test_rede_arquivo_usa_url_e_sufixo(projeto, fichas):
 
 
 def test_rede_coletor_desconhecido(projeto, fichas):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     s = replace(f.serie("scr_ref2010"), verificado=True, coletor="inventado")
     with pytest.raises(ErroColeta, match="inventado"):
         coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoFalsa())

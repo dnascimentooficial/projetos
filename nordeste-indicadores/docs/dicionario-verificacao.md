@@ -36,7 +36,7 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `populacao` | `estimativa_pos_censo2022` | SIDRA 6579, v9324 | 2024 a 2026 | sim |
 | `populacao` | `censo_2000_2010` | SIDRA 202, v93 | 2000 e 2010 | sim |
 | `populacao` | `censo_2022` | SIDRA 4709, v93 | 2022 | sim |
-| `pib_per_capita` | `scr_ref2010` | cálculo do projeto: SIDRA 5938 v37 ÷ população (6579 v9324; 202 e 4709 v93) × 1000 | 2002 a 2023, sem 2007 | sim (conferido) |
+| `pib_per_capita` | `scr_ref2010` | cálculo do projeto: SIDRA 5938 v37 ÷ população (6579 v9324; 202 e 4709 v93) × 1000 | 2002 a 2023, sem 2007 | sim (32 pontos conferidos em 2002, 2010, 2013-2018 e 2021-2023; 2003-2009 sem conferência) |
 | `pib_volume` | `scr_ref2010` | `tab03.xls` (aba `Tabela3`) de `Especiais_2002_2023_xls.zip` | 2002 a 2023 | sim |
 
 ## pib_nominal / scr_ref2010
@@ -117,16 +117,17 @@ verificadas, com a metodologia declarada como fonte, desde que o resultado seja 
 
 | Anos | População (série da ficha `populacao`) | Tabela SIDRA | Como foi deduzido |
 |---|---|---|---|
-| 2002 a 2006, 2008, 2009, 2011 a 2021 | estimativa do próprio ano (`estimativa_pre_censo2022`) | 6579, v9324 | conferido em 2016 e 2021 (abaixo) |
+| 2002 a 2006, 2008, 2009, 2011 a 2021 | estimativa do próprio ano (`estimativa_pre_censo2022`) | 6579, v9324 | conferido em 2002, 2013 a 2018 e 2021 (abaixo); 2003 a 2006, 2008, 2009, 2011, 2012, 2019 e 2020 sem conferência |
 | 2010 | Censo 2010 (`censo_2000_2010`) | 202, v93 | conferido em 2010; a 6579 não tem 2010 |
 | 2022 | Censo 2022 (`censo_2022`) | 4709, v93 | conferido em 2022; a 6579 não tem 2022 |
 | 2023 | Censo 2022 (`censo_2022`, ano fixo 2022) | 4709, v93 | conferido em 2023; o IBGE não publicou estimativa de 2023 |
 | 2007 | sem valor | | ver abaixo |
 
-Os anos de estimativa não conferidos um a um (2002 a 2006, 2008, 2009, 2011 a 2015, 2017 a 2020) seguem a mesma
-regra dos conferidos (estimativa do próprio ano, a única população anual da 6579 para eles). Indício
-adicional para 2002: a razão Nordeste/Brasil divulgada pelo IBGE é 0,47 (release "Contas Regionais 2016"); o
-cálculo dá 3.989,09 ÷ 8.525,24 = 0,468.
+Os anos de estimativa sem conferência seguem a regra dos conferidos (estimativa do próprio ano, a única população
+anual da 6579 para eles). Ponto de atenção: o PIB de 2002 a 2009 da referência 2010 é retropolado, e não se sabe
+se o IBGE usou, nesses anos, as estimativas originais da 6579 ou outra população. 2002 foi conferido (Brasil e
+Ceará, a até 0,003%; razão Nordeste/Brasil divulgada de 0,47, contra 0,468 no cálculo), o que sustenta as
+estimativas originais. 2003 a 2009 não têm valor publicado conferido.
 
 2007: a Contagem da População 2007 existe no SIDRA (tabela 793, variável 93, "população residente" em 1º de
 abril de 2007; `https://apisidra.ibge.gov.br/values/t/793/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/93/p/2007`,
@@ -146,44 +147,70 @@ Nordeste 2023 = 63.536,91; 2010 = 24.427,86.
 
 ### Conferência contra valores publicados
 
-Critério: diferença ≤ 0,5% em todos os pontos. Resultado: maior diferença absoluta 0,087% (Maranhão, 2010);
-2021 e 2023 batem ao centavo. Diferença = (calculado − publicado) ÷ publicado.
+Critério: diferença ≤ 0,5% em todos os pontos conferidos. Resultado: **32 pontos conferidos**, maior diferença
+absoluta 0,050% (Ceará, 2010); 2021 e 2023 batem ao centavo. Diferença = (calculado − publicado) ÷ publicado.
 
-| Ano | Território | Calculado (R$) | Publicado (R$) | Diferença | Fonte do publicado |
-|---|---|---|---|---|---|
-| 2010 | BR | 20.370,79 | 20.371,64 | −0,004% | [1] |
-| 2010 | NE | 9.848,34 | 9.848,97 | −0,006% | [1] |
-| 2010 | PE | 11.048,75 | 11.049,07 | −0,003% | [1] |
-| 2010 | BA | 11.016,66 | 11.012,34 | +0,039% | [1] |
-| 2010 | CE | 9.386,27 | 9.390,62 | −0,046% | [1] |
-| 2010 | MA | 7.043,52 | 7.049,63 | −0,087% | [1] |
-| 2010 | PI | 7.141,30 | 7.140,47 | +0,012% | [1] |
-| 2016 | BR | 30.421,61 | 30.410 (R$ 30,41 mil) | +0,038% | [2] |
-| 2016 | NE | 15.784,01 | 15.779,11 | +0,031% | [2], [3] |
-| 2016 | CE | 15.442,63 | 15.438 | +0,030% | [3] |
-| 2016 | PE | 17.783,11 | 17.777 | +0,034% | [2] |
-| 2016 | BA | 16.936,99 | 16.931 | +0,035% | [2] |
-| 2016 | MA | 12.267,70 | 12.264,28 | +0,028% | [4] |
-| 2021 | BR | 42.247,52 | 42.247,52 | 0,000% | [5], [6] |
-| 2021 | CE | 21.090,10 | 21.090,10 | 0,000% | [6] |
-| 2021 | PE | 22.823,59 | 22.823,59 | 0,000% | [7] |
-| 2021 | BA | 23.530,94 | 23.530,94 | 0,000% | [7] |
-| 2021 | MA | 17.471,85 | 17.471,85 | 0,000% | [7] |
-| 2022 | BR | 49.633,83 | 49.638 | −0,008% | [8] |
-| 2022 | MA | 20.627,91 | 20.632,62 | −0,023% | [9] |
-| 2023 | BR | 53.886,67 | 53.886,67 | 0,000% | [10] |
-| 2023 | NE | 27.681,97 | 27.681,97 | 0,000% | [10] |
-| 2023 | CE | 26.405,96 | 26.405,96 | 0,000% | [10] |
-| 2023 | PE | 29.857,27 | 29.857,27 | 0,000% | [10] |
-| 2023 | BA | 30.476,54 | 30.476,54 | 0,000% | [10] |
-| 2023 | MA | 22.020,63 | 22.020,63 | 0,000% | [10] |
-| 2023 | RN | 30.804,91 | 30.804,91 | 0,000% | [11] |
+Natureza da evidência (ler antes da tabela):
+
+- **Nenhum valor publicado foi baixado.** Os sites de notícias e da biblioteca do IBGE
+  (`agenciadenoticias.ibge.gov.br`, `biblioteca.ibge.gov.br`, `www.ibge.gov.br`) e os demais sites citados
+  (Ipea, BNB, Ipece, Fapespa, imprensa) estavam bloqueados no ambiente da conferência. Os números foram lidos nos
+  trechos devolvidos pela busca na web, com as URLs abaixo.
+- **Fonte primária do IBGE: 7 dos 32 pontos** (os 6 de 2023 da matéria [10] e Maranhão 2016 do release [4]).
+  **Reproduções do número do IBGE: 25 pontos** (Ipea, BNB, Ipece, Fapespa, IMESC e imprensa).
+- **Anos de PIB retropolado (2002 a 2009):** só 2002 foi conferido (2 pontos, ambos reproduções arredondadas
+  ao real). 2003 a 2009 não têm nenhum ponto conferido; supõe-se a estimativa original da 6579 em cada ano,
+  como em 2002.
+- **Não contados** (marcados "ano não confirmado"): Maranhão e Piauí 2010, da tabela do Ipea [1]. O trecho
+  da busca não repetiu o ano nessas linhas, e atribuir o ano pela proximidade com o próprio cálculo seria
+  raciocínio circular. O Ceará 2010 desse mesmo trecho também foi descartado; o ponto do Ceará 2010 que conta
+  vem do Ipece [13], com o ano explícito.
+
+| Ano | Território | Calculado (R$) | Publicado (R$) | Diferença | Fonte do publicado | Tipo |
+|---|---|---|---|---|---|---|
+| 2002 | BR | 8.525,24 | 8.525 | +0,003% | [12] | reprodução |
+| 2002 | CE | 3.751,87 | 3.752 | −0,003% | [13] (também "44,01% do Brasil"; cálculo: 44,009%) | reprodução |
+| 2010 | BR | 20.370,79 | 20.371,64 | −0,004% | [1] (o BNB [12] dá 20.372) | reprodução |
+| 2010 | NE | 9.848,34 | 9.848,97 | −0,006% | [1] | reprodução |
+| 2010 | PE | 11.048,75 | 11.049,07 | −0,003% | [1] | reprodução |
+| 2010 | BA | 11.016,66 | 11.012,34 | +0,039% | [1] | reprodução |
+| 2010 | CE | 9.386,27 | 9.391 | −0,050% | [13] | reprodução |
+| 2013 | BR | 26.521,15 | 26.521 | +0,001% | [12] | reprodução |
+| 2014 | BR | 28.500,24 | 28.500 | +0,001% | [12] | reprodução |
+| 2015 | BR | 29.326,42 | 29.326 | +0,001% | [12] | reprodução |
+| 2016 | BR | 30.421,61 | 30.411 | +0,035% | [12] (o [2] dá R$ 30,41 mil) | reprodução |
+| 2016 | NE | 15.784,01 | 15.779,11 | +0,031% | [2], [3] | reprodução |
+| 2016 | CE | 15.442,63 | 15.438 | +0,030% | [3] | reprodução |
+| 2016 | PE | 17.783,11 | 17.777 | +0,034% | [2] | reprodução |
+| 2016 | BA | 16.936,99 | 16.931 | +0,035% | [2] | reprodução |
+| 2016 | MA | 12.267,70 | 12.264,28 | +0,028% | [4] | IBGE |
+| 2017 | CE | 16.398,45 | 16.398 | +0,003% | [13] | reprodução |
+| 2018 | CE | 17.178,26 | 17.178 | +0,001% | [13] | reprodução |
+| 2021 | BR | 42.247,52 | 42.247,52 | 0,000% | [6] (também citado como do informativo [5]) | reprodução |
+| 2021 | CE | 21.090,10 | 21.090,10 | 0,000% | [6] | reprodução |
+| 2021 | PE | 22.823,59 | 22.823,59 | 0,000% | [7] | reprodução |
+| 2021 | BA | 23.530,94 | 23.530,94 | 0,000% | [7] | reprodução |
+| 2021 | MA | 17.471,85 | 17.471,85 | 0,000% | [7] | reprodução |
+| 2022 | BR | 49.633,83 | 49.638 | −0,008% | [8] | reprodução |
+| 2022 | MA | 20.627,91 | 20.632,62 | −0,023% | [9] | reprodução |
+| 2023 | BR | 53.886,67 | 53.886,67 | 0,000% | [10] | IBGE |
+| 2023 | NE | 27.681,97 | 27.681,97 | 0,000% | [10] | IBGE |
+| 2023 | CE | 26.405,96 | 26.405,96 | 0,000% | [10] | IBGE |
+| 2023 | PE | 29.857,27 | 29.857,27 | 0,000% | [10] | IBGE |
+| 2023 | BA | 30.476,54 | 30.476,54 | 0,000% | [10] | IBGE |
+| 2023 | MA | 22.020,63 | 22.020,63 | 0,000% | [10] | IBGE |
+| 2023 | RN | 30.804,91 | 30.804,91 | 0,000% | [11] | reprodução |
+| 2010 | MA | 7.043,52 | 7.049,63 | (−0,087%) | [1] | **ano não confirmado, não contado** |
+| 2010 | PI | 7.141,30 | 7.140,47 | (+0,012%) | [1] | **ano não confirmado, não contado** |
+
+Cobertura mínima pedida (Brasil, Nordeste e 3 UFs do NE em 3 anos espalhados): 2010 (BR, NE, PE, BA, CE),
+2016 (BR, NE, CE, PE, BA, MA) e 2023 (BR, NE, CE, PE, BA, MA).
 
 Leitura das diferenças: 2021 e 2023 vêm da edição das Contas Regionais em que o ano é o mais recente, e o PIB
-desses anos é o mesmo da tabela 5938 atual; batem exatamente. Em 2010, 2016 e 2022 os valores publicados são de
-edições anteriores (2010: série de referência 2010 divulgada em 2015/2016; 2016: Contas Regionais 2016, de 2018;
-2022: Contas Regionais 2022, de 2024), e o PIB desses anos foi revisado nas edições seguintes, o que explica as
-diferenças de até 0,09%. Um denominador de outra fonte daria diferenças de outra ordem (com a projeção
+desses anos é o mesmo da tabela 5938 atual; batem exatamente. Os valores de 2010, 2016 e 2022 são de edições
+anteriores (2010: série de referência 2010 divulgada em 2015 e 2016; 2016: Contas Regionais 2016, de 2018; 2022:
+Contas Regionais 2022, de 2024), e o PIB desses anos foi revisado nas edições seguintes. Isso explica as
+diferenças de até 0,05%. Um denominador de outra fonte daria diferenças de outra ordem (com a projeção
 `POP_PROJE` do Ipeadata, cerca de 4% no Brasil em 2023).
 
 Fontes dos valores publicados (achadas por busca na web em 2026-11-01; nenhuma pôde ser baixada nesta sessão:
@@ -194,9 +221,8 @@ devolveu):
 1. Ipea, Boletim Regional, Urbano e Ambiental nº 15, "Indicadores territoriais" (tabela de PIB per capita das UFs
    com dados das Contas Regionais do IBGE): https://portalantigo.ipea.gov.br/agencia/images/stories/PDFs/boletim_regional/160906_bru15_indicadores01_regionais.pdf
    (cópia: https://repositorio.ipea.gov.br/bitstreams/0f75c28f-35f2-4c22-814b-ae23ac0f45f6/download).
-   Brasil, Nordeste, Pernambuco e Bahia apareceram no trecho como valores de 2010; Maranhão, Piauí e Ceará vieram
-   da mesma tabela, mas o trecho não repetiu o ano (o cálculo de 2010 é o único que se aproxima: os de 2009 e
-   2011 diferem dos valores publicados em mais de 8%).
+   Brasil, Nordeste, Pernambuco e Bahia apareceram no trecho como valores de 2010. Maranhão, Piauí e Ceará
+   vieram da mesma tabela, mas o trecho não repetiu o ano, e por isso esses pontos não contam.
 2. BNB, "Desempenho da Economia Regional: 2002 a 2016" (Tabela 6, PIB per capita, citando o IBGE):
    https://bnb.gov.br/documents/45799/1057811/Desempenho+da+Economia+Regional+2002+a+2016.pdf
    e estudo do BNB sobre o Piauí 2002-2016 (Nordeste 15.779 em 2016).
@@ -221,10 +247,19 @@ devolveu):
     https://agenciadenoticias.ibge.gov.br/agencia-noticias/2012-agencia-de-noticias/noticias/45142-pib-cresce-em-todos-os-27-estados-do-pais-em-2023
 11. Movimento Econômico, "PIB do Nordeste cresce 2,9%, mas renda per capita segue a menor do país" (citando o IBGE):
     https://movimentoeconomico.com.br/economia/2025/11/14/pib-do-nordeste-cresce-29-mas-renda-per-capita-segue-a-menor-do-pais/
+12. BNB, "A Economia do Ceará: Uma Análise Setorial no Período 2002-2018" (tabela de PIB per capita a preços
+    correntes, com dados do IBGE; linha Brasil: 8.525 em 2002, 20.372 em 2010, 26.521, 28.500, 29.326 e 30.411 de
+    2013 a 2016): https://www.bnb.gov.br/documents/45799/1057811/A+Economia+do+Cear%C3%A1+Uma+An%C3%A1lise+Setorial+no+Per%C3%ADodo+2002-2018.pdf/004160b9-f414-dc46-d7d9-f3ba9c4d40fe?t=1648743925838&download=true
+13. Ipece, "PIB dos Municípios Cearenses 2002-2018" (Ceará: 3.752 em 2002, 9.391 em 2010, 16.398 em 2017 e
+    17.178 em 2018; 2002 = 44,01% do Brasil): https://www.ipece.ce.gov.br/wp-content/uploads/sites/45/2020/12/PIB_dos_Municipios_Cearenses_2002_2018.pdf ;
+    2002 também em TrendsCE, "PIB histórico mostra potencial de crescimento da economia do Ceará":
+    https://www.trendsce.com.br/2020/07/06/pib-historico-mostra-potencial-de-crescimento-da-economia-do-ceara/
+    (e 2018 no comunicado do Ipece de 13/11/2020: https://www.ipece.ce.gov.br/2020/11/13/estudo-revela-numeros-do-pib-do-ceara-de-2018-com-base-nos-dados-consolidados-divulgados-pelo-ibge/).
 
-Pontos de fonte primária do IBGE: todos os de 2023 menos o Rio Grande do Norte ([10]), Maranhão 2016 ([4]) e Brasil
-2021 ([5]). Os demais são reproduções do número do IBGE por órgãos públicos (Ipea, BNB, Ipece, Fapespa, IMESC) ou
-pela imprensa.
+Contagem: 7 pontos de fonte primária do IBGE (2023 menos o Rio Grande do Norte, [10]; Maranhão 2016, [4]) e 25
+reproduções do número do IBGE por órgãos públicos (Ipea, BNB, Ipece, Fapespa, IMESC) ou pela imprensa. O Brasil 2021
+aparece atribuído ao informativo [5] num trecho de busca, mas sem confirmação de que o trecho seja do próprio
+informativo, e foi contado como reprodução.
 
 ### Histórico: a busca de uma série pronta (Tarefas 14A e 14c)
 
@@ -262,6 +297,6 @@ Bloco IBGE, parte C (Tarefa 14c). Data da verificação: 2026-11-01.
 
 1. `populacao`: "estimativas e censos IBGE, 2000+" virou quatro séries (`estimativa_pre_censo2022`, `estimativa_pos_censo2022`, `censo_2000_2010`, `censo_2022`). O ano 2000 só existe como Censo; 2007, 2010, 2022 (nas estimativas) e 2023 (em nenhuma fonte) ficam sem valor.
 2. `pib_volume`: série confirmada na fonte (2002 a 2023, 15 territórios, `Especiais_2002_2023_xls.zip`/`tab03.xls`), lida com o novo formato `xls`; a comparação é `brasil`, não `brasil_fora_ne` (spec admite: "senão Brasil"). A fonte traz o índice encadeado 2002 = 100 de cada território, sem variação anual em %.
-3. `pib_per_capita`: o IBGE não publica o PIB per capita por território em formato legível; a spec previa coletá-lo das Contas Regionais, e o projeto passou a calculá-lo (PIB 5938 ÷ população do ano que o IBGE usou × 1000), conferido contra valores publicados (diferença máxima 0,087%). Cobre 2002 a 2023 sem 2007 (sem denominador conferido); a fonte da série declara o cálculo.
+3. `pib_per_capita`: o IBGE não publica o PIB per capita por território em formato legível; a spec previa coletá-lo das Contas Regionais, e o projeto passou a calculá-lo (PIB 5938 ÷ população do ano que o IBGE usou × 1000), conferido contra valores publicados (32 pontos, diferença máxima 0,050%; 2003 a 2009 sem conferência). Cobre 2002 a 2023 sem 2007 (sem denominador conferido); a fonte da série declara o cálculo.
 4. `populacao_contas_regionais`: removida (a spec a previa como denominador do PIB per capita); o denominador agora são as séries de `populacao`, escolhidas por ano no `calculo` da ficha `pib_per_capita`.
 5. `pib_participacao`: sem divergência (2002 a 2023, comparação `nenhuma`).

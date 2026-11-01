@@ -28,11 +28,11 @@ def test_ponta_a_ponta_com_fixtures_e_barrado_so_pela_r01(projeto, capsys):
     assert set(erros.regra) == {"R01"}
 
 
-def test_br_fora_ne_do_pib_per_capita(projeto):
+def test_br_fora_ne_do_amostra_per_capita(projeto):
     raiz = argumentos(projeto)
     main(raiz + ["coletar", "--offline"]); main(raiz + ["consolidar"])
     b = pd.read_csv(projeto.trabalho / "base.csv")
-    sel = b.query("indicador_id == 'pib_per_capita' and territorio_id == 'BR_FORA_NE' and ano == 2002")
+    sel = b.query("indicador_id == 'amostra_per_capita' and territorio_id == 'BR_FORA_NE' and ano == 2002")
     assert sel.valor.tolist() == [1000.0] and sel.tipo_dado.tolist() == ["derivado"]
 
 
@@ -42,7 +42,7 @@ def test_coletar_sem_fixture_sai_com_1(projeto, capsys):
     err = capsys.readouterr().err
     assert "sem fixture para pib_nominal/scr_ref2010" in err and "Traceback" not in err
     coletados = set(ler_registro(projeto.registro_coletas).indicador_id)
-    assert {"pib_per_capita", "populacao_contas_regionais"} <= coletados
+    assert {"amostra_per_capita", "amostra_populacao"} <= coletados
 
 
 def test_coletar_um_indicador_so_coleta_esse(projeto):
@@ -80,7 +80,7 @@ def test_consolidar_grava_os_cinco_arquivos(projeto):
     assert list(pendencias.columns) == ["indicador_id", "serie_id", "motivo"] and pendencias.empty
     assert list(pd.read_csv(projeto.registro_derivacoes).columns) == COLUNAS_REGISTRO
     cobertura = pd.read_csv(projeto.relatorios / "cobertura.csv", keep_default_na=False)
-    assert "pib_per_capita" in set(cobertura.indicador_id)
+    assert "amostra_per_capita" in set(cobertura.indicador_id)
 
 
 def test_consolidar_registra_pendencia_de_serie_sem_coleta(projeto, capsys):
@@ -88,15 +88,15 @@ def test_consolidar_registra_pendencia_de_serie_sem_coleta(projeto, capsys):
     main(raiz + ["coletar", "--offline", "--indicador", "pib_nominal"])
     assert main(raiz + ["consolidar"]) == 0
     pendencias = pd.read_csv(projeto.trabalho / "pendencias.csv", keep_default_na=False)
-    assert set(pendencias.indicador_id) == {"pib_per_capita", "populacao_contas_regionais"}
+    assert set(pendencias.indicador_id) == {"amostra_per_capita", "amostra_populacao"}
     assert set(pendencias.motivo) == {"sem coleta"}
-    assert "pib_per_capita/scr_ref2010" in capsys.readouterr().out
+    assert "amostra_per_capita/scr_ref2010" in capsys.readouterr().out
 
 
 def test_consolidar_acrescenta_derivacoes_sem_duplicar_nem_apagar(projeto):
     raiz = argumentos(projeto)
     main(raiz + ["coletar", "--offline"]); main(raiz + ["consolidar"])
-    antigo = {"coleta_id": "deriv.pib_per_capita.scr_ref2010.antigo", "indicador_id": "pib_per_capita",
+    antigo = {"coleta_id": "deriv.amostra_per_capita.scr_ref2010.antigo", "indicador_id": "amostra_per_capita",
               "serie_id": "scr_ref2010", "insumos": "coleta.antiga"}
     registro = pd.read_csv(projeto.registro_derivacoes, dtype=str, keep_default_na=False)
     registro = pd.concat([pd.DataFrame([antigo]), registro], ignore_index=True)

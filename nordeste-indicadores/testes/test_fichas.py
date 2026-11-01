@@ -39,9 +39,9 @@ def _gravar(pasta, dados, nome="x.yaml"):
     return pasta / nome
 
 
-def test_carrega_pib_per_capita(projeto):
-    f = carregar_fichas(projeto.fichas)["pib_per_capita"]
-    assert f.comparacao == Comparacao("brasil_fora_ne", "razao", "pib_nominal", "populacao_contas_regionais", 1000.0)
+def test_carrega_amostra_per_capita(projeto):
+    f = carregar_fichas(projeto.fichas)["amostra_per_capita"]
+    assert f.comparacao == Comparacao("brasil_fora_ne", "razao", "pib_nominal", "amostra_populacao", 1000.0)
     assert f.serie("scr_ref2010").inicio == 2002
     assert f.serie_do_ano(2001) is None
 
@@ -61,11 +61,11 @@ def test_fichas_do_repositorio_sao_validas_e_auxiliares(projeto_completo):
 
 def test_serie_inexistente_levanta_keyerror(fichas):
     with pytest.raises(KeyError):
-        fichas["pib_per_capita"].serie("nao_existe")
+        fichas["amostra_per_capita"].serie("nao_existe")
 
 
 def test_serie_do_ano_respeita_inicio_e_fim(fichas):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     assert f.serie_do_ano(2002).id == "scr_ref2010"
     assert f.serie_do_ano(2023).id == "scr_ref2010"
     assert f.serie_do_ano(2024) is None
@@ -273,3 +273,24 @@ def test_calculo_exige_metodo_conhecido_fator_positivo_e_uma_serie(pasta_com_cal
     mensagens = " | ".join(verificar_fichas(pasta))
     assert "calculo.metodo" in mensagens and "calculo.fator" in mensagens
     assert "uma unica serie" in mensagens
+
+
+@pytest.mark.parametrize("destino, trecho", [
+    ({"serie": "censo", "ano": 2012}, "posterior"),  # populacao de 2012 servindo a 2011: projecao silenciosa
+    ({"serie": "censo", "ano": 1999}, "fora da cobertura da serie censo"),  # insumo cobre 2002 a 2023
+])
+def test_ano_fixo_do_denominador_nao_pode_ser_futuro_nem_fora_do_insumo(pasta_com_calculo, destino, trecho):
+    pasta, calculada = pasta_com_calculo
+    calculada["calculo"]["denominador"]["series_por_ano"]["2011"] = destino
+    _gravar(pasta, calculada, "calculada.yaml")
+    mensagens = verificar_fichas(pasta)
+    assert any("calculada.yaml" in m and trecho in m for m in mensagens), mensagens
+    with pytest.raises(ErroFicha):
+        carregar_fichas(pasta)
+
+
+def test_ano_fixo_igual_ao_inicio_da_faixa_e_aceito(pasta_com_calculo):
+    pasta, calculada = pasta_com_calculo
+    calculada["calculo"]["denominador"]["series_por_ano"]["2011"] = {"serie": "censo", "ano": 2011}
+    _gravar(pasta, calculada, "calculada.yaml")
+    assert verificar_fichas(pasta) == []

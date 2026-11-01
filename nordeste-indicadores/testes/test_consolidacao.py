@@ -21,7 +21,7 @@ def projeto_coletado(projeto, fichas):
 
 def test_consolida_tres_fichas(projeto_coletado, fichas, territorios):
     base, pend = consolidar(projeto_coletado, fichas, territorios)
-    assert set(base.indicador_id) == {"pib_per_capita", "pib_nominal", "populacao_contas_regionais"}
+    assert set(base.indicador_id) == {"amostra_per_capita", "pib_nominal", "amostra_populacao"}
     assert pend == []
     assert list(base.columns) == COLUNAS_BASE
     assert not base.duplicated(CHAVE_BASE).any()
@@ -73,7 +73,7 @@ def test_erro_de_layout_vira_pendencia(projeto_coletado, fichas, territorios):
     assert (pend[0].indicador_id, pend[0].serie_id) == ("pib_nominal", "scr_ref2010")
     assert pend[0].motivo
     assert "pib_nominal" not in set(base.indicador_id)
-    assert {"pib_per_capita", "populacao_contas_regionais"} <= set(base.indicador_id)
+    assert {"amostra_per_capita", "amostra_populacao"} <= set(base.indicador_id)
 
 
 def test_outras_excecoes_propagam(projeto_coletado, fichas, territorios):

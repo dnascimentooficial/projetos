@@ -1,9 +1,10 @@
 # Ficha de TESTE da amostra dos testes de mecanica (fixture `projeto` em testes/conftest.py).
-# Nao e ficha do dicionario: guarda o arranjo de uma razao com valor oficial e dois insumos (soma),
-# usado para exercitar coleta, consolidacao, R07, R08, publicacao e CLI. O pib_per_capita real
-# (metadados/indicadores/pib_per_capita.yaml) e calculado pelo projeto (calculo: razao_por_ano).
-id: pib_per_capita
-nome: PIB per capita
+# Nao e ficha do dicionario: guarda o arranjo de uma razao com valor oficial (amostra_per_capita) e dois
+# insumos soma (pib_nominal e amostra_populacao), usado para exercitar coleta, consolidacao, R07, R08,
+# publicacao e CLI. O PIB per capita real (metadados/indicadores/pib_per_capita.yaml) e calculado pelo
+# projeto (calculo: razao_por_ano).
+id: amostra_per_capita
+nome: PIB per capita (amostra de teste)
 descricao: >-
   Produto Interno Bruto a preços correntes dividido pela população residente,
   por Brasil, região e unidade da federação.
@@ -29,7 +30,7 @@ comparacao:
   referencia: brasil_fora_ne
   metodo: razao
   numerador: pib_nominal
-  denominador: populacao_contas_regionais
+  denominador: amostra_populacao
   fator: 1000
 series:
   - id: scr_ref2010

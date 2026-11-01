@@ -15,9 +15,8 @@ sys.path.insert(0, str(RAIZ_REPOSITORIO / "testes" / "fixtures"))
 
 
 # Amostra dos testes de mecanica (coleta, consolidacao, publicacao, CLI): uma razao com valor oficial
-# (pib_per_capita) e seus dois insumos soma (pib_nominal e populacao_contas_regionais). O pib_nominal e a
-# ficha real do dicionario; as outras duas sao fichas de teste em testes/amostra/ (o pib_per_capita real
-# e calculado pelo projeto e a populacao_contas_regionais saiu do dicionario), com as fixtures ao lado.
+# (amostra_per_capita) e seus dois insumos soma (pib_nominal e amostra_populacao). O pib_nominal e a ficha
+# real do dicionario; as outras duas sao fichas de teste em testes/amostra/, com as fixtures ao lado.
 # O dicionario cresce a cada bloco de fontes; so test_dicionario.py olha o dicionario inteiro.
 AMOSTRA_DO_DICIONARIO = ("pib_nominal",)
 PASTA_AMOSTRA = RAIZ_REPOSITORIO / "testes" / "amostra"

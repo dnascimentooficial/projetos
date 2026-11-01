@@ -48,7 +48,7 @@ def _base_observada(anos=ANOS, fator_pib=None):
         pop = _valores(_POP_UF, _POP_REG, 1.01 ** (ano - 2002))
         per_capita = {t: pib[t] / pop[t] * 1000 for t in pib}
         for indicador, valores in (
-            ("pib_nominal", pib), ("populacao_contas_regionais", pop), ("pib_per_capita", per_capita),
+            ("pib_nominal", pib), ("amostra_populacao", pop), ("amostra_per_capita", per_capita),
         ):
             linhas += [
                 {"indicador_id": indicador, "territorio_id": t, "ano": ano, "valor": v,
@@ -67,7 +67,7 @@ def cenario(fim=_DA_FICHA, ultimo_ano=None, hoje=date(2026, 11, 1), per_capita_n
     """
     fichas = {
         "pib_nominal": carregar_ficha(METADADOS / "indicadores" / "pib_nominal.yaml"),
-        **{i: carregar_ficha(AMOSTRA / f"{i}.yaml") for i in ("populacao_contas_regionais", "pib_per_capita")},
+        **{i: carregar_ficha(AMOSTRA / f"{i}.yaml") for i in ("amostra_populacao", "amostra_per_capita")},
     }
     if fim is not _DA_FICHA:
         fichas = {i: dataclasses.replace(f, series=tuple(dataclasses.replace(s, fim=fim) for s in f.series))
@@ -144,7 +144,7 @@ def valor_nulo_com_tipo_observado(c):
 
 
 def ano_antes_do_inicio(c):
-    return _com_base(c, lambda b: b.__setitem__("ano", b.ano.where(~_linha(b, "pib_per_capita", "MA", 2002), 2001)))
+    return _com_base(c, lambda b: b.__setitem__("ano", b.ano.where(~_linha(b, "amostra_per_capita", "MA", 2002), 2001)))
 
 
 def valor_negativo_com_min_zero(c):
@@ -156,11 +156,11 @@ def ne_diferente_da_soma_das_ufs(c):
 
 
 def per_capita_ne_divergente(c):
-    return _com_base(c, lambda b: b.__setitem__("valor", b.valor.where(~_linha(b, "pib_per_capita", "NE", 2002), b.valor * 1.01)))
+    return _com_base(c, lambda b: b.__setitem__("valor", b.valor.where(~_linha(b, "amostra_per_capita", "NE", 2002), b.valor * 1.01)))
 
 
 def valor_infinito(c):
-    return _com_base(c, lambda b: b.__setitem__("valor", b.valor.where(~_linha(b, "pib_per_capita", "NE", 2003), float("inf"))))
+    return _com_base(c, lambda b: b.__setitem__("valor", b.valor.where(~_linha(b, "amostra_per_capita", "NE", 2003), float("inf"))))
 
 
 def coleta_id_inexistente(c):
@@ -271,7 +271,7 @@ def test_base_vazia_bloqueia():
 def test_r08_denominador_zero_bloqueia():
     def populacao_ne_zero(c):
         return _com_base(c, lambda b: b.__setitem__(
-            "valor", b.valor.where(~_linha(b, "populacao_contas_regionais", "NE", 2002), 0.0)))
+            "valor", b.valor.where(~_linha(b, "amostra_populacao", "NE", 2002), 0.0)))
     r = validar(**populacao_ne_zero(cenario()))
     r08 = [f for f in r.erros if f.regra == "R08"]
     assert len(r08) == 1 and "NE 2002" in r08[0].mensagem

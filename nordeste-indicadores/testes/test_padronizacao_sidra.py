@@ -30,13 +30,13 @@ def json_sidra(linhas, rotulo_periodo="Ano (Código)"):
 
 
 def test_mapeia_niveis_e_valores(projeto, fichas, territorios):
-    f = fichas["pib_per_capita"]
-    df = padronizar_sidra(ler(projeto, "pib_per_capita"), f, f.serie("scr_ref2010"), "c1", territorios)
+    f = fichas["amostra_per_capita"]
+    df = padronizar_sidra(ler(projeto, "amostra_per_capita"), f, f.serie("scr_ref2010"), "c1", territorios)
     ne_2002 = df[(df.territorio_id == "NE") & (df.ano == 2002)].iloc[0]
     assert ne_2002.valor == 1000.0 and ne_2002.tipo_dado == "observado" and ne_2002.coleta_id == "c1"
     assert set(df.territorio_id) == {"BR", "N", "NE", "SE", "S", "CO", "MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE_UF", "BA"}
     assert list(df.columns) == COLUNAS_BASE
-    assert set(df.indicador_id) == {"pib_per_capita"} and set(df.serie_id) == {"scr_ref2010"}
+    assert set(df.indicador_id) == {"amostra_per_capita"} and set(df.serie_id) == {"scr_ref2010"}
     assert df.ano.min() == 2002 and df.ano.max() == 2023
     assert not df.duplicated(["territorio_id", "ano"]).any()
 
@@ -49,8 +49,8 @@ def test_codigo_um_depende_do_nivel(fichas, territorios):
 
 
 def test_reticencias_viram_indisponivel(projeto, fichas, territorios):
-    f = fichas["pib_per_capita"]
-    df = padronizar_sidra(ler(projeto, "pib_per_capita"), f, f.serie("scr_ref2010"), "c1", territorios)
+    f = fichas["amostra_per_capita"]
+    df = padronizar_sidra(ler(projeto, "amostra_per_capita"), f, f.serie("scr_ref2010"), "c1", territorios)
     al = df[(df.territorio_id == "AL") & (df.ano == 2010)].iloc[0]
     assert pd.isna(al.valor) and al.tipo_dado == "indisponivel" and al.nota == "SIDRA: ..."
     assert (df[df.tipo_dado != "indisponivel"].nota == "").all()
@@ -115,11 +115,11 @@ def test_colunas_sobrescritas_por_parametros(fichas, territorios):
 
 
 def test_padronizar_le_o_arquivo_da_coleta(projeto, fichas, territorios):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     s = f.serie("scr_ref2010")
     coleta = Coleta(
         coleta_id="c9", indicador_id=f.id, serie_id=s.id, url="x", data_coleta="2026-11-01",
-        sha256="0" * 64, origem="fixture", arquivo="testes/fixtures/pib_per_capita/scr_ref2010.json",
+        sha256="0" * 64, origem="fixture", arquivo="testes/fixtures/amostra_per_capita/scr_ref2010.json",
     )
     df = padronizar(f, s, coleta, projeto, territorios)
     assert set(df.coleta_id) == {"c9"} and len(df) == 15 * 22
@@ -127,11 +127,11 @@ def test_padronizar_le_o_arquivo_da_coleta(projeto, fichas, territorios):
 
 
 def test_anos_estimativa(projeto, fichas, territorios):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     s = replace(f.serie("scr_ref2010"), parametros={"anos_estimativa": [2023, 2010]})
     coleta = Coleta(
         coleta_id="c9", indicador_id=f.id, serie_id=s.id, url="x", data_coleta="2026-11-01",
-        sha256="0" * 64, origem="fixture", arquivo="testes/fixtures/pib_per_capita/scr_ref2010.json",
+        sha256="0" * 64, origem="fixture", arquivo="testes/fixtures/amostra_per_capita/scr_ref2010.json",
     )
     df = padronizar(f, s, coleta, projeto, territorios)
     assert set(df[df.ano == 2023].tipo_dado) == {"estimativa_oficial"}
@@ -143,11 +143,11 @@ def test_anos_estimativa(projeto, fichas, territorios):
 
 
 def test_padronizador_desconhecido(projeto, fichas, territorios):
-    f = fichas["pib_per_capita"]
+    f = fichas["amostra_per_capita"]
     s = replace(f.serie("scr_ref2010"), parametros={"padronizador": "inventado"})
     coleta = Coleta(
         coleta_id="c9", indicador_id=f.id, serie_id=s.id, url="x", data_coleta="2026-11-01",
-        sha256="0" * 64, origem="fixture", arquivo="testes/fixtures/pib_per_capita/scr_ref2010.json",
+        sha256="0" * 64, origem="fixture", arquivo="testes/fixtures/amostra_per_capita/scr_ref2010.json",
     )
     with pytest.raises(ErroLayout, match="padronizador desconhecido.*inventado"):
         padronizar(f, s, coleta, projeto, territorios)

@@ -192,7 +192,7 @@ def test_valor_alterado_aparece_no_relatorio_e_no_aviso_a02(trabalho_aprovado):
     base = ler_base_de_trabalho(trabalho_aprovado)
     # Escala o PIB nominal de todos os territorios de 2002 por 2: somas continuam coerentes,
     # mas a razao do per capita (R08) deixa de bater; entao escalamos o per capita junto.
-    em_2002 = (base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "pib_per_capita"])
+    em_2002 = (base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "amostra_per_capita"])
     base.loc[em_2002, "valor"] = base.loc[em_2002, "valor"] * 2
     base.to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
 
@@ -200,7 +200,7 @@ def test_valor_alterado_aparece_no_relatorio_e_no_aviso_a02(trabalho_aprovado):
 
     assert "A02" in {f.regra for f in resultado.avisos}
     relatorio = pd.read_csv(trabalho_aprovado.relatorios / "mudancas.csv", keep_default_na=False)
-    assert set(relatorio.tipo) == {"alterado"} and set(relatorio.indicador_id) == {"pib_nominal", "pib_per_capita"}
+    assert set(relatorio.tipo) == {"alterado"} and set(relatorio.indicador_id) == {"pib_nominal", "amostra_per_capita"}
     assert (relatorio.valor_novo == relatorio.valor_anterior * 2).all()
 
 
@@ -227,13 +227,13 @@ def test_derivados_publicados_incluem_serie_pendente_reaproveitada(trabalho_apro
     publicar(trabalho_aprovado, hoje=HOJE)
     derivados_antes = (trabalho_aprovado.base / "derivados.csv").read_bytes()
     base = ler_base_de_trabalho(trabalho_aprovado)
-    base[base.indicador_id != "pib_per_capita"].to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
-    gravar_pendencias(trabalho_aprovado, [Pendencia("pib_per_capita", "scr_ref2010", "sem coleta")])
+    base[base.indicador_id != "amostra_per_capita"].to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
+    gravar_pendencias(trabalho_aprovado, [Pendencia("amostra_per_capita", "scr_ref2010", "sem coleta")])
 
     publicar(trabalho_aprovado, hoje=HOJE)
 
     derivados = pd.read_csv(trabalho_aprovado.base / "derivados.csv", keep_default_na=False)
-    assert "pib_per_capita" in set(derivados.indicador_id)
+    assert "amostra_per_capita" in set(derivados.indicador_id)
     assert (trabalho_aprovado.base / "derivados.csv").read_bytes() == derivados_antes
 
 
@@ -264,7 +264,7 @@ def test_falha_na_versao_completa_nao_toca_na_base(trabalho_aprovado, com_public
     governos[governos.fim != "2002-12-31"].to_csv(trabalho_aprovado.governos_csv, index=False)
     if com_publicacao_anterior:  # forca uma mudanca para a publicacao nao ser um no-op
         base = ler_base_de_trabalho(trabalho_aprovado)
-        base.loc[(base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "pib_per_capita"]), "valor"] *= 2
+        base.loc[(base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "amostra_per_capita"]), "valor"] *= 2
         base.to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
 
     with pytest.raises(ValueError, match="2002"):
@@ -282,7 +282,7 @@ def test_falha_ao_gravar_nao_deixa_publicacao_parcial(trabalho_aprovado, monkeyp
     publicar(trabalho_aprovado, hoje=HOJE)
     antes = {p.name: p.read_bytes() for p in trabalho_aprovado.base.iterdir()}
     base = ler_base_de_trabalho(trabalho_aprovado)
-    base.loc[(base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "pib_per_capita"]), "valor"] *= 2
+    base.loc[(base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "amostra_per_capita"]), "valor"] *= 2
     base.to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
 
     def parquet_falha(self, *args, **kwargs):
@@ -379,15 +379,15 @@ def test_versao_completa_traz_ficha_serie_e_governo(projeto):
     territorios = carregar_territorios(projeto.territorios_csv)
     governos = carregar_governos(projeto.governos_csv)
     base = pd.concat([
-        base_com_valor(1.0, indicador_id="pib_per_capita", territorio_id="PE", ano=2016, serie_id="scr_ref2010"),
-        base_com_valor(2.0, indicador_id="pib_per_capita", territorio_id="NE", ano=2023, serie_id="scr_ref2010"),
+        base_com_valor(1.0, indicador_id="amostra_per_capita", territorio_id="PE", ano=2016, serie_id="scr_ref2010"),
+        base_com_valor(2.0, indicador_id="amostra_per_capita", territorio_id="NE", ano=2023, serie_id="scr_ref2010"),
     ], ignore_index=True)
 
     completa = versao_completa(base, fichas, territorios, governos)
 
     assert list(completa.columns) == [*COLUNAS_BASE, *COLUNAS_EXTRAS]
     assert completa[COLUNAS_BASE].equals(base)
-    ficha, serie = fichas["pib_per_capita"], fichas["pib_per_capita"].serie("scr_ref2010")
+    ficha, serie = fichas["amostra_per_capita"], fichas["amostra_per_capita"].serie("scr_ref2010")
     a, b = completa.iloc[0], completa.iloc[1]
     assert (a.territorio_nome, b.territorio_nome) == ("Pernambuco", "Nordeste")
     assert a.indicador_nome == ficha.nome and a.unidade == ficha.unidade
