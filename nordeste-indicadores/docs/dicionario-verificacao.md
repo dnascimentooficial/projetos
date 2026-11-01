@@ -42,8 +42,8 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `renda_dom_pc` | `pnadc` | SIDRA 7533, v10816 | 2012 a 2025 | sim |
 | `massa_renda_dom_pc` (auxiliar) | `pnadc` | SIDRA 7427, v10495 | 2012 a 2025 | sim |
 | `populacao_pnadc` (auxiliar) | `pnadc` | SIDRA 7436, v606 | 2012 a 2025 | sim |
-| `pobreza` | `pnadc` | SIDRA 5877, v9948 | 2012 a 2024 | **não** (linha US$ 8,30 PPC 2021 só no Ipeadata, não em publicação do IBGE) |
-| `extrema_pobreza` | `pnadc` | SIDRA 5817, v9617 | 2012 a 2024 | **não** (linha US$ 3,00 PPC 2021 só no Ipeadata, não em publicação do IBGE) |
+| `pobreza` | `pnadc` | SIDRA 5877, v9948 | 2012 a 2024 | sim, pela confirmação do Ipeadata (linha US$ 8,30 PPC 2021; decisão do usuário em 2026-11-01, Tarefa C3b) |
+| `extrema_pobreza` | `pnadc` | SIDRA 5817, v9617 | 2012 a 2024 | sim, pela confirmação do Ipeadata (linha US$ 3,00 PPC 2021; decisão do usuário em 2026-11-01, Tarefa C3b) |
 | `gini` | `pnad` | Ipeadata `PGINI` (janela 2001-2014) | 2001 a 2014; 2010 `indisponivel` (ano sem pesquisa) | sim |
 | `gini` | `pnadc` | SIDRA 7435, v10681 | 2012 a 2025 | sim |
 | `desocupacao` | `pnad` | Ipeadata `Dese_Pnad` (janela 2001-2014) | 2001 a 2014; 2010 `indisponivel` (ano sem pesquisa) | sim |
@@ -329,9 +329,10 @@ Bloco IBGE, parte C (Tarefa 14c). Data da verificação: 2026-11-01.
 
 Tarefa 14b. Data da verificação: 2026-11-01. Método: `python -I -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar
 --indicador <id>` (o coletor do projeto monta a URL a partir dos `parametros` da ficha), `consolidar` e `validar`, numa
-raiz temporária fora do repositório, com as fichas do repositório. Para as duas séries de pobreza, que estão
-`verificado: false` e por isso o coletor recusa, a mesma execução foi feita numa cópia temporária das fichas com
-`verificado: true` (o arquivo do repositório não foi alterado).
+raiz temporária fora do repositório, com as fichas do repositório. Para as duas séries de pobreza, que na Tarefa 14b
+estavam `verificado: false` e por isso o coletor recusava, a mesma execução foi feita numa cópia temporária das fichas com
+`verificado: true`; na Tarefa C3b (2026-11-01) elas passaram a `verificado: true` no repositório, e a execução foi repetida
+com as fichas do repositório (seções `pobreza / pnadc` e `extrema_pobreza / pnadc`).
 
 Resultado do `validar` com os dados reais das 13 fichas: código 0, nenhuma regra bloqueante (inclusive R07, soma das UFs
 e das regiões, e R08, razão contra o valor oficial do Nordeste) e nenhum aviso, com os limiares de A01 declarados nas
@@ -433,15 +434,17 @@ dentro da meia casa (0,05), em 11 anos conferidos.
 
 ### pobreza / pnadc
 
-**Série não verificada (`verificado: false`).** Os dados foram baixados e passaram pelo padronizador, mas a linha de pobreza da
-tabela não está confirmada.
+**Série verificada (`verificado: true`), com a linha confirmada pelo Ipeadata (Tarefa C3b, 2026-11-01).** Os dados foram baixados e
+passaram pelo padronizador; a linha de pobreza da tabela (US$ 8,30 por dia, PPC 2021) foi identificada pela metadata do Ipeadata, e o
+usuário decidiu em 2026-11-01 (opção A) aceitá-la como confirmação. Linha declarada segundo o Ipeadata (metadados da série); não conferida contra publicação do IBGE, que recusa acesso automatizado; aceita como confirmação por decisão do usuário em 2026-11-01. Risco registrado: se o IBGE trocar a linha da
+tabela 5877 e o Ipeadata não atualizar a metadata, a ficha fica desatualizada; reverificar a linha a cada atualização anual.
 
 - Página oficial: https://sidra.ibge.gov.br/tabela/5877
-- URL de coleta (usada na evidência, com a cópia temporária da ficha): `https://apisidra.ibge.gov.br/values/t/5877/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/9948/p/all`
+- URL de coleta (a que o coletor monta a partir da ficha): `https://apisidra.ibge.gov.br/values/t/5877/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/9948/p/all`
 - Variável 9948: "Proporção da população abaixo da linha de pobreza nacional", Proporção (%) (indicador 1.2.1 dos ODS).
 - Obtido: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, `observado`, sem indisponíveis. Brasil 2012 = 36,8% e 2024 = 26,5%; Nordeste
   2012 = 58,8% e 2024 = 44,7%.
-- Por que não está verificada: a resposta da API não traz o valor da linha, a página de descrição da tabela
+- Evidência da Tarefa 14b, mantida na C3b (a decisão do usuário não mudou os dados): a resposta da API não traz o valor da linha, a página de descrição da tabela
   (`apisidra.ibge.gov.br/desctabapi.aspx?c=5877`) responde 403 com desafio anti-robô (não contornado) e a tabela não tem
   classificações além de variável, ano e território (`/c/all` devolve "Parâmetro C inválido"), então não há categoria de linha
   a fixar nos parâmetros.
@@ -457,12 +460,13 @@ tabela não está confirmada.
   paridade); a Síntese dá as linhas de 2024 já atualizadas pelo IPCA (US$ 6,85 = R$ 692 por mês, 23,1% das pessoas; US$ 3,65 = R$ 370, 8,6%), então a linha de 8,30 PPC 2021 em reais de 2024
   fica acima de R$ 692. A FGV IBRE (não o IBGE) cita cerca de R$ 775 por mês para a linha de US$ 8,30, valor aqui não verificado e provavelmente em preços mais recentes que 2021. Extrapolando
   linearmente a curva da Síntese (R$ 370 → 8,6%; R$ 692 → 23,1%) até R$ 775, a taxa vai a cerca de 26,8%, contra 26,5% da tabela 5877: mesma ordem de grandeza, nada além disso.
-- Por que continua `verificado: false`: o critério pede conferência de pelo menos 3 valores (Brasil e Nordeste de um mesmo ano) contra publicação do IBGE
+- Por que a conferência contra o IBGE não foi feita, e por que isso não barra mais a verificação: o critério original pedia conferência de pelo menos 3 valores (Brasil e Nordeste de um mesmo ano) contra publicação do IBGE
   que declare a linha. O Ipeadata é do Ipea e republica a série do IBGE; não é publicação do IBGE. A publicação do IBGE que a declararia, "Rendimento de
   todas as fontes 2025" (`liv102275_informativo.pdf`, em `biblioteca.ibge.gov.br`), a nota da tabela e o portal de indicadores ODS
   (`indicadoresods.ibge.gov.br`) não são acessíveis deste ambiente (hosts bloqueados ou fora da lista de rede); `sidra.ibge.gov.br`, `www.ibge.gov.br` e a agência
-  de notícias também não. A SIS 2025, que é acessível, usa outra linha. Para promover a `verificado: true`: ler a linha na nota da tabela 5877 (ou numa
-  publicação do IBGE com US$ 8,30 PPC 2021) e conferir 3 valores; a ficha já traz a linha na metodologia. O metadado do Ipeadata declara uma só linha para a série de 2012 a 2024 (a tabela 5877 tem 195 linhas, 13 anos), sem afirmar expressamente que ela é constante no tempo; a nota da tabela deve confirmar isso antes de uma promoção.
+  de notícias também não. A SIS 2025, que é acessível, usa outra linha. O metadado do Ipeadata declara uma só linha para a série de 2012 a 2024 (a tabela 5877 tem 195 linhas, 13 anos), sem afirmar expressamente que ela é constante no tempo; a decisão do usuário aceita essa leitura. Se a nota da tabela do IBGE ficar acessível, conferir a linha e 3 valores (Brasil e Nordeste de um mesmo ano) e substituir a nota de origem da ficha.
+- Promoção a `verificado: true` (Tarefa C3b, 2026-11-01): `fim` fechado em **2024**, o último ano com download real conferido (a tabela não tem 2025). Download real repetido na data com as fichas do repositório (`python -I -m nordeste --raiz <tmp> coletar --indicador pobreza`), `consolidar` e `validar` com `python -I -W error`: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, todas `observado`, sem indisponíveis, sha256 da resposta `15db303d91ee598e108aa1bc0f5fc6e80e95be96c6d5659d0d56195b0ee43408`; Brasil 36,8% (2012), 29,8% (2023) e 26,5% (2024); Nordeste 58,8%, 50,2% e 44,7%, iguais aos da evidência da C3 e aos do Ipeadata; `validacao.csv` sem nenhuma linha (nem regra nem aviso). Evidência por ano: os 13 anos de 2012 a 2024 estão na base baixada, e a série do Ipeadata `PNADCA_TXPNUF` repete os mesmos 195 valores (evidência da C3 acima).
+- Quebra de consolidação (nota do Ipeadata, mantida na ficha): primeiras entrevistas em 2012 a 2019 e 2023 a 2024; quintas entrevistas em 2020 a 2022. A comparabilidade entre os blocos não foi verificada.
 - A ficha `pobreza` é só a medida de pobreza; a extrema pobreza é a ficha `extrema_pobreza` (tabela 5817), porque cada série do projeto vem
   de uma única tabela e uma ficha não junta duas tabelas em subindicadores.
 - Brasil fora do Nordeste: não há (a tabela só traz a proporção e não foi achada contagem de pobres por UF em série anual); comparação com o
@@ -470,17 +474,21 @@ tabela não está confirmada.
 
 ### extrema_pobreza / pnadc
 
-**Série não verificada (`verificado: false`).** Mesmo motivo da `pobreza`.
+**Série verificada (`verificado: true`), com a linha confirmada pelo Ipeadata (Tarefa C3b, 2026-11-01).** Mesmo caminho da `pobreza`: linha de
+US$ 3,00 por dia (PPC 2021) identificada pela metadata do Ipeadata e aceita como confirmação por decisão do usuário. Linha declarada segundo o Ipeadata (metadados da série); não conferida contra publicação do IBGE, que recusa acesso automatizado; aceita como confirmação por decisão do usuário em 2026-11-01. Risco registrado:
+se o IBGE trocar a linha da tabela 5817 e o Ipeadata não atualizar a metadata, a ficha fica desatualizada; reverificar a linha a cada atualização anual.
 
 - Página oficial: https://sidra.ibge.gov.br/tabela/5817
-- URL de coleta (usada na evidência, com a cópia temporária da ficha): `https://apisidra.ibge.gov.br/values/t/5817/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/9617/p/all`
+- URL de coleta (a que o coletor monta a partir da ficha): `https://apisidra.ibge.gov.br/values/t/5817/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/9617/p/all`
 - Variável 9617: "Proporção da população abaixo da linha de pobreza internacional", Proporção (%) (indicador 1.1.1 dos ODS).
 - Obtido: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, `observado`. Brasil 2012 = 8,8% e 2024 = 4,7%; Nordeste 2012 = 18,5% e 2024 = 9,1%.
 - Linha: mesmas tentativas e mesma conclusão da `pobreza` (descrição da tabela bloqueada, sem classificações). O metadado do Ipeadata `PNADCA_TXPIUF`
   ("Taxa de pobreza internacional (SIS/IBGE)", `https://www.ipeadata.gov.br/api/odata4/Metadados('PNADCA_TXPIUF')`) declara "Linha de 3,00 dólares por dia,
   convertidos pela paridade do poder de compra (PPC-2021) do consumo final de R$ 2,44983620 por dólar", e os 195 valores da tabela 5817 são idênticos aos dele
   (Brasil 8,8% em 2012, 5,8% em 2023 e 4,7% em 2024; Nordeste 18,5%, 12,1% e 9,1%). A Síntese 2025 usa US$ 2,15 PPC 2017 (3,5% em 2024, 4,4% em 2023), outra linha;
-  por isso os valores diferem. Fonte só do Ipeadata, não do IBGE: segue `verificado: false`, pelos mesmos motivos da `pobreza`.
+  por isso os valores diferem. Fonte só do Ipeadata, não do IBGE: foi `verificado: false` na Tarefa C3 e passou a `verificado: true` na C3b, pela decisão do usuário, como a `pobreza`.
+- Promoção a `verificado: true` (Tarefa C3b, 2026-11-01): `fim` fechado em **2024**, o último ano com download real conferido. Download real repetido na data com as fichas do repositório, `consolidar` e `validar` com `python -I -W error`: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, todas `observado`, sha256 da resposta `4ca309a7e862ad69cbd46315b5452f9357be13339d0f08befc5bc09754135669`; Brasil 8,8% (2012), 5,8% (2023) e 4,7% (2024); Nordeste 18,5%, 12,1% e 9,1%, iguais aos da evidência da C3 e aos do Ipeadata `PNADCA_TXPIUF`; `validacao.csv` sem nenhuma linha (o A01 usa o limiar de 100% da ficha). Evidência por ano: os 13 anos estão na base baixada e repetidos na série do Ipeadata.
+- Quebra de consolidação (nota do Ipeadata, mantida na ficha): primeiras entrevistas em 2012 a 2019 e 2023 a 2024; quintas entrevistas em 2020 a 2022. A comparabilidade entre os blocos não foi verificada.
 - Aviso A01: com o limiar padrão (50%), 7 casos em 2020 a 2021 (alta depois do auxílio emergencial, por exemplo Rio Grande do Norte de 9,2% para
   17,9%); a ficha usa 100%.
 - Brasil fora do Nordeste: não há; comparação com o Brasil. PNAD antiga: sem série.
@@ -601,8 +609,8 @@ tabela não está confirmada.
    R$ 2.316 em 2025): universo das tabelas de rendimento de todas as fontes.
 7. `pobreza` (e a nova `extrema_pobreza`): a spec previa pobreza e extrema pobreza como subindicadores de uma ficha; viraram **duas fichas**, porque cada série do projeto vem de
    uma única tabela e as duas medidas estão em tabelas diferentes do SIDRA (5877 e 5817), com padronizador sem subindicador (decisão do controlador: manter duas fichas).
-   Só `pnadc` (2012 a 2024), e as duas **não verificadas**: as linhas das tabelas ODS do SIDRA (5877 e 5817) são, segundo o Ipeadata, US$ 8,30 e US$ 3,00 por dia em PPC 2021
-   (Tarefa C3), mas isso não foi confirmado em publicação do IBGE (nota da tabela e publicações do IBGE inacessíveis); por isso os valores não coincidem com a Síntese de Indicadores Sociais (US$ 6,85 e US$ 2,15 PPC 2017). Sem `pnad` (PNAD antiga) e sem Brasil fora do Nordeste (não há contagem de pobres por UF em série
+   Só `pnadc` (2012 a 2024). As linhas das tabelas ODS do SIDRA (5877 e 5817) são, segundo o Ipeadata, US$ 8,30 e US$ 3,00 por dia em PPC 2021
+   (Tarefa C3); por isso os valores não coincidem com a Síntese de Indicadores Sociais (US$ 6,85 e US$ 2,15 PPC 2017). As duas séries ficaram `verificado: false` na C3 e foram promovidas na C3b (divergência 18). Sem `pnad` (PNAD antiga) e sem Brasil fora do Nordeste (não há contagem de pobres por UF em série
    anual).
 8. `gini`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `PGINI` (a PNAD de 2015 não está na série), com 2010 `indisponivel`; `pnadc` de 2012 a 2025. Comparação com o Brasil, como na spec.
 9. `desocupacao`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `Dese_Pnad`, com 2010 `indisponivel` e **sem Brasil fora do Nordeste** (não há contagem de desocupados da PNAD
@@ -617,6 +625,7 @@ tabela não está confirmada.
 15. `matriculas_basica`: a spec previa `educacenso` (2007+) e `censo_escolar_pre2007` (2000-2006). Verificadas `educacenso` de 2007 a **2025** (a Tarefa C4 acrescentou 2022 a 2025), `censo_escolar_pre2007` só de **2005 e 2006** e uma terceira série, `censo_escolar_2000_2002` (**2000 a 2002**, só creche, pré-escola, ensino fundamental e ensino médio, sem os totais da educação básica e da infantil). **2003 e 2004 ficam sem série**: o Censo Escolar existiu, mas as sinopses só saem em PDF, que o projeto não lê; não são `anos_sem_publicacao` (o campo diria "sem pesquisa", o que seria falso), e a cobertura efetiva fica "2000–2002; 2005–2025". A etapa e a rede variam por série: ensino fundamental e ensino médio por rede só até 2006; anos iniciais e anos finais por rede só de 2007 em diante; ensino médio de 2007 em diante só no total (as tabelas por dependência vêm por série, sem soma). Brasil fora do Nordeste por soma, como na spec (Tarefas 15B e C4).
 16. `superior`: a spec previa `censup_pre2009` e `censup` (2009+). Verificadas `censup_pre2009` de **2001 a 2008** (2000 só em PDF; matrículas só totais e só de cursos presenciais, porque as linhas de Pública e Privada vêm sem o nome do território) e `censup` de 2009 a **2024** (a Tarefa C5 acrescentou 2020 a 2024; 2025 ainda não publicada, e a série tem `fim: 2024`). Subindicadores `matriculas` (rede `total`, `publica`, `privada`), `ies` e `universidades`; Brasil fora do Nordeste por soma, como na spec (Tarefas 15B e C5). **Divergência da Tarefa C5**: nas matrículas do `censup` o Brasil é maior que a soma das cinco regiões, porque a tabela 5.1 tem uma linha "Exterior" (matrículas a distância de instituições brasileiras no exterior) que só entra no total do Brasil; a diferença é de 284 a 2.826 matrículas em 2009, 2010 e 2017 a 2024 (zero nos outros anos) e é igual à linha "Exterior" em cada um desses anos. Por isso o Brasil fora do Nordeste das matrículas, que é Brasil menos Nordeste, inclui as matrículas do exterior; a spec não previa o resíduo.
 17. Tarefa 15B: nenhuma mudança no código de coleta nem de padronização. A única mudança de código é do gerador de fixtures (`xls_abas`, `.xls` com várias abas, e o montador de pacotes a partir das partes da ficha).
+18. `pobreza` e `extrema_pobreza` (Tarefa C3b, 2026-11-01): **verificadas pela confirmação do Ipeadata, não de uma publicação do IBGE.** O foco de revisão 5 do plano exigia a linha de pobreza conferida contra publicação do IBGE antes de `verificado: true`; o IBGE recusa acesso automatizado à descrição das tabelas (`apisidra.ibge.gov.br/desctabapi.aspx`), à biblioteca, à agência de notícias e ao portal de indicadores ODS, e a Síntese de Indicadores Sociais 2025 usa outra linha (PPC 2017). Por **decisão do usuário em 2026-11-01 (opção A)**, a metadata do Ipeadata (`PNADCA_TXPNUF`: US$ 8,30 por dia, PPC 2021; `PNADCA_TXPIUF`: US$ 3,00 por dia, PPC 2021), com os 195 de 195 valores de cada tabela iguais aos do Ipeadata (Tarefa C3), vale como confirmação. As fichas declaram a linha em `descricao`, `unidade` e `metodologia` e trazem a nota "Linha declarada segundo o Ipeadata (metadados da série); não conferida contra publicação do IBGE, que recusa acesso automatizado; aceita como confirmação por decisão do usuário em 2026-11-01." `fim` fechado em 2024, o último ano com download real conferido; como a série deixou de estar em curso, nenhum aviso A03 lembra de acrescentar o ano seguinte, e é preciso reabri-la quando o IBGE divulgar. A quebra de consolidação (primeiras entrevistas em 2012 a 2019 e 2023 a 2024; quintas entrevistas em 2020 a 2022) segue declarada. **Risco registrado:** se o IBGE trocar a linha e o Ipeadata não atualizar a metadata, a ficha fica desatualizada sem que nada no pipeline avise; **reverificar a linha a cada atualização anual** e, se a nota da tabela do IBGE ficar acessível, conferi-la e trocar a nota de origem.
 
 ## Bloco PNUD: IDHM
 
@@ -1093,7 +1102,7 @@ seguida de `consolidar` e `validar` (`python -W error`); os arquivos baixados fi
 Tarefa C1 da conclusão da base. Data: 2026-11-01. Primeira execução do pipeline inteiro com dados reais de uma vez: `coletar` (rede) das fichas verificadas, `consolidar`, `validar` e
 `publicar --ensaio`, numa cópia temporária do projeto fora do repositório (`python -m nordeste --raiz <cópia> ...`, pacote instalado em modo editável apontando para o código do repositório). As
 duas séries grandes do INEP, `matriculas_basica/educacenso` e `superior/censup`, ficaram de fora (dependem da coleta enxuta, Tarefa C2): na cópia, e só nela, essas duas séries tiveram
-`verificado` posto em `false`, de modo que o `coletar` as pulou. `pobreza` e `extrema_pobreza` seguem `verificado: false` e foram puladas como sempre. Os arquivos baixados não são versionados.
+`verificado` posto em `false`, de modo que o `coletar` as pulou. `pobreza` e `extrema_pobreza` seguem `verificado: false` e foram puladas como sempre. (Situação da C1: na Tarefa C3b as duas passaram a `verificado: true`.) Os arquivos baixados não são versionados.
 
 ### Execução
 

@@ -55,7 +55,7 @@ python -m nordeste publicar  [--ensaio]
   `--ensaio`, executa tudo e gera os relatórios sem escrever em `dados/base/`.
 
 Cada comando é idempotente. `coletar` só busca na rede séries com `verificado: true` na ficha: as demais
-(hoje `pobreza` e `extrema_pobreza`) são puladas com um aviso em stderr e não contam como falha. Uma série que
+(hoje nenhuma) são puladas com um aviso em stderr e não contam como falha. Uma série que
 falha na coleta não derruba as outras: o motivo vai para stderr e para `dados/relatorios/falhas_coleta.csv`
 (`indicador_id`, `serie_id`, `motivo`; o cabeçalho sai sempre, e cada `coletar` reescreve o arquivo), o comando
 sai com 1 e a série segue com a coleta anterior. No `consolidar`, série sem coleta, com arquivo bruto ausente
@@ -209,7 +209,7 @@ curso. Indicadores `auxiliar` são insumos (denominadores e contagens) e não s�
 | `abandono_em` | Taxa de abandono no ensino médio | educacao_basica | exibido | `indicadores_inep` | 2007–2025 | verificada |
 | `desocupacao` | Taxa de desocupação | trabalho | exibido | `pnad`, `pnadc` | 2001–2009; 2011– | verificada |
 | `desocupados` | Pessoas desocupadas | trabalho | auxiliar | `pnadc` | 2012– | verificada |
-| `extrema_pobreza` | Extrema pobreza | social | exibido | `pnadc` | — | não verificada (fora da coleta) |
+| `extrema_pobreza` | Extrema pobreza | social | exibido | `pnadc` | 2012–2024 | verificada |
 | `forca_trabalho` | Pessoas na força de trabalho | trabalho | auxiliar | `pnadc` | 2012– | verificada |
 | `gini` | Índice de Gini da renda domiciliar per capita | social | exibido | `pnad`, `pnadc` | 2001–2009; 2011– | verificada |
 | `ideb` | Índice de Desenvolvimento da Educação Básica (IDEB) | educacao_basica | exibido | `ideb` | 2005–2025 | verificada |
@@ -223,7 +223,7 @@ curso. Indicadores `auxiliar` são insumos (denominadores e contagens) e não s�
 | `pib_participacao` | Participação no PIB nacional | economia | exibido | `scr_ref2010` | 2002–2023 | verificada |
 | `pib_per_capita` | PIB per capita | economia | exibido | `scr_ref2010` | 2002–2006; 2008–2023 | verificada, calculada pelo projeto |
 | `pib_volume` | PIB real (índice de volume) | economia | exibido | `scr_ref2010` | 2002–2023 | verificada |
-| `pobreza` | Pobreza | social | exibido | `pnadc` | — | não verificada (fora da coleta) |
+| `pobreza` | Pobreza | social | exibido | `pnadc` | 2012–2024 | verificada |
 | `populacao` | População residente | contexto | exibido | `estimativa_pre_censo2022`, `estimativa_pos_censo2022`, `censo_2000_2010`, `censo_2022` | 2000–2022; 2024– | verificada |
 | `populacao_pnadc` | População residente da PNAD Contínua | contexto | auxiliar | `pnadc` | 2012– | verificada |
 | `renda_dom_pc` | Renda domiciliar per capita | social | exibido | `pnadc` | 2012– | verificada |

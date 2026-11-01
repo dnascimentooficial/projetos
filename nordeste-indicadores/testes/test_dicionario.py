@@ -386,11 +386,11 @@ def test_valores_monetarios_da_pnadc_declaram_deflator_e_ano_base(fichas):
         assert fichas[indicador].tratamento_monetario is None, indicador
 
 
-def test_pobreza_registra_a_linha_e_so_vira_verificada_com_a_linha_confirmada(fichas):
+def test_pobreza_registra_a_linha_e_a_origem_da_confirmacao(fichas):
     for indicador in ("pobreza", "extrema_pobreza"):
         f = fichas[indicador]
         (s,) = f.series
-        assert (s.id, s.inicio, s.fim, s.verificado) == ("pnadc", 2012, None, False), indicador
+        assert (s.id, s.inicio, s.fim, s.verificado) == ("pnadc", 2012, 2024, True), indicador  # 2012 a 2024: o download real
         assert "linha" in (f.metodologia + s.compatibilidade).lower(), indicador
         assert f.sentido == "menor_melhor" and f.limites == {"min": 0, "max": 100}, indicador
 
@@ -884,15 +884,43 @@ def test_series_grandes_do_inep_declaram_o_custo_operacional_medido(fichas, indi
         assert antigo not in texto, antigo
 
 
-def test_fichas_de_pobreza_registram_a_linha_identificada_mas_seguem_nao_verificadas(fichas):
-    """Linha achada so no Ipeadata (nao em publicacao do IBGE): declarada com a ressalva, serie nao verificada."""
-    texto = DICIONARIO.read_text(encoding="utf-8")
+NOTA_DA_LINHA_DO_IPEADATA = (
+    "Linha declarada segundo o Ipeadata (metadados da série); não conferida contra publicação do IBGE, que recusa "
+    "acesso automatizado; aceita como confirmação por decisão do usuário em 2026-11-01."
+)
+
+
+def _normalizado(texto: str) -> str:
+    return " ".join(texto.split())
+
+
+def test_fichas_de_pobreza_verificadas_declaram_a_linha_a_nota_de_origem_e_a_quebra_de_consolidacao(fichas):
+    """Verificada pela decisao do usuario (Ipeadata como confirmacao): a linha, a origem e a quebra ficam nas fichas."""
     for ficha_id, linha in (("pobreza", "8,30"), ("extrema_pobreza", "3,00")):
         f = fichas[ficha_id]
         serie = f.serie("pnadc")
-        assert not serie.verificado
-        assert f"US$ {linha} por dia (PPC 2021)" in f.metodologia, ficha_id
-        assert "Ipeadata" in f.metodologia and "não foi confirmada" in f.metodologia, ficha_id
-        assert "PPC 2021" in serie.compatibilidade, ficha_id
-        assert f"US$ {linha}" in texto, ficha_id
-        assert "quintas entrevistas" in f.metodologia and "quintas" in serie.compatibilidade, ficha_id
+        assert serie.verificado and (serie.inicio, serie.fim) == (2012, 2024), ficha_id
+        for texto in (f.descricao, f.unidade, f.metodologia):  # a linha esta em tres campos
+            assert f"US$ {linha} por dia (PPC 2021)" in _normalizado(texto), (ficha_id, texto)
+        assert NOTA_DA_LINHA_DO_IPEADATA in _normalizado(f.metodologia), ficha_id
+        assert NOTA_DA_LINHA_DO_IPEADATA in _normalizado(f.observacoes), ficha_id
+        assert "Ipeadata" in serie.compatibilidade and "PPC 2021" in serie.compatibilidade, ficha_id
+        assert "não foi confirmada" not in f.metodologia and "não verificada" not in f.observacoes, ficha_id
+        # quebra de consolidacao: primeiras entrevistas 2012-2019 e 2023-2024, quintas entrevistas 2020-2022
+        for texto in (f.metodologia, serie.compatibilidade):
+            assert "primeiras entrevistas em 2012 a 2019 e 2023 a 2024" in _normalizado(texto), ficha_id
+            assert "quintas entrevistas em 2020 a 2022" in _normalizado(texto), ficha_id
+
+
+def test_dicionario_registra_a_confirmacao_da_pobreza_pelo_ipeadata_como_divergencia_e_risco():
+    texto = _normalizado(DICIONARIO.read_text(encoding="utf-8"))
+    divergencias = texto[texto.index("## Divergências em relação à seção 4 da spec"):texto.index("## Bloco PNUD")]
+    item = divergencias.split(" 18. ")[1]  # nova entrada, depois da 17
+    assert "`pobreza`" in item and "`extrema_pobreza`" in item and "Ipeadata" in item
+    assert "decisão do usuário em 2026-11-01" in item and "publicação do IBGE" in item
+    assert "reverificar a linha a cada atualização anual" in item and "foco de revisão 5" in item
+    for secao in ("### pobreza / pnadc", "### extrema_pobreza / pnadc"):
+        corpo = texto[texto.index(secao) + len(secao):]
+        corpo = corpo[:corpo.index(" ### ")]
+        assert "**Série verificada (`verificado: true`)" in corpo and "195 linhas" in corpo, secao
+        assert NOTA_DA_LINHA_DO_IPEADATA in corpo, secao

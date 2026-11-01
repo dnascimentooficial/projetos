@@ -1,5 +1,6 @@
 """Tabela de indicadores do README: gerada das fichas, com a situacao de verificacao e a cobertura efetiva."""
 
+from dataclasses import replace
 from pathlib import Path
 
 from nordeste.fichas import carregar_fichas
@@ -41,9 +42,14 @@ def test_cobertura_de_indicador_calculado_so_tem_os_anos_com_denominador_mapeado
 
 def test_serie_nao_verificada_fica_fora_da_cobertura_e_da_situacao_verificada():
     fichas = carregar_fichas(RAIZ / "metadados" / "indicadores")
-    assert cobertura_efetiva(fichas["pobreza"]) == "—"
     tabela = tabela_markdown(fichas)
-    assert "não verificada" in _linha(tabela, "pobreza")[-1]
+    assert cobertura_efetiva(fichas["pobreza"]) == "2012–2024"  # verificada pelo Ipeadata (C3b), fim no ultimo ano baixado
+    assert _linha(tabela, "pobreza")[-1] == "verificada" and _linha(tabela, "extrema_pobreza")[-1] == "verificada"
+    # nenhuma ficha real e nao verificada hoje: o caso vem de uma ficha com a serie desmarcada
+    (serie,) = fichas["pobreza"].series
+    nao_verificada = replace(fichas["pobreza"], series=(replace(serie, verificado=False),))
+    assert cobertura_efetiva(nao_verificada) == "—"
+    assert "não verificada" in _linha(tabela_markdown({**fichas, "pobreza": nao_verificada}), "pobreza")[-1]
     assert "verificada" == _linha(tabela, "ideb")[-1]
 
 

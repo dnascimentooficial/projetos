@@ -2,23 +2,25 @@ id: pobreza
 nome: Pobreza
 descricao: >-
   Proporção da população abaixo da linha de pobreza que o IBGE classifica como
-  nacional (indicador 1.2.1 dos Objetivos de Desenvolvimento Sustentável), por
-  Brasil, região e unidade da federação.
+  nacional (indicador 1.2.1 dos Objetivos de Desenvolvimento Sustentável), de
+  US$ 8,30 por dia (PPC 2021), por Brasil, região e unidade da federação.
 eixo: social
 categoria: renda
-unidade: "%"
+unidade: "% da população abaixo de US$ 8,30 por dia (PPC 2021)"
 orgao: IBGE
 periodicidade: anual
 metodologia: >-
   Proporção da população abaixo da linha de pobreza nacional, tabela do SIDRA
-  5877 (variável 9948, indicador ODS 1.2.1 com a PNAD Contínua), de 2012 em
-  diante. A resposta do SIDRA não informa o valor da linha e a página de
-  descrição da tabela responde com desafio anti-robô. A linha foi identificada
-  pelo Ipeadata (série PNADCA_TXPNUF, "Taxa de pobreza nacional (SIS/IBGE)", que
-  repete os 195 valores da tabela): US$ 8,30 por dia (PPC 2021), convertidos
-  pela paridade do consumo final de R$ 2,4498362 por dólar. Essa linha não foi
-  confirmada em publicação do IBGE, e por isso a série fica não verificada. Não é
-  a linha da Síntese de Indicadores Sociais 2025 (planilha 2.18, ftp.ibge.gov.br),
+  5877 (variável 9948, indicador ODS 1.2.1 com a PNAD Contínua), de 2012 a 2024.
+  A resposta do SIDRA não informa o valor da linha e a página de descrição da
+  tabela responde com desafio anti-robô. A linha foi identificada pelo Ipeadata
+  (série PNADCA_TXPNUF, "Taxa de pobreza nacional (SIS/IBGE)", que repete os 195
+  valores da tabela): US$ 8,30 por dia (PPC 2021), convertidos pela paridade do
+  consumo final de R$ 2,4498362 por dólar. Linha declarada segundo o Ipeadata
+  (metadados da série); não conferida contra publicação do IBGE, que recusa
+  acesso automatizado; aceita como confirmação por decisão do usuário em
+  2026-11-01. Não é a linha da Síntese de Indicadores Sociais 2025 (planilha 2.18,
+  ftp.ibge.gov.br),
   que usa US$ 6,85 PPC 2017 por dia e dá 27,3% para o Brasil em 2023, contra
   29,8% desta tabela.
   Quebra de consolidação (nota do Ipeadata): o IBGE consolida as primeiras
@@ -27,8 +29,11 @@ metodologia: >-
   foi verificada. "Nacional" e "internacional" são rótulos do ODS do IBGE (1.2.1
   e 1.1.1): as duas linhas estão em dólares PPC.
 observacoes: >-
-  Série não verificada: a linha da tabela 5877 (US$ 8,30 PPC 2021, segundo o
-  Ipeadata) não está confirmada em publicação do IBGE.
+  Linha declarada segundo o Ipeadata (metadados da série); não conferida contra
+  publicação do IBGE, que recusa acesso automatizado; aceita como confirmação
+  por decisão do usuário em 2026-11-01.
+  Se o IBGE trocar a linha e o Ipeadata não atualizar a metadata, esta ficha fica
+  desatualizada: reverificar a linha a cada atualização anual.
   A pobreza extrema é a ficha `extrema_pobreza` (tabela 5817), separada porque
   cada serie do projeto vem de uma única tabela. A PNAD antiga (2001 a 2015)
   não tem proporção de pobres por UF em fonte consultada, e fica sem série.
@@ -42,16 +47,18 @@ comparacao:
 series:
   - id: pnadc
     inicio: 2012
-    fim: null
+    fim: 2024
     fonte: IBGE, PNAD Contínua (indicador ODS 1.2.1)
     base_origem: SIDRA, tabela 5877, variável 9948
     url: https://sidra.ibge.gov.br/tabela/5877
     coletor: sidra
     parametros: {tabela: "5877", variavel: "9948"}
     compatibilidade: >-
-      PNAD Contínua (2012 em diante), linha de pobreza nacional de US$ 8,30 por
-      dia (PPC 2021), segundo o Ipeadata (não confirmada em publicação do IBGE).
+      PNAD Contínua (2012 a 2024), linha de pobreza nacional de US$ 8,30 por
+      dia (PPC 2021), segundo o Ipeadata (aceita como confirmação por decisão do
+      usuário; não conferida em publicação do IBGE).
       Consolidação das primeiras entrevistas em 2012 a 2019 e 2023 a 2024 e das quintas
-      entrevistas em 2020 a 2022. Não comparável com a série `extrema_pobreza` (outra linha), com a Síntese de
+      entrevistas em 2020 a 2022. Não comparável com a série
+      `extrema_pobreza` (outra linha), com a Síntese de
       Indicadores Sociais 2025 (US$ 6,85 PPC 2017) nem com a PNAD antiga.
-    verificado: false
+    verificado: true
