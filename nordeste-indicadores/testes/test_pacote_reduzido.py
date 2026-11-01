@@ -217,6 +217,15 @@ def test_arquivo_baixado_sem_o_membro_declarado_e_erro_de_coleta(caso):
         empacotar_partes({URL: fonte}, PARAMETROS)
 
 
+@pytest.mark.parametrize("deslocamento", [10, 254])
+def test_deflate_corrompido_no_membro_xlsx_e_erro_de_coleta_e_nao_zlib_error(deslocamento):
+    """Byte invertido nos dados deflate do membro lido com aba (poda): ErroColeta, nunca zlib.error."""
+    fonte = bytearray(_zip_da_fonte())
+    fonte[30 + len(MEMBRO.encode("utf-8")) + deslocamento] ^= 0xFF
+    with pytest.raises(ErroColeta, match=re.escape(URL)):
+        empacotar_partes({URL: bytes(fonte)}, PARAMETROS)
+
+
 def test_url_sem_arquivo_no_zip_segue_inteira_mesmo_sem_ser_zip():
     """Sem `arquivo_no_zip` nao ha o que conferir: o arquivo vai como veio e o padronizador o le."""
     fonte = b"<html>tabela</html>"

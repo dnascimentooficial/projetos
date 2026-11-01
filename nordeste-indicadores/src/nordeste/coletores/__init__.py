@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import tempfile
+import zlib
 from datetime import date
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
@@ -159,7 +160,7 @@ def _parte(
         with tempfile.TemporaryDirectory(dir=pasta, prefix=f"{chave}-") as trabalho:
             try:
                 pronta = preparar_parte(url, baixando, sha256, tamanho, receita, Path(trabalho))
-            except ValueError as erro:
+            except (ValueError, zlib.error) as erro:  # zlib.error: deflate corrompido no membro
                 raise ErroColeta(f"falha ao reduzir {url} ({erro})") from erro
             arquivo = pasta / f"{chave}.parte"
             os.replace(pronta.arquivo, arquivo)

@@ -665,3 +665,33 @@ def test_parte_que_nao_traz_o_membro_declarado_falha_e_nao_e_guardada(projeto, f
     sessao = SessaoPorUrl({URL_UFS: ZIP_UFS, URL_BRASIL: b"zip do brasil"})
     coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=sessao)
     assert sessao.urls == [URL_UFS]
+
+
+def _zip_com_deflate_corrompido(deslocamento: int) -> bytes:
+    """Zip valido com um membro deflate, com um byte invertido `deslocamento` bytes dentro dos dados comprimidos."""
+    import io
+    import random
+    import zipfile
+    acaso = random.Random(1)
+    dados = bytes(acaso.getrandbits(2) for _ in range(20000)) + b"planilha " * 5000
+    saida = io.BytesIO()
+    with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("ufs/ufs.xls", dados)
+    bruto = bytearray(saida.getvalue())
+    inicio = 30 + len("ufs/ufs.xls")  # cabecalho local sem campo extra
+    bruto[inicio + deslocamento] ^= 0xFF
+    return bytes(bruto)
+
+
+@pytest.mark.parametrize("deslocamento", [53, 212, 3000], ids=["zlib.error cedo", "zlib.error", "CRC invalido"])
+def test_deflate_corrompido_no_membro_declarado_e_erro_de_coleta_e_nao_zlib_error(projeto, fichas, deslocamento):
+    """Corrupcao no meio dos dados comprimidos (arquivo com o tamanho certo) nao pode escapar como zlib.error."""
+    f, s = _serie_com_partes(fichas)
+    partes = [{**p, "arquivo_no_zip": "ufs/ufs.xls", "formato": "xls"} if p["url"] == URL_UFS else p
+              for p in s.parametros["partes"]]
+    s = replace(s, parametros={**s.parametros, "partes": partes})
+    with pytest.raises(ErroColeta, match=r"1 de 2 partes falharam.*ufs\.zip"):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE,
+                      sessao=SessaoPorUrl({URL_UFS: _zip_com_deflate_corrompido(deslocamento), URL_BRASIL: b"zip do brasil"}))
+    guardadas = projeto.partes_em_coleta / "amostra_per_capita" / "scr_ref2010"
+    assert len(list(guardadas.glob("*.parte"))) == 1 and ler_registro(projeto.registro_coletas).empty

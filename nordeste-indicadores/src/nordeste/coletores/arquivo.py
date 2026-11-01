@@ -294,7 +294,7 @@ def _podar_xlsx(origem: Path, abas: tuple[str, ...], destino: Path) -> bool:
                 for nome, info in infos.items() if nome in manter]
             with destino.open("wb") as saida:
                 _gravar_zip(saida, entradas)
-    except (KeyError, ValueError, zipfile.BadZipFile, NotImplementedError, UnicodeDecodeError):
+    except (KeyError, ValueError, zipfile.BadZipFile, NotImplementedError, UnicodeDecodeError, zlib.error):
         return False
     return _abas_do_xlsx(destino) == [nome for nome in nomes_folhas if nome in abas]
 
@@ -370,7 +370,7 @@ def _extrair_e_podar(zip_: zipfile.ZipFile, info: zipfile.ZipInfo, abas: tuple[s
     try:
         with zip_.open(info) as membro, extraido.open("wb") as saida:
             shutil.copyfileobj(membro, saida, _BLOCO)
-    except (zipfile.BadZipFile, NotImplementedError, RuntimeError, OSError, EOFError):
+    except (zipfile.BadZipFile, NotImplementedError, RuntimeError, OSError, EOFError, zlib.error):
         return False
     try:
         return _podar_xlsx(extraido, abas, podado)
@@ -388,7 +388,7 @@ def preparar_parte(url: str, original: Path, sha256_original: str, bytes_origina
         reduzido = pasta / "reduzido.zip"
         try:
             membros = _reduzir_zip(original, receita, reduzido, pasta)
-        except zipfile.BadZipFile as erro:
+        except (zipfile.BadZipFile, zlib.error) as erro:  # zlib.error: deflate corrompido no membro
             raise ErroColeta(
                 f"{url} não é um zip legível com {', '.join(receita)} ({erro}): download incompleto ou página de "
                 "erro no lugar do arquivo; a parte não foi guardada") from erro
