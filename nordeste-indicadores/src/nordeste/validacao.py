@@ -1,5 +1,6 @@
 """Validacao bloqueante da base (regras R01 a R10): aponta problemas, nao corrige dados."""
 
+import math
 from dataclasses import dataclass
 from datetime import date
 
@@ -64,13 +65,18 @@ def _agregar(regra: str, linhas: pd.DataFrame, problema: str) -> list[Falha]:
 
 
 def _diverge(oficial: float, calculado: float) -> bool:
+    """Diferenca relativa acima da tolerancia; qualquer termo nao finito (inf, nan) diverge."""
+    if not (math.isfinite(oficial) and math.isfinite(calculado)):
+        return True
     if oficial == 0:
         return calculado != 0
     return abs(oficial - calculado) / abs(oficial) > TOLERANCIA
 
 
 def _pct(oficial: float, calculado: float) -> str:
-    return "inf" if oficial == 0 else f"{abs(oficial - calculado) / abs(oficial) * 100:.2f}%"
+    if oficial == 0 or not (math.isfinite(oficial) and math.isfinite(calculado)):
+        return "inf"
+    return f"{abs(oficial - calculado) / abs(oficial) * 100:.2f}%"
 
 
 # ---------------------------------------------------------------------------
@@ -98,12 +104,14 @@ def _r01_fixture(base: pd.DataFrame, coletas: pd.DataFrame, derivacoes: pd.DataF
     return falhas
 
 
-def _r02_colunas(base: pd.DataFrame) -> list[Falha]:
-    """Sem as colunas do esquema nenhuma regra de linha pode ser avaliada."""
-    if list(base.columns) == COLUNAS_BASE:
-        return []
-    return [Falha("R02", f"colunas da base diferem do esquema: esperado {', '.join(COLUNAS_BASE)}; "
-                         f"encontrado {', '.join(map(str, base.columns))}")]
+def _r02_estrutura(base: pd.DataFrame) -> list[Falha]:
+    """Sem as colunas do esquema, ou sem linhas, nenhuma regra de linha pode ser avaliada."""
+    if list(base.columns) != COLUNAS_BASE:
+        return [Falha("R02", f"colunas da base diferem do esquema: esperado {', '.join(COLUNAS_BASE)}; "
+                             f"encontrado {', '.join(map(str, base.columns))}")]
+    if base.empty:
+        return [Falha("R02", "base sem linhas")]
+    return []
 
 
 def _r02_tipos(base: pd.DataFrame) -> list[Falha]:
@@ -120,6 +128,7 @@ def _r02_tipos(base: pd.DataFrame) -> list[Falha]:
 
 def _r02_linhas(base: pd.DataFrame, fichas: dict[str, Ficha], conhecidos: set[str]) -> list[Falha]:
     falhas = _agregar("R02", base[~base.tipo_dado.isin(TIPOS_DADO)], "tipo_dado fora do dominio")
+    falhas += _agregar("R02", base[base.valor.abs() == math.inf], "valor nao finito (infinito)")
     falhas += _agregar("R02", base[~base.territorio_id.isin(conhecidos)], "territorio_id desconhecido")
     falhas += _agregar("R02", base[~base.indicador_id.isin(fichas)], "indicador_id sem ficha")
     return falhas
@@ -177,8 +186,11 @@ def _r06_limites(base: pd.DataFrame, fichas: dict[str, Ficha]) -> list[Falha]:
 
 
 def _valores_por_ano(linhas: pd.DataFrame) -> pd.DataFrame:
-    """Valores presentes por (grupo, ano, serie) nas linhas e por territorio nas colunas."""
-    return linhas[linhas.valor.notna()].pivot_table(
+    """Valores finitos por (grupo, ano, serie) nas linhas e por territorio nas colunas.
+
+    Nulos e infinitos ficam de fora (infinito ja bloqueia em R02); o ano fica incompleto.
+    """
+    return linhas[linhas.valor.abs() < math.inf].pivot_table(
         index=[*_GRUPO, "ano", "serie_id"], columns="territorio_id", values="valor", aggfunc="first",
     )
 
@@ -218,11 +230,18 @@ def _r08_razao(base: pd.DataFrame, fichas: dict[str, Ficha]) -> list[Falha]:
         termos = [ne[ne.indicador_id == i][[*chaves, "valor"]].rename(columns={"valor": nome})
                   for i, nome in ((ficha.id, "oficial"), (comp.numerador, "num"), (comp.denominador, "den"))]
         junto = termos[0].merge(termos[1], on=chaves).merge(termos[2], on=chaves)
-        for r in junto[junto.den != 0].to_dict("records"):
+        for r in junto.to_dict("records"):
+            onde = f"{_rotulo(ficha.id, r['serie_id'], r['subindicador'], r['etapa'], r['rede'])} NE {r['ano']}"
+            if r["den"] == 0:
+                falhas.append(Falha("R08", (
+                    f"{onde}: oficial = {r['oficial']:g}, mas {comp.denominador} do NE e zero; "
+                    f"nao ha como recalcular {comp.numerador} / {comp.denominador}"
+                )))
+                continue
             calculado = r["num"] / r["den"] * comp.fator
             if _diverge(r["oficial"], calculado):
                 falhas.append(Falha("R08", (
-                    f"{_rotulo(ficha.id, r['serie_id'], r['subindicador'], r['etapa'], r['rede'])} NE {r['ano']}: "
+                    f"{onde}: "
                     f"oficial = {r['oficial']:g}, recalculado {comp.numerador} / {comp.denominador} x {comp.fator:g} "
                     f"= {calculado:g} ({_pct(r['oficial'], calculado)})"
                 )))
@@ -265,7 +284,7 @@ def validar(
     `base_publicada` e `hoje` alimentam os avisos (ainda nao calculados: `avisos` sai vazia).
     A regra R01 (dado de fixture) nao tem como ser desligada.
     """
-    erros = _r02_colunas(base)
+    erros = _r02_estrutura(base)
     if not erros:
         erros = _r01_fixture(base, coletas, derivacoes)
         tipos = _r02_tipos(base)

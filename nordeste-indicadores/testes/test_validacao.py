@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from datetime import date
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from nordeste.derivados import brasil_fora_ne, metricas_convergencia
 from nordeste.esquema import normalizar_base
 from nordeste.fichas import carregar_fichas
 from nordeste.territorios import REGIOES, UFS_NE, carregar_territorios
-from nordeste.validacao import Falha, ResultadoValidacao, validar
+from nordeste.validacao import Falha, ResultadoValidacao, _diverge, validar
 
 METADADOS = Path(__file__).resolve().parent.parent / "metadados"
 SERIE = "scr_ref2010"
@@ -130,6 +131,10 @@ def per_capita_ne_divergente(c):
     return _com_base(c, lambda b: b.__setitem__("valor", b.valor.where(~_linha(b, "pib_per_capita", "NE", 2002), b.valor * 1.01)))
 
 
+def valor_infinito(c):
+    return _com_base(c, lambda b: b.__setitem__("valor", b.valor.where(~_linha(b, "pib_per_capita", "NE", 2003), float("inf"))))
+
+
 def coleta_id_inexistente(c):
     return _com_base(c, lambda b: b.__setitem__("coleta_id", b.coleta_id.where(b.index != 0, "sidra.nao_registrada")))
 
@@ -157,7 +162,8 @@ def test_base_valida_aprova():
     ("R02", trocar_territorio_por("XX")), ("R03", duplicar_primeira_linha),
     ("R04", valor_nulo_com_tipo_observado), ("R05", ano_antes_do_inicio),
     ("R06", valor_negativo_com_min_zero), ("R07", ne_diferente_da_soma_das_ufs),
-    ("R08", per_capita_ne_divergente), ("R09", coleta_id_inexistente), ("R10", falha_de_ficha)])
+    ("R08", per_capita_ne_divergente), ("R09", coleta_id_inexistente), ("R10", falha_de_ficha),
+    ("R02", valor_infinito)])
 def test_regra_bloqueia(regra, quebra):
     r = validar(**quebra(cenario()))
     assert not r.aprovado and regra in {f.regra for f in r.erros}
@@ -218,3 +224,38 @@ def test_r02_texto_nulo():
         return _com_base(c, lambda b: b.__setitem__("indicador_id", b.indicador_id.where(b.index != 0, None)))
     r = validar(**indicador_nulo(cenario()))
     assert any(f.regra == "R02" and "indicador_id nulo" in f.mensagem for f in r.erros)
+
+
+def test_r08_com_oficial_infinito_bloqueia_sem_warning():
+    assert _diverge(float("inf"), 1.0) and _diverge(1.0, float("-inf")) and _diverge(float("nan"), 1.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        r = validar(**valor_infinito(cenario()))
+    assert "R08" in {f.regra for f in r.erros}
+
+
+def test_base_vazia_bloqueia():
+    c = cenario()
+    r = validar(**{**c, "base": c["base"].iloc[0:0]})
+    assert not r.aprovado and any(f.regra == "R02" and "base sem linhas" in f.mensagem for f in r.erros)
+
+
+def test_r08_denominador_zero_bloqueia():
+    def populacao_ne_zero(c):
+        return _com_base(c, lambda b: b.__setitem__(
+            "valor", b.valor.where(~_linha(b, "populacao_contas_regionais", "NE", 2002), 0.0)))
+    r = validar(**populacao_ne_zero(cenario()))
+    r08 = [f for f in r.erros if f.regra == "R08"]
+    assert len(r08) == 1 and "NE 2002" in r08[0].mensagem
+
+
+def test_infinitos_opostos_nas_ufs_bloqueiam_sem_warning():
+    def ufs_infinitas(c):
+        def ajuste(b):
+            b.loc[_linha(b, "pib_nominal", "MA", 2002), "valor"] = float("inf")
+            b.loc[_linha(b, "pib_nominal", "PI", 2002), "valor"] = float("-inf")
+        return _com_base(c, ajuste)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        r = validar(**ufs_infinitas(cenario()))
+    assert "R02" in {f.regra for f in r.erros}
