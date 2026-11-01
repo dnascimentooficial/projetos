@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import pandas as pd
 import pytest
+from gerar_fixtures import xls_sintetico as montar_xls
 from gerar_fixtures import xlsx_sintetico as montar_xlsx
 
 from nordeste.coletores.registro import Coleta
@@ -195,3 +196,59 @@ def test_coluna_inteira_no_yaml_casa_cabecalho(ficha_planilha, territorios):
     ficha, serie = com_parametros(ficha_planilha, colunas=[{"coluna": 2030, "ano": 2030}])
     with pytest.raises(ErroLayout, match="'2030'"):
         padronizar_planilha(conteudo, ficha, serie, "c1", territorios)
+
+
+# Planilhas .xls (formato antigo do IBGE): mesma tabela de teste, gravada em BIFF8.
+def xls_sintetico() -> bytes:
+    posicoes = range(len(CABECALHO))
+    corpo = [[linha[i] for i in posicoes] for linha in LINHAS]
+    return montar_xls(ABA, [["Indicador sintético"], [], CABECALHO, *corpo])
+
+
+def test_planilha_xls_equivale_ao_xlsx(ficha_planilha, territorios):
+    xlsx = padronizar_planilha(xlsx_sintetico(), ficha_planilha, ficha_planilha.series[0], "c1", territorios)
+    ficha, serie = com_parametros(ficha_planilha, formato="xls")
+    xls = padronizar_planilha(xls_sintetico(), ficha, serie, "c1", territorios)
+    pd.testing.assert_frame_equal(xls, xlsx)
+    assert xls.query("territorio_id == 'CE' and ano == 2019").valor.tolist() == [1234.5]
+
+
+def test_planilha_xls_dentro_de_zip(ficha_planilha, territorios):
+    ficha, serie = com_parametros(ficha_planilha, formato="xls")
+    direto = padronizar_planilha(xls_sintetico(), ficha, serie, "c1", territorios)
+    pacote = io.BytesIO()
+    with zipfile.ZipFile(pacote, "w") as z:
+        z.writestr("tab03.xls", xls_sintetico())
+    ficha, serie = com_parametros(ficha_planilha, formato="xls", arquivo_no_zip="tab03.xls")
+    do_zip = padronizar_planilha(pacote.getvalue(), ficha, serie, "c1", territorios)
+    pd.testing.assert_frame_equal(do_zip, direto)
+
+
+def test_planilha_xls_com_layout_do_ibge(ficha_planilha, territorios):
+    """Tabela 3 das Contas Regionais: canto do cabecalho vazio, anos numericos, nomes recuados."""
+    conteudo = montar_xls("Tabela3", [
+        ["Tabela 3 - Série encadeada do volume"], [], ["Brasil,\nGrandes Regiões", "Série encadeada"],
+        [None, 2002, 2003],
+        ["Brasil", 100, 99999],
+        ["  Nordeste", 100, 101.5],
+        ["    Sergipe", 100, "..."],
+        ["Fonte: IBGE"],
+    ])
+    colunas = [{"coluna": 2002, "ano": 2002}, {"coluna": 2003, "ano": 2003}]
+    ficha, serie = com_parametros(
+        ficha_planilha, formato="xls", aba="Tabela3", linha_cabecalho=4,
+        coluna_territorio="Unnamed: 0", colunas=colunas)
+    df = padronizar_planilha(conteudo, ficha, serie, "c1", territorios)
+    assert df.set_index(["territorio_id", "ano"]).valor.dropna().to_dict() == {
+        ("BR", 2002): 100.0, ("BR", 2003): 99999.0, ("NE", 2002): 100.0, ("NE", 2003): 101.5,
+        ("SE_UF", 2002): 100.0}
+    assert df.query("territorio_id == 'SE_UF' and ano == 2003").tipo_dado.tolist() == ["indisponivel"]
+
+
+def test_planilha_xls_ilegivel_e_erro_de_layout(ficha_planilha, territorios):
+    ficha, serie = com_parametros(ficha_planilha, formato="xls")
+    with pytest.raises(ErroLayout, match="não foi possível ler"):
+        padronizar_planilha(b"isto nao e uma planilha", ficha, serie, "c1", territorios)
+    ficha, serie = com_parametros(ficha_planilha, formato="xls", aba="Outra")
+    with pytest.raises(ErroLayout, match="aba Outra"):
+        padronizar_planilha(xls_sintetico(), ficha, serie, "c1", territorios)

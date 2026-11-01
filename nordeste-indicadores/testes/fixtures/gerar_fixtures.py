@@ -7,6 +7,7 @@ Os valores sao derivados de 99999 e nao representam dado oficial.
 import io
 import json
 import re
+import struct
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -91,6 +92,123 @@ def xlsx_sintetico(aba: str, linhas: list[list]) -> bytes:
     return saida.getvalue()
 
 
+_FIM_DE_CADEIA, _LIVRE = 0xFFFFFFFE, 0xFFFFFFFF
+_TAMANHO_SETOR = 512
+
+
+def _registro_biff(codigo: int, dados: bytes) -> bytes:
+    return struct.pack("<HH", codigo, len(dados)) + dados
+
+
+def _texto_biff(texto: str, tamanho_bytes: int) -> bytes:
+    """String Unicode do BIFF8 (UTF-16, sem compressao); o tamanho vem em 1 ou 2 bytes."""
+    prefixo = struct.pack("<B" if tamanho_bytes == 1 else "<H", len(texto))
+    return prefixo + b"\x01" + texto.encode("utf-16-le")
+
+
+def _fluxo_biff8(aba: str, linhas: list[list]) -> bytes:
+    """Fluxo `Workbook` minimo: globais com uma aba e as celulas de texto e numero da planilha."""
+    def bof(tipo: int) -> bytes:
+        return _registro_biff(0x0809, struct.pack("<HHHHII", 0x0600, tipo, 0x0DBB, 0x07CC, 0, 6))
+
+    nome = _texto_biff(aba, 1)
+    tamanho_globais = len(bof(0x0005)) + 6 + (4 + 4 + 2 + len(nome)) + 4  # BOF, CODEPAGE, ABA, EOF
+    celulas = b""
+    for i, linha in enumerate(linhas):
+        for j, valor in enumerate(linha):
+            if valor is None:
+                continue
+            if isinstance(valor, str):
+                celulas += _registro_biff(0x0204, struct.pack("<HHH", i, j, 0) + _texto_biff(valor, 2))
+            else:
+                celulas += _registro_biff(0x0203, struct.pack("<HHHd", i, j, 0, float(valor)))
+    return (
+        bof(0x0005) + _registro_biff(0x0042, struct.pack("<H", 1200))
+        + _registro_biff(0x0085, struct.pack("<IH", tamanho_globais, 0) + nome)
+        + _registro_biff(0x000A, b"")
+        + bof(0x0010) + celulas + _registro_biff(0x000A, b"")
+    )
+
+
+def _entrada_diretorio(nome: str, tipo: int, filho: int, inicio: int, tamanho: int) -> bytes:
+    codificado = nome.encode("utf-16-le")
+    return (
+        codificado.ljust(64, b"\0") + struct.pack("<HBB", len(codificado) + 2 if nome else 0, tipo, 1)
+        + struct.pack("<III", _LIVRE, _LIVRE, filho) + bytes(16 + 4 + 8 + 8)
+        + struct.pack("<IQ", inicio, tamanho)
+    )
+
+
+def xls_sintetico(aba: str, linhas: list[list]) -> bytes:
+    """Monta um .xls (BIFF8 em contêiner OLE2) com uma aba; `linhas` como em `xlsx_sintetico`.
+
+    Escritor minimo, so com texto e numero, para nao depender de uma biblioteca de escrita de .xls.
+    O fluxo e completado a ao menos 4096 bytes para dispensar o mini-fluxo do OLE2; sem datas: bytes estaveis.
+    """
+    fluxo = _fluxo_biff8(aba, linhas)
+    setores = max(-(-len(fluxo) // _TAMANHO_SETOR), 4096 // _TAMANHO_SETOR)  # o diretorio vem depois, depois a FAT
+    fluxo = fluxo.ljust(setores * _TAMANHO_SETOR, b"\0")
+    fat = 1
+    while fat * 128 < setores + 1 + fat:
+        fat += 1
+    diretorio = setores
+    tabela = [*range(1, setores), _FIM_DE_CADEIA, _FIM_DE_CADEIA]  # fluxo, depois o diretorio
+    tabela += [0xFFFFFFFD] * fat  # setores da propria FAT
+    tabela += [_LIVRE] * (fat * 128 - len(tabela))
+    cabecalho = (
+        bytes.fromhex("D0CF11E0A1B11AE1") + bytes(16) + struct.pack("<HHHHH", 0x3E, 3, 0xFFFE, 9, 6)
+        + bytes(6) + struct.pack("<IIIIIIIII", 0, fat, diretorio, 0, 4096, _FIM_DE_CADEIA, 0, _FIM_DE_CADEIA, 0)
+        + b"".join(struct.pack("<I", diretorio + 1 + k) for k in range(fat))
+    ).ljust(_TAMANHO_SETOR, b"\xff")
+    entradas = (
+        _entrada_diretorio("Root Entry", 5, 1, _FIM_DE_CADEIA, 0)
+        + _entrada_diretorio("Workbook", 2, _LIVRE, 0, len(fluxo))
+        + _entrada_diretorio("", 0, _LIVRE, 0, 0) * 2
+    )
+    return cabecalho + fluxo + entradas + struct.pack(f"<{len(tabela)}I", *tabela)
+
+
+# Linhas da Tabela 3 das Contas Regionais (tab03.xls): Brasil e regioes com nome recuado por espacos,
+# cada regiao seguida das suas UFs, como no arquivo do IBGE.
+_LINHAS_TABELA3 = [
+    "          Brasil",
+    "          Norte", "Rondônia", "Acre", "Amazonas", "Roraima", "Pará", "Amapá", "Tocantins",
+    "          Nordeste", "Maranhão", "Piauí", "Ceará", "Rio Grande do Norte", "Paraíba",
+    "Pernambuco", "Alagoas", "Sergipe", "Bahia",
+    "          Sudeste", "Minas Gerais", "Espírito Santo", "Rio de Janeiro", "São Paulo",
+    "          Sul", "Paraná", "Santa Catarina", "Rio Grande do Sul",
+    "          Centro-Oeste", "Mato Grosso do Sul", "Mato Grosso ", "Goiás", "Distrito Federal",
+]
+
+
+def zip_com_um_arquivo(nome: str, conteudo: bytes) -> bytes:
+    """Zip com um unico arquivo, com data fixa: a mesma entrada gera sempre os mesmos bytes."""
+    saida = io.BytesIO()
+    with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as pacote:
+        item = zipfile.ZipInfo(nome, date_time=(2026, 1, 1, 0, 0, 0))
+        item.compress_type = zipfile.ZIP_DEFLATED
+        pacote.writestr(item, conteudo)
+    return saida.getvalue()
+
+
+def zip_tabela3_volume() -> bytes:
+    """Especiais_2002_2023_xls.zip sintetico: so tab03.xls, no layout real (anos na 4a linha, 2002-2023).
+
+    Todo valor e 99999: o indice de cada territorio nao soma nem se compoe com os demais.
+    """
+    anos = list(ANOS)
+    linhas = [
+        ["Tabela 3 - Série encadeada do volume do Produto Interno Bruto (sintético)"],
+        [],
+        ["Brasil, Grandes Regiões\ne\nUnidades da Federação",
+         "Série encadeada do volume do Produto Interno Bruto (base:2002 = 100)"],
+        [None, *anos],
+        *([nome, *[BASE] * len(anos)] for nome in _LINHAS_TABELA3),
+        ["Fonte: IBGE, em parceria com os Órgãos Estaduais de Estatística (sintético)."],
+    ]
+    return zip_com_um_arquivo("tab03.xls", xls_sintetico("Tabela3", linhas))
+
+
 def json_ipeadata(registros: list[tuple]) -> dict:
     """Monta a resposta OData do Ipeadata; cada registro e (NIVNOME, TERCODIGO, VALDATA, VALVALOR)."""
     return {"value": [
@@ -125,6 +243,7 @@ GERADORES = {
         "População (sintético)", "99998", "Pessoas", _soma),
     "pib_per_capita/scr_ref2010.json": lambda: json_sidra(
         "PIB per capita (sintético)", "99997", "Reais", _per_capita),
+    "pib_volume/scr_ref2010.zip": zip_tabela3_volume,
     "pib_participacao/scr_ref2010.json": lambda: json_sidra(
         "Participação do PIB no PIB do Brasil (sintético)", "2", "%", _participacao),
     "populacao/estimativa_pre_censo2022.json": lambda: json_sidra(

@@ -1,4 +1,4 @@
-"""Padronizador de planilhas (xlsx ou csv, opcionalmente dentro de um zip) com um ano por coluna."""
+"""Padronizador de planilhas (xlsx, xls ou csv, opcionalmente dentro de um zip) com um ano por coluna."""
 
 import io
 import math
@@ -16,6 +16,7 @@ from nordeste.territorios import territorio_por_nome
 _AUSENTES = frozenset({"", "-", "--", "...", "…", "x", "n/d"})
 _MILHAR_BR = re.compile(r"-?\d{1,3}(\.\d{3})+(,\d+)?")
 _NOTA_NO_NOME = re.compile(r"\s*(\(\d+\)|\*+)$")
+_MOTOR_EXCEL = {"xlsx": "openpyxl", "xls": "xlrd"}
 
 
 def numero_br(texto) -> float | None:
@@ -69,9 +70,10 @@ def _ler_tabela(conteudo: bytes, parametros: dict, onde: str) -> pd.DataFrame:
     formato = parametros.get("formato", "xlsx")
     puladas = parametros.get("linha_cabecalho", 1) - 1  # linhas de titulo antes do cabecalho
     try:
-        if formato == "xlsx":
+        if formato in _MOTOR_EXCEL:
             tabela = pd.read_excel(
-                io.BytesIO(conteudo), sheet_name=parametros["aba"], header=puladas, dtype=object)
+                io.BytesIO(conteudo), sheet_name=parametros["aba"], header=puladas, dtype=object,
+                engine=_MOTOR_EXCEL[formato])
         elif formato == "csv":
             tabela = pd.read_csv(
                 io.BytesIO(conteudo), sep=parametros.get("separador", ";"),

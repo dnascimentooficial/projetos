@@ -17,6 +17,7 @@ TERRITORIOS_COMPLETOS = {
 FICHAS_PARTE_A = {
     "populacao", "pib_participacao", "pib_nominal", "pib_per_capita", "populacao_contas_regionais",
 }
+FICHAS_COMPLETAS = FICHAS_PARTE_A | {"pib_volume"}  # as que trazem os 15 territorios em todo ano
 HOJE = ["--hoje", "2026-11-01"]
 DICIONARIO = Path(__file__).resolve().parent.parent / "docs" / "dicionario-verificacao.md"
 URL_DO_COLETOR = {"sidra": url_sidra, "ipeadata": url_ipeadata, "arquivo": url_arquivo}
@@ -41,7 +42,7 @@ def base(projeto_completo):
 
 
 def test_fichas_da_parte_a_existem(fichas):
-    assert FICHAS_PARTE_A <= set(fichas)
+    assert FICHAS_COMPLETAS <= set(fichas)
 
 
 def test_toda_serie_tem_exatamente_uma_fixture(projeto_completo, fichas):
@@ -101,7 +102,7 @@ def test_series_de_populacao_nao_se_sobrepoem(fichas):
 
 def test_base_offline_tem_os_15_territorios_em_cada_ano_de_cada_serie(base, fichas):
     for f, s in _series(fichas):
-        if f.id not in FICHAS_PARTE_A:
+        if f.id not in FICHAS_COMPLETAS:
             continue
         linhas = base[(base.indicador_id == f.id) & (base.serie_id == s.id)
                       & (base.territorio_id != "BR_FORA_NE")]
@@ -154,3 +155,34 @@ def test_ensaio_do_dicionario_inteiro_so_e_barrado_pela_r01(projeto_completo, ca
     assert not projeto_completo.base.exists()
     pendencias = pd.read_csv(projeto_completo.trabalho / "pendencias.csv", keep_default_na=False)
     assert pendencias.empty
+
+
+def test_pib_volume_le_a_tabela3_do_zip_de_xls_do_ibge(fichas):
+    f = fichas["pib_volume"]
+    s = f.serie("scr_ref2010")
+    assert (s.inicio, s.fim, s.coletor, s.verificado) == (2002, 2023, "arquivo", True)
+    p = s.parametros
+    assert p["url"].endswith("/Contas_Regionais/2023/xls/Especiais_2002_2023_xls.zip")
+    assert (p["padronizador"], p["formato"], p["arquivo_no_zip"], p["aba"]) == (
+        "planilha", "xls", "tab03.xls", "Tabela3")
+    assert p["linha_cabecalho"] == 4
+    assert [c["ano"] for c in p["colunas"]] == list(range(2002, 2024))
+    assert all(c["coluna"] == c["ano"] for c in p["colunas"])
+
+
+def test_pib_volume_compara_com_o_brasil_porque_nao_ha_pib_a_precos_do_ano_anterior(fichas):
+    f = fichas["pib_volume"]
+    assert f.comparacao.referencia == "brasil" and f.comparacao.metodo is None
+    assert f.tratamento_monetario is None and not f.auxiliar
+
+
+def test_pib_volume_offline_vem_do_xls_sintetico_sem_brasil_fora_ne(base):
+    v = base[base.indicador_id == "pib_volume"]
+    assert set(v.tipo_dado) == {"observado"} and set(v.valor) == {99999.0}
+    assert "BR_FORA_NE" not in set(v.territorio_id)
+    assert len(v) == 15 * 22  # as 27 UFs do arquivo ficam so as 9 do Nordeste, mais BR e as 5 regioes
+
+
+def test_series_sem_fonte_legivel_seguem_nao_verificadas(fichas):
+    for ficha, serie in (("pib_per_capita", "scr_ref2010"), ("populacao_contas_regionais", "scr_ref2010")):
+        assert not fichas[ficha].serie(serie).verificado

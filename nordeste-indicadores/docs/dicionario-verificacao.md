@@ -16,7 +16,7 @@ Observação sobre a página de descrição das tabelas do SIDRA
 consultada. Variáveis e classificações foram lidas nos cabeçalhos e nos valores devolvidos pela API
 de valores (`/values/t/<tabela>/.../v/all`), que é a própria fonte dos dados.
 
-Bloco IBGE, parte A (população e PIB). Data de todas as verificações: 2026-11-01.
+Bloco IBGE, partes A (população e PIB) e C (`pib_volume`, planilha `.xls`). Data de todas as verificações: 2026-11-01.
 
 Reverificação de ponta a ponta, na mesma data, por outro executor: `python -m nordeste --raiz <tmp> coletar --indicador <id>`
 (rede, só séries `verificado: true`), `consolidar` e `validar` sobre `populacao`, `pib_nominal` e `pib_participacao`.
@@ -36,7 +36,7 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `populacao` | `censo_2022` | SIDRA 4709, v93 | 2022 | sim |
 | `populacao_contas_regionais` (auxiliar) | `scr_ref2010` | não encontrada | | não |
 | `pib_per_capita` | `scr_ref2010` | não encontrada | | não |
-| `pib_volume` | `scr_ref2010` | arquivo `.xls` do IBGE | 2002 a 2023 (no arquivo) | ficha não criada |
+| `pib_volume` | `scr_ref2010` | `tab03.xls` (aba `Tabela3`) de `Especiais_2002_2023_xls.zip` | 2002 a 2023 | sim |
 
 ## pib_nominal / scr_ref2010
 
@@ -118,24 +118,59 @@ Conclusão: o denominador das Contas Regionais para 2002 a 2022 não está publi
 
 O PIB per capita por Brasil, região e UF não existe em nenhuma tabela SIDRA consultada (5938 não tem a variável) nem nas planilhas das Contas Regionais; só aparece nos informativos em PDF. Busca nos 4.075 metadados do Ipeadata (nome com "PIB"): sem PIB per capita corrente por região e UF. O Ipeadata tem `PIBPCE` (PIB estadual per capita a preços de 2010, só UFs) e `GAC_PIBCAPN` (só Brasil), que não servem à ficha (valores correntes, todos os territórios). `verificado: false`, `parametros: {}`.
 
-## pib_volume (ficha não criada)
+## pib_volume / scr_ref2010
 
-- Fonte oficial confirmada: `https://ftp.ibge.gov.br/Contas_Regionais/2023/xls/Especiais_2002_2023_xls.zip`, arquivo `tab03.xls`, aba `Tabela3`: "Série encadeada do volume do Produto Interno Bruto, segundo Brasil, Grandes Regiões e Unidades da Federação" (base 2002 = 100).
-- Conteúdo conferido (lido com `xlrd` fora do projeto): 22 colunas de ano (2002 a 2023) e 33 linhas de território (Brasil, 5 regiões, 27 UFs, nomes com espaços à esquerda), título nas 3 primeiras linhas, anos na linha 4. Brasil 2023 = 158,20; Nordeste 2023 = 163,40.
-- Bloqueio: o arquivo é `.xls` (formato antigo), e o IBGE publica só `.xls` e `.ods` nessa pasta. O padronizador `planilha` lê `xlsx` e `csv`, e a única dependência que lê `.xls` (`xlrd`) está fora da lista permitida. A tabela 5938 e as demais do SIDRA não trazem o índice de volume regional.
-- Alternativa descartada: Ipeadata `PIBE` (PIB estadual a preços de 2010). Reproduz o índice oficial para o Brasil (158,198 contra 158,198), mas não para o Nordeste (167,13 contra 163,40 em 2023) nem para as UFs (Bahia 2010: 138,14 contra 140,13). Usá-la seria publicar um índice diferente do oficial.
-- Comparação (decidida pela pesquisa): `brasil`. O IBGE não publica o PIB a preços do ano anterior por região; a aba de Conta da Produção traz "valor do ano anterior" só para valor bruto da produção, consumo intermediário e valor adicionado bruto (VAB), não para o PIB, então `razao_encadeada` com PIB a preços do ano anterior não é possível com o publicado.
-- Pasta do IBGE conferida: `xls/` e `ods/` (e só elas) em `https://ftp.ibge.gov.br/Contas_Regionais/2023/`; nenhum `.xlsx` nem `.csv`. O índice de volume do PIB por região também não está no SIDRA (5938, 21 e 6784 sem essa variável; a 6784 é só Brasil).
-- Parâmetros que a ficha teria, quando houver leitor de `.xls` (não escritos na ficha: sem fixture legível, `coletar --offline` quebraria):
-  `coletor: arquivo`, `url: https://ftp.ibge.gov.br/Contas_Regionais/2023/xls/Especiais_2002_2023_xls.zip`, `padronizador: planilha`,
-  `arquivo_no_zip: tab03.xls`, `aba: Tabela3`, linha de anos na 4ª linha da aba (`linha_cabecalho: 4`), 22 `colunas` (2002 a 2023).
-  Cobertura de territórios do arquivo: 33 linhas (Brasil, 5 regiões e 27 UFs), com nomes recuados por espaços (o padronizador tira os espaços).
-- Pendente de decisão: ler `.xls` (dependência `xlrd` e `formato: xls` no padronizador `planilha`) ou obter o arquivo em outro formato.
+Bloco IBGE, parte C (Tarefa 14c). Data da verificação: 2026-11-01.
+
+- Página oficial: https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9054-contas-regionais-do-brasil.html
+- URL de coleta: `https://ftp.ibge.gov.br/Contas_Regionais/2023/xls/Especiais_2002_2023_xls.zip` (388.533 bytes; `Last-Modified` do servidor: 17/11/2025; sha256 `75281f8f40113cf947aa1ccd22892f50b76d937a918c4bfd43aa0ef4fa85d97b`).
+- Arquivo no zip: `tab03.xls` (o zip tem `tab01.xls` a `tab07.xls`), aba `Tabela3`: "Série encadeada do volume do Produto Interno Bruto, segundo Brasil, Grandes Regiões e Unidades da Federação - 2002-2023", com o cabeçalho "(base:2002 = 100)".
+- Layout: título na linha 1, cabeçalho de colunas na linha 4 (`linha_cabecalho: 4`), 22 colunas de ano (2002 a 2023) a partir da segunda coluna, 33 linhas de território logo abaixo (Brasil, 5 regiões e 27 UFs) e nota de fonte na última linha. A célula do canto do cabeçalho é vazia, por isso o pandas a nomeia `Unnamed: 0` (é o valor de `coluna_territorio` na ficha). O Brasil e as regiões vêm com o nome recuado por espaços (o padronizador tira) e "Mato Grosso " tem espaço no fim.
+- Formato `.xls` (BIFF8): lido por `padronizar_planilha` com `formato: xls` (pandas + `xlrd`, dependência acrescentada na Tarefa 14c).
+- Método: o coletor do projeto (`python -m nordeste --raiz <tmp> coletar --indicador pib_volume`, com a URL montada a partir da ficha) baixou o zip; `consolidar` e `validar` sobre ele saíram com código 0, sem nenhuma linha em `validacao.csv`.
+- Obtido: 330 linhas = 22 anos (2002 a 2023) x 15 territórios (BR, N, NE, SE, S, CO e as 9 UFs do Nordeste), todas `observado`, nenhuma indisponível. As outras 18 UFs do arquivo não casam com os territórios do projeto e são descartadas.
+- Exemplo (2023): Brasil 158,1977; Nordeste 163,3951; Bahia 149,7738; 2002 vale 100 em todos os territórios.
+- Unidade e tratamento: índice de volume encadeado, 2002 = 100 em cada território. A tabela não traz variação anual em %, só o índice. Sem valor monetário (`tratamento_monetario` ausente). Cada território tem a sua base 2002 = 100: o nível do índice não compara territórios, só a evolução.
+- Comparação: `brasil` (razão NE/BR dos índices = crescimento acumulado do Nordeste frente ao do país desde 2002). Não há "Brasil fora do Nordeste": o IBGE não publica o PIB a preços do ano anterior por região. A aba de Conta da Produção traz "valor do ano anterior" só para valor bruto da produção, consumo intermediário e valor adicionado bruto (VAB), não para o PIB, e uma varredura das 1.056 abas dos quatro zips `xls` da publicação (`Especiais_2002_2023`, `Especiais_2010_2023`, `Conta_da_Producao_2002_2023`, `Conta_da_Producao_2010_2023`) não achou PIB a preços do ano anterior.
+- Alternativa descartada (da 14A): Ipeadata `PIBE` (PIB estadual a preços de 2010) reproduz o índice oficial só para o Brasil; para o Nordeste (167,13 contra 163,40 em 2023) e para as UFs diverge do oficial.
+
+## populacao_contas_regionais / scr_ref2010 (não verificada)
+
+A ficha supõe uma população "das Contas Regionais" como denominador do PIB per capita. Procurado em:
+
+- SIDRA 5938 e 21 (Contas Regionais): nenhuma variável de população ou de per capita.
+- Planilhas das Contas Regionais 2023, pasta `https://ftp.ibge.gov.br/Contas_Regionais/2023/` (só `xls/` e `ods/`, com os mesmos quatro pacotes `Especiais_2002_2023`, `Especiais_2010_2023`, `Conta_da_Producao_2002_2023` e `Conta_da_Producao_2010_2023` e os respectivos `*_indice_das_tabelas.txt`): na 14c, as 1.056 abas dos quatro zips `xls` foram varridas por "capita", "popula" e "habitant" e não há ocorrência. Os índices de tabelas (Especiais: PIB corrente, participação, volume, VAB, volume do VAB por atividade, participação do VAB por atividade) também não listam população nem per capita.
+- Outras publicações no FTP: as pastas de 2022, 2018 e 2016 trazem os mesmos pacotes (`Especiais_*`, `Conta_da_Producao_*`; 2018 e 2016 também `PIB_Otica_da_Renda.xlsx`, não aberto, que é a ótica da renda); a de 2013 tem `tab001.xls` a `tab007.xls` e `PIB_Regional_BR.xls`, abertos e sem ocorrência de "capita" nem "popula". São divulgações de outras revisões, não do vintage 2023, e não serviriam de série.
+- SIDRA 6579, 202, 4709: têm população, mas nenhuma tabela traz todos os anos de 2002 a 2023 numa só série (faltam 2007, 2010, 2022 e 2023 nas estimativas).
+- Ipeadata `POP_PROJE` (projeção IBGE, revisão 2024) cobre todos os anos de 1980 a 2070 para Brasil, regiões e UFs, mas não é a população que o IBGE usou: com ela, PIB per capita do Brasil em 2023 sai R$ 51.693,88 contra R$ 53.886,67 publicado pelo IBGE (diferença de cerca de 4%).
+
+Achado que ajuda a explicar a diferença, sem resolver a série: o PIB per capita do Brasil em 2023 publicado pelo IBGE
+(R$ 53.886,67, segundo a matéria "PIB cresce em todos os 27 estados do país em 2023", Agência de Notícias do IBGE, achada por
+busca e não baixada) é exatamente o PIB de 2023 da tabela 5938 (v37, R$ 10.943.345.439 mil) dividido pela população do
+Censo 2022 (tabela 4709, 203.080.756): 53.886,67. Ou seja, nas Contas Regionais 2023 o denominador de 2023 é a contagem do
+Censo 2022, e não a estimativa de 2023 (que o IBGE não publicou na 6579). Conferido só para o Brasil e só para 2023.
+A SIDRA 6784 (Contas Nacionais anuais, só nível Brasil) traz população (211.695 mil em 2023) e PIB per capita
+(R$ 51.693,92), mas é outro denominador e não tem região nem UF.
+
+Conclusão: o denominador das Contas Regionais para 2002 a 2022 não está publicado numa série legível por máquina
+(hipótese não confirmada: contagens e estimativas oficiais de cada ano). `verificado: false`, `parametros: {}`.
+
+Alternativas, não implementadas (decisão do controlador):
+
+1. Denominador montado das tabelas SIDRA de população já verificadas (`populacao`): 6579 nos anos de estimativa, 202 em 2000 e 2010 (Censo) e 4709 em 2022 e 2023 (a hipótese acima, conferida só para o Brasil em 2023). Fica sem valor 2007 (a 6579 não tem o ano) e exigiria uma série nova, com limite declarado na ficha.
+2. Ipeadata `POP_PROJE` como denominador, assumindo diferença de cerca de 4% do PIB per capita oficial; série nova e não igual à do IBGE.
+3. Ipeadata `PIBPCE` (PIB estadual per capita a preços de 2010), só UFs, outra unidade; não cobre Brasil e regiões.
+4. Transcrever o PIB per capita dos informativos em PDF do IBGE (não é legível por máquina; sem URL estável de dados).
+5. Tirar o PIB per capita desta entrega e manter `pib_nominal` e `populacao` como insumos.
+
+## pib_per_capita / scr_ref2010 (não verificada)
+
+O PIB per capita por Brasil, região e UF não existe em nenhuma tabela SIDRA consultada (5938 não tem a variável) nem nas planilhas das Contas Regionais (varredura da 14c descrita em `populacao_contas_regionais`); só aparece nos informativos em PDF. Busca nos 4.075 metadados do Ipeadata (nome com "PIB"): sem PIB per capita corrente por região e UF. O Ipeadata tem `PIBPCE` (PIB estadual per capita a preços de 2010, só UFs) e `GAC_PIBCAPN` (só Brasil), que não servem à ficha (valores correntes, todos os territórios). A ficha calcula a razão `pib_nominal` ÷ `populacao_contas_regionais` x 1000, e o denominador não existe (ver a seção anterior e as alternativas). `verificado: false`, `parametros: {}`.
 
 ## Divergências em relação à seção 4 da spec
 
 1. `populacao`: "estimativas e censos IBGE, 2000+" virou quatro séries (`estimativa_pre_censo2022`, `estimativa_pos_censo2022`, `censo_2000_2010`, `censo_2022`). O ano 2000 só existe como Censo; 2007, 2010, 2022 (nas estimativas) e 2023 (em nenhuma fonte) ficam sem valor.
-2. `pib_volume`: série confirmada na fonte (2002 a 2023), mas a ficha não foi criada porque o arquivo é `.xls`; comparação seria `brasil`, não `brasil_fora_ne`.
-3. `pib_per_capita`: a fonte não publica o PIB per capita por território em formato legível; a ficha segue sem verificação.
-4. `populacao_contas_regionais`: o denominador do IBGE não é legível por máquina; a ficha segue sem verificação.
+2. `pib_volume`: série confirmada na fonte (2002 a 2023, 15 territórios, `Especiais_2002_2023_xls.zip`/`tab03.xls`), lida com o novo formato `xls`; a comparação é `brasil`, não `brasil_fora_ne` (spec admite: "senão Brasil"). A fonte traz o índice encadeado 2002 = 100 de cada território, sem variação anual em %.
+3. `pib_per_capita`: a fonte não publica o PIB per capita por território em formato legível (varridas as 1.056 abas das planilhas de 2023); a ficha segue sem verificação.
+4. `populacao_contas_regionais`: o denominador do IBGE não está publicado em nenhum arquivo da publicação Contas Regionais 2023; a ficha segue sem verificação (alternativas listadas na seção da série).
 5. `pib_participacao`: sem divergência (2002 a 2023, comparação `nenhuma`).

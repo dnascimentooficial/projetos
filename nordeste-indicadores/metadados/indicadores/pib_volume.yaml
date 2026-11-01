@@ -1,0 +1,72 @@
+id: pib_volume
+nome: PIB real (índice de volume)
+descricao: >-
+  Índice de volume do Produto Interno Bruto, em série encadeada com 2002 = 100,
+  por Brasil, região e unidade da federação. Mostra o crescimento real da
+  economia, sem o efeito dos preços.
+eixo: economia
+categoria: renda
+unidade: índice (2002 = 100)
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Série encadeada do volume do PIB do Sistema de Contas Regionais do IBGE,
+  referência 2010, com 2002 igual a 100 em todos os territórios (Tabela 3 das
+  tabelas especiais das Contas Regionais). Cada território tem a sua própria
+  base 2002 = 100; o índice mede a evolução dentro do território e não permite
+  comparar o nível do PIB entre territórios.
+observacoes: >-
+  Sem Brasil fora do Nordeste: o IBGE não publica o PIB a preços do ano anterior
+  por região, então o índice não pode ser recomposto sem o Nordeste e a
+  comparação é com o Brasil. Como todos os índices partem de 100 em 2002, a
+  razão com o Brasil mede o crescimento acumulado do Nordeste em relação ao
+  do país desde 2002. Os dados mais recentes costumam ser revisados na
+  divulgação seguinte.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 23
+comparacao:
+  referencia: brasil
+series:
+  - id: scr_ref2010
+    inicio: 2002
+    fim: 2023
+    fonte: IBGE, Sistema de Contas Regionais (referência 2010)
+    base_origem: Tabelas especiais das Contas Regionais 2002-2023, Tabela 3 (arquivo tab03.xls)
+    url: https://ftp.ibge.gov.br/Contas_Regionais/2023/xls/Especiais_2002_2023_xls.zip
+    coletor: arquivo
+    parametros:
+      url: https://ftp.ibge.gov.br/Contas_Regionais/2023/xls/Especiais_2002_2023_xls.zip
+      padronizador: planilha
+      formato: xls
+      arquivo_no_zip: tab03.xls
+      aba: Tabela3
+      linha_cabecalho: 4
+      coluna_territorio: "Unnamed: 0"
+      colunas:
+        - {coluna: 2002, ano: 2002}
+        - {coluna: 2003, ano: 2003}
+        - {coluna: 2004, ano: 2004}
+        - {coluna: 2005, ano: 2005}
+        - {coluna: 2006, ano: 2006}
+        - {coluna: 2007, ano: 2007}
+        - {coluna: 2008, ano: 2008}
+        - {coluna: 2009, ano: 2009}
+        - {coluna: 2010, ano: 2010}
+        - {coluna: 2011, ano: 2011}
+        - {coluna: 2012, ano: 2012}
+        - {coluna: 2013, ano: 2013}
+        - {coluna: 2014, ano: 2014}
+        - {coluna: 2015, ano: 2015}
+        - {coluna: 2016, ano: 2016}
+        - {coluna: 2017, ano: 2017}
+        - {coluna: 2018, ano: 2018}
+        - {coluna: 2019, ano: 2019}
+        - {coluna: 2020, ano: 2020}
+        - {coluna: 2021, ano: 2021}
+        - {coluna: 2022, ano: 2022}
+        - {coluna: 2023, ano: 2023}
+    compatibilidade: >-
+      Não comparável com a série de referência 2002 (anos 2000 a 2001):
+      mudança de base metodológica e de classificações.
+    verificado: true

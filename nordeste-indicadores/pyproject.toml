@@ -13,6 +13,7 @@ dependencies = [
     "pyyaml",
     "requests",
     "openpyxl",
+    "xlrd",
 ]
 
 [project.optional-dependencies]
