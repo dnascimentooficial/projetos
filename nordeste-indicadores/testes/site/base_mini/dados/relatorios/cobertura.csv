@@ -1,0 +1,6 @@
+indicador_id,serie_id,territorio_id,primeiro_ano,ultimo_ano,anos_faltantes,proxima_publicacao
+alfa,s_antiga,NE,2011,2012,,
+alfa,s_nova,NE,2012,2013,,2027-03
+alfa,s_nova,BR,2012,2013,,2027-03
+beta,s_unica,NE,2011,2013,2012,2028-05
+beta,s_unica,BR,2011,2013,,2028-05

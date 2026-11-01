@@ -1,0 +1,26 @@
+id: beta
+nome: Indicador Beta
+descricao: Indicador de teste do site.
+eixo: teste
+categoria: teste
+unidade: pontos
+orgao: Órgão de teste
+periodicidade: anual
+metodologia: Metodologia de teste.
+observacoes: Sem observações.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 12
+comparacao:
+  referencia: brasil
+series:
+  - id: s_unica
+    inicio: 2011
+    fim: null
+    fonte: Fonte de teste
+    base_origem: Planilha de teste
+    url: https://exemplo.invalido/s_unica
+    coletor: arquivo
+    parametros: {}
+    compatibilidade: Série de teste, não comparável com as demais.
+    verificado: true

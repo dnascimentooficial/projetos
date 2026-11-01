@@ -1,0 +1,4 @@
+coleta_id,indicador_id,serie_id,url,data_coleta,sha256,origem,arquivo
+alfa.s_antiga.2026-02-10,alfa,s_antiga,https://exemplo.invalido/a1,2026-02-10,0000000000000000000000000000000000000000000000000000000000000000,fixture,dados/brutos/alfa/s_antiga/a1.json
+alfa.s_nova.2026-10-25,alfa,s_nova,https://exemplo.invalido/a2,2026-10-25,1111111111111111111111111111111111111111111111111111111111111111,fixture,dados/brutos/alfa/s_nova/a2.json
+beta.s_unica.2026-05-10,beta,s_unica,https://exemplo.invalido/b,2026-05-10,2222222222222222222222222222222222222222222222222222222222222222,fixture,dados/brutos/beta/s_unica/b.json

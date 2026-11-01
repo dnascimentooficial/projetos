@@ -1,0 +1,10 @@
+indicador_id,subindicador,etapa,rede,metrica,referencia,territorio_id,ano,valor,serie_id
+alfa,,,total,razao,BR,NE,2011,0.5,s_antiga
+alfa,,,total,razao,BR,NE,2012,0.6,s_antiga
+alfa,,,total,razao,BR,NE,2012,0.65,s_nova
+alfa,,,total,razao,BR,NE,2013,0.75,s_nova
+alfa,,,total,razao,BR,BA,2011,1.5,s_antiga
+alfa,,,total,razao,BR,BA,2012,1.6,s_antiga
+alfa,,,total,razao,BR,BA,2012,1.65,s_nova
+alfa,,,total,razao,BR,BA,2013,1.75,s_nova
+alfa,,,total,diferenca,BR,NE,2013,-9.5,s_nova

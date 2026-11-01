@@ -1,0 +1,36 @@
+id: alfa
+nome: Indicador Alfa
+descricao: Indicador de teste do site.
+eixo: teste
+categoria: teste
+unidade: pontos
+orgao: Órgão de teste
+periodicidade: anual
+metodologia: Metodologia de teste.
+observacoes: Sem observações.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 12
+comparacao:
+  referencia: brasil
+series:
+  - id: s_antiga
+    inicio: 2011
+    fim: 2012
+    fonte: Fonte de teste
+    base_origem: Planilha de teste
+    url: https://exemplo.invalido/s_antiga
+    coletor: arquivo
+    parametros: {}
+    compatibilidade: Série de teste, não comparável com as demais.
+    verificado: true
+  - id: s_nova
+    inicio: 2012
+    fim: null
+    fonte: Fonte de teste
+    base_origem: Planilha de teste
+    url: https://exemplo.invalido/s_nova
+    coletor: arquivo
+    parametros: {}
+    compatibilidade: Série de teste, não comparável com as demais.
+    verificado: true
