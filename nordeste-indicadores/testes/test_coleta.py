@@ -10,8 +10,9 @@ import certifi
 import pytest
 import requests
 
+from nordeste.caminhos import Caminhos
 from nordeste.coletores import ErroColeta, coletar_serie
-from nordeste.coletores.http import baixar
+from nordeste.coletores.http import baixar, baixar_para_arquivo
 from nordeste.coletores.registro import Coleta, ler_registro, registrar, ultima_coleta
 from nordeste.coletores.sidra import url_sidra
 
@@ -19,11 +20,23 @@ HOJE = date(2026, 11, 1)
 
 
 class RespostaFalsa:
+    """Dublê de requests.Response, com leitura inteira (`content`) ou em blocos (`iter_content`, com stream=True)."""
+
     def __init__(self, conteudo: bytes):
         self.content = conteudo
 
     def raise_for_status(self):
         pass
+
+    def iter_content(self, chunk_size=1):
+        for inicio in range(0, len(self.content), chunk_size):
+            yield self.content[inicio:inicio + chunk_size]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *erro):
+        return False
 
 
 class SessaoFalsa:
@@ -373,7 +386,7 @@ def test_coletor_com_partes_baixa_cada_url_uma_vez_e_grava_um_pacote_por_serie(p
 
 
 def test_coletor_com_partes_falha_na_segunda_url_sem_arquivo_nem_registro(projeto, fichas, monkeypatch):
-    monkeypatch.setattr("nordeste.coletores.baixar", partial(baixar, esperar=lambda s: None))
+    monkeypatch.setattr("nordeste.coletores.baixar_para_arquivo", partial(baixar_para_arquivo, esperar=lambda s: None))
     f, s = _serie_com_partes(fichas)
     sessao = SessaoPorUrl({URL_UFS: b"zip das ufs"}, falham=[URL_BRASIL])
     with pytest.raises(ErroColeta, match="brasil.zip"):
@@ -405,7 +418,7 @@ def test_pacote_de_partes_e_deterministico_e_rejeita_conteudo_estranho():
         ler_pacote(b"nao e zip")
 
 
-SHA256_PACOTE_PEQUENO = "4bd4e45c6436351c2292411877920a4554b02361a878a0e4f2bd7d61db73edf1"
+SHA256_PACOTE_PEQUENO = "1cd59888a513a6e42c4e517f93b406bf55c73017beb803b712ab1baee0e5f43f"
 
 
 def test_pacote_de_partes_tem_bytes_fixos_entre_ambientes():
@@ -418,3 +431,161 @@ def test_pacote_de_partes_tem_bytes_fixos_entre_ambientes():
         assert [(i.compress_type, i.create_system, i.date_time) for i in z.infolist()] == [
             (zipfile.ZIP_STORED, 3, (2026, 1, 1, 0, 0, 0))] * 3
     assert hashlib.sha256(pacote).hexdigest() == SHA256_PACOTE_PEQUENO
+
+
+# ---------------------------------------------------------------------------
+# Download em blocos para o disco e retomada de partes de uma coleta interrompida
+# ---------------------------------------------------------------------------
+
+class RespostaQueCaiNoMeio(RespostaFalsa):
+    """Entrega o primeiro bloco e cai, como uma conexao que fecha no meio do download."""
+
+    def iter_content(self, chunk_size=1):
+        yield self.content[:chunk_size]
+        raise requests.exceptions.ChunkedEncodingError("conexao interrompida")
+
+
+class SessaoQueCaiNoMeio(SessaoFalsa):
+    def get(self, url, **kwargs):
+        resposta = super().get(url, **kwargs)
+        return RespostaQueCaiNoMeio(self.conteudo) if self.chamadas <= 1 + self.falhas else resposta
+
+
+def test_baixar_para_arquivo_grava_em_blocos_e_devolve_sha_e_tamanho(tmp_path, monkeypatch):
+    monkeypatch.setattr("nordeste.coletores.http.BLOCO_DOWNLOAD", 4)
+    conteudo = b"conteudo de um zip grande do INEP"
+    sessao = SessaoFalsa(conteudo=conteudo)
+    destino = tmp_path / "parte.baixando"
+    assert baixar_para_arquivo("https://x/a.zip", destino, sessao=sessao) == (
+        hashlib.sha256(conteudo).hexdigest(), len(conteudo))
+    assert destino.read_bytes() == conteudo
+    assert sessao.kwargs[0]["stream"] is True and sessao.kwargs[0]["timeout"] == 120
+
+
+def test_baixar_para_arquivo_recomeca_do_zero_quando_a_conexao_cai(tmp_path, monkeypatch):
+    monkeypatch.setattr("nordeste.coletores.http.BLOCO_DOWNLOAD", 4)
+    sessao = SessaoQueCaiNoMeio(conteudo=b"0123456789abcdef")
+    destino = tmp_path / "parte.baixando"
+    sha, tamanho = baixar_para_arquivo("https://x/a.zip", destino, sessao=sessao, esperar=lambda s: None)
+    assert sessao.chamadas == 2 and destino.read_bytes() == b"0123456789abcdef" and tamanho == 16
+    assert sha == hashlib.sha256(b"0123456789abcdef").hexdigest()
+
+
+def test_baixar_para_arquivo_esgotado_apaga_o_parcial(tmp_path):
+    sessao = SessaoQueCaiNoMeio(falhas=0, conteudo=b"0123456789")
+    sessao.get = lambda url, **kwargs: RespostaQueCaiNoMeio(b"0123456789")
+    destino = tmp_path / "parte.baixando"
+    with pytest.raises(ErroColeta, match="a.zip"):
+        baixar_para_arquivo("https://x/a.zip", destino, sessao=sessao, esperar=lambda s: None)
+    assert not destino.exists()
+
+
+def test_coletor_com_partes_baixa_em_blocos_com_stream(projeto, fichas):
+    f, s = _serie_com_partes(fichas)
+    sessao = SessaoPorUrl({URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"})
+    kwargs = []
+    original = sessao.get
+    sessao.get = lambda url, **k: kwargs.append(k) or original(url, **k)
+    coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=sessao)
+    assert [k.get("stream") for k in kwargs] == [True, True]
+
+
+def _sem_espera(monkeypatch):
+    monkeypatch.setattr("nordeste.coletores.baixar_para_arquivo", partial(baixar_para_arquivo, esperar=lambda s: None))
+
+
+def test_coleta_interrompida_retoma_baixando_so_as_partes_que_faltam(projeto, fichas, monkeypatch):
+    from nordeste.coletores.arquivo import ler_manifesto, ler_pacote
+    _sem_espera(monkeypatch)
+    f, s = _serie_com_partes(fichas)
+    with pytest.raises(ErroColeta, match=r"1 de 2 partes falharam.*brasil.zip.*dados/trabalho/partes"):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE,
+                      sessao=SessaoPorUrl({URL_UFS: b"zip das ufs"}, falham=[URL_BRASIL]))
+    guardadas = projeto.partes_em_coleta / "amostra_per_capita" / "scr_ref2010"
+    assert len(list(guardadas.glob("*.json"))) == 1 and len(list(guardadas.glob("*.parte"))) == 1
+    assert not list(guardadas.glob("*.baixando"))  # o download que falhou nao deixa resto
+    assert ler_registro(projeto.registro_coletas).empty  # serie incompleta nao e registrada
+    pasta = projeto.brutos / "amostra_per_capita" / "scr_ref2010"
+    assert not pasta.exists() or not any(pasta.iterdir())
+
+    # dia seguinte: a UFS ja esta guardada, so a do Brasil e baixada
+    sessao = SessaoPorUrl({URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"})
+    c = coletar_serie(f, s, projeto, offline=False, hoje=date(2026, 11, 2), sessao=sessao)
+    assert sessao.urls == [URL_BRASIL]
+    bruto = (projeto.raiz / c.arquivo).read_bytes()
+    assert ler_pacote(bruto) == {URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"}
+    assert [i["sha256_original"] for i in ler_manifesto(bruto)] == [
+        hashlib.sha256(b"zip das ufs").hexdigest(), hashlib.sha256(b"zip do brasil").hexdigest()]
+    assert c.data_coleta == "2026-11-02" and len(ler_registro(projeto.registro_coletas)) == 1
+    assert not projeto.partes_em_coleta.exists()  # com a serie registrada, as partes guardadas saem
+
+
+def test_pacote_retomado_e_igual_ao_de_uma_coleta_sem_interrupcao(projeto, fichas, monkeypatch, tmp_path):
+    _sem_espera(monkeypatch)
+    f, s = _serie_com_partes(fichas)
+    conteudos = {URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"}
+    with pytest.raises(ErroColeta):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoPorUrl(conteudos, falham=[URL_UFS]))
+    retomada = coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoPorUrl(conteudos))
+    direto = Caminhos(tmp_path / "outro")
+    shutil.copytree(projeto.metadados, direto.metadados)
+    sem_interrupcao = coletar_serie(f, s, direto, offline=False, hoje=HOJE, sessao=SessaoPorUrl(conteudos))
+    assert retomada.sha256 == sem_interrupcao.sha256
+
+
+@pytest.mark.parametrize("motivo", ["vencida", "receita mudou", "arquivo corrompido", "sem json"])
+def test_parte_guardada_invalida_e_baixada_de_novo(projeto, fichas, monkeypatch, motivo):
+    _sem_espera(monkeypatch)
+    f, s = _serie_com_partes(fichas)
+    with pytest.raises(ErroColeta):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE,
+                      sessao=SessaoPorUrl({URL_UFS: b"zip das ufs"}, falham=[URL_BRASIL]))
+    guardadas = projeto.partes_em_coleta / "amostra_per_capita" / "scr_ref2010"
+    hoje = HOJE
+    if motivo == "vencida":
+        hoje = date(2026, 11, 9)  # 8 dias depois
+    elif motivo == "receita mudou":
+        partes = [{**p, "arquivo_no_zip": "ufs.xlsx"} if p["url"] == URL_UFS else p for p in s.parametros["partes"]]
+        s = replace(s, parametros={**s.parametros, "partes": partes})
+    elif motivo == "arquivo corrompido":
+        next(guardadas.glob("*.parte")).write_bytes(b"zip das uf")
+    else:
+        next(guardadas.glob("*.json")).unlink()
+    sessao = SessaoPorUrl({URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"})
+    coletar_serie(f, s, projeto, offline=False, hoje=hoje, sessao=sessao)
+    assert sessao.urls == [URL_UFS, URL_BRASIL]
+
+
+def test_parte_guardada_com_ate_sete_dias_e_reaproveitada(projeto, fichas, monkeypatch):
+    _sem_espera(monkeypatch)
+    f, s = _serie_com_partes(fichas)
+    with pytest.raises(ErroColeta):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE,
+                      sessao=SessaoPorUrl({URL_UFS: b"zip das ufs"}, falham=[URL_BRASIL]))
+    sessao = SessaoPorUrl({URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"})
+    coletar_serie(f, s, projeto, offline=False, hoje=date(2026, 11, 8), sessao=sessao)
+    assert sessao.urls == [URL_BRASIL]
+
+
+def test_coletor_reduz_zip_baixado_ao_membro_declarado(projeto, fichas):
+    """Ponta a ponta na coleta: a parte que declara arquivo_no_zip guarda so o membro, nao o zip baixado."""
+    import io
+    import zipfile
+    from nordeste.coletores.arquivo import ler_manifesto, ler_pacote
+    saida = io.BytesIO()
+    with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("ufs/ufs.xls", b"planilha " * 50)
+        z.writestr("ufs/ufs.ods", bytes(range(256)) * 50)
+    zip_ufs = saida.getvalue()
+    f, s = _serie_com_partes(fichas)
+    partes = [{**p, "arquivo_no_zip": "ufs/ufs.xls", "formato": "xls"} if p["url"] == URL_UFS else p
+              for p in s.parametros["partes"]]
+    s = replace(s, parametros={**s.parametros, "partes": partes})
+    c = coletar_serie(f, s, projeto, offline=False, hoje=HOJE,
+                      sessao=SessaoPorUrl({URL_UFS: zip_ufs, URL_BRASIL: b"zip do brasil"}))
+    bruto = (projeto.raiz / c.arquivo).read_bytes()
+    ufs, brasil = ler_manifesto(bruto)
+    assert ufs["membros"] == [{"membro": "ufs/ufs.xls"}] and "membros" not in brasil
+    assert ufs["sha256_original"] == hashlib.sha256(zip_ufs).hexdigest() and ufs["bytes_original"] == len(zip_ufs)
+    with zipfile.ZipFile(io.BytesIO(ler_pacote(bruto)[URL_UFS])) as reduzido:
+        assert reduzido.namelist() == ["ufs/ufs.xls"] and reduzido.read("ufs/ufs.xls") == b"planilha " * 50

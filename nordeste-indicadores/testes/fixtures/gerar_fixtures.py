@@ -350,7 +350,7 @@ def pacote_ideb() -> bytes:
     return empacotar_partes({
         URL_IDEB_UFS: zip_com_um_arquivo(f"{pasta_ufs}/{pasta_ufs}.xlsx", xlsx_abas(abas_ufs)),
         URL_IDEB_BRASIL: zip_com_um_arquivo(f"{pasta_brasil}/{pasta_brasil}.xlsx", xlsx_abas(abas_brasil)),
-    })
+    }, _serie("ideb", "ideb")["parametros"])
 
 
 # ---------------------------------------------------------------------------
@@ -367,6 +367,10 @@ MULTIPLICADOR_TERRITORIO = {"BR": 13, "NE": 9}  # BR = soma das cinco regioes; N
 
 def _ficha(indicador_id: str) -> dict:
     return yaml.safe_load((RAIZ / "metadados" / "indicadores" / f"{indicador_id}.yaml").read_text(encoding="utf-8"))
+
+
+def _serie(indicador_id: str, serie_id: str) -> dict:
+    return next(s for s in _ficha(indicador_id)["series"] if s["id"] == serie_id)
 
 
 def _nomes_dos_territorios() -> dict[str, str]:
@@ -433,8 +437,11 @@ def _aba_das_partes(partes: list[dict], valor, nomes: dict[str, str]) -> list[li
 
 
 def pacote_de_partes(indicador_id: str, serie_id: str, valor) -> bytes:
-    """Pacote do coletor `arquivo` com as partes da serie: um zip por URL, com um arquivo por `arquivo_no_zip`."""
-    serie = next(s for s in _ficha(indicador_id)["series"] if s["id"] == serie_id)
+    """Pacote do coletor `arquivo` com as partes da serie: um zip por URL, com um arquivo por `arquivo_no_zip`.
+
+    O pacote passa pela mesma reducao da coleta (so os membros declarados; xlsx so com as abas lidas).
+    """
+    serie = _serie(indicador_id, serie_id)
     nomes = _nomes_dos_territorios()
     por_url: dict[str, dict[str, dict]] = {}
     formatos: dict[tuple[str, str], str] = {}
@@ -449,7 +456,7 @@ def pacote_de_partes(indicador_id: str, serie_id: str, valor) -> bytes:
             planilhas = {aba: _aba_das_partes(partes, valor, nomes) for aba, partes in abas.items()}
             arquivos[membro] = (xls_abas if formatos[(url, membro)] == "xls" else xlsx_abas)(planilhas)
         baixados[url] = zip_com_arquivos(arquivos)
-    return empacotar_partes(baixados)
+    return empacotar_partes(baixados, serie["parametros"])
 
 
 # Abandono: taxa de 9,9999 % (derivada de 99999) em todo territorio, como a taxa de desocupacao (comparacao com o Brasil).

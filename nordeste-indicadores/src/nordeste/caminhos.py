@@ -37,6 +37,11 @@ class Caminhos:
         return self._dados / "trabalho"
 
     @property
+    def partes_em_coleta(self) -> Path:
+        """Partes ja baixadas de series com `partes` ainda incompletas (retomada da coleta)."""
+        return self.trabalho / "partes"
+
+    @property
     def base(self) -> Path:
         return self._dados / "base"
 
