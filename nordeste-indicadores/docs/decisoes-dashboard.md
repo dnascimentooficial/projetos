@@ -37,3 +37,19 @@ Decidido:
 - Seção 1 do design (arquitetura: módulo `nordeste.site`, `perguntas.yaml`, site só a partir de publicação aprovada) aprovada.
 
 Em aberto ao pausar: seção 2 (páginas e conteúdo) apresentada e não aprovada — pontos pendentes: detalhe editorial escrito pelo usuário; sem Google Analytics; imagem de compartilhamento fixa. Seções 3 a 5 (publicação/envio, erros/segurança, testes) não apresentadas. Domínio não definido.
+
+## Retomada do brainstorming do site (2026-11-01, depois da primeira publicação real)
+
+Decidido pelo usuário:
+- Endereço: numa pasta do domínio principal, `dnascimento.com.br/nordeste` (o usuário trocou o subdomínio pela pasta). O dnascimento.com.br já roda na Hostinger (hPanel).
+- Site estático, mas com fluidez: transições e movimentos suaves (sempre respeitando `prefers-reduced-motion`).
+- Atualização totalmente automática (opção C): sem revisão humana a cada atualização; o que barra a publicação são as regras de validação do pipeline.
+- Voz do autor (Júlio Diógenes), primeira pessoa, linguagem simples, sem cenas; o site responde a quem diz que "o Nordeste está do mesmo jeito".
+- Visual do dnascimento.com.br: laranja #ea2e00 (texto pequeno em fundo claro #c42600), preto #080808, papel #f5f4ef; Manrope nos títulos, DM Sans no texto; cantos 24/34 px, pílulas, rótulos em caixa alta laranja.
+- O painel no Claude (https://claude.ai/artifact/4Ekqm88b9JvsyzdLriFi7f) é o protótipo: perguntas no formato "frase feita × dado", fechos "No frigir dos ovos", Estados, Explorar (com comparação lado a lado e zoom de período e de escala), 17 cards de compartilhar em formato 4:5 e "Sobre os dados" com todas as fontes e fórmulas.
+- OpenGraph e Twitter Card por página e dados estruturados (JSON-LD `Dataset`, com links para os CSVs).
+- Imagens: uma imagem gráfica para o OpenGraph (contorno do Nordeste em laranja sobre preto, título e número) e uma foto contemporânea com licença livre e crédito para a abertura. Evitar o estereótipo da seca.
+- Sem Google Analytics; imagem de compartilhamento fixa por página.
+
+Em aberto: como o dnascimento.com.br é publicado hoje (define como a pasta /nordeste convive com o site principal sem uma publicação apagar a outra); repositório do site; seções 3 a 5 do design (publicação/envio, erros/segurança, testes).
+
