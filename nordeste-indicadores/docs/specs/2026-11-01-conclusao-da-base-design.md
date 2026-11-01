@@ -35,7 +35,7 @@ Cada item tem tempo limitado. O que não fechar fica registrado no dicionário c
 
 | Item | O que fazer | Se não der |
 |---|---|---|
-| Pobreza e extrema pobreza | Identificar a linha de pobreza usada pelas tabelas (5877 e 5817) ou achar a tabela da Síntese de Indicadores Sociais com linha declarada; registrar a linha na ficha; não misturar critérios | Seguem `verificado: false` e fora do site |
+| Pobreza e extrema pobreza | Identificar a linha de pobreza usada pelas tabelas (5877 e 5817) ou achar a tabela da Síntese de Indicadores Sociais com linha declarada; registrar a linha na ficha; não misturar critérios. **Decisão do usuário (2026-11-01):** a linha identificada pela metadata do Ipeadata (US$ 8,30 e US$ 3,00/dia, PPC 2021; 195/195 valores iguais ao SIDRA) vale como confirmação, com nota de origem e registro como divergência | Seguem `verificado: false` e fora do site |
 | Matrículas 2022–2025 | Ler os layouts novos das Sinopses | Pendência registrada por ano |
 | Matrículas 2000–2002 | Ler as abas com numeração própria | Idem |
 | Ensino superior 2020–2024 | Possível após 3.2 | Idem |

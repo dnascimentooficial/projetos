@@ -25,7 +25,7 @@
 2. Merge da branch da outra sessão: nenhum teste ou regra da base pode ter sido afrouxado; R01, territórios esperados e pacote determinístico continuam valendo.
 3. Fichas ampliadas: anos novos sem evidência real não podem entrar em `inicio..fim` de série verificada.
 4. Publicação real: os arquivos publicados devem ser exatamente os que o ensaio aprovado mostrou (mesmo conteúdo da base de trabalho validada).
-5. Linha de pobreza: nenhuma ficha de pobreza pode virar `verificado: true` sem a linha declarada e conferida contra uma publicação do IBGE.
+5. Linha de pobreza: nenhuma ficha de pobreza pode virar `verificado: true` sem a linha declarada e conferida contra uma publicação do IBGE. **Exceção decidida pelo usuário em 2026-11-01 (opção A):** a metadata do Ipeadata vale como confirmação da linha (US$ 8,30 e US$ 3,00/dia, PPC 2021), com nota explícita de origem e registro como divergência (tarefa C3b).
 
 ---
 
@@ -55,6 +55,16 @@
 - [ ] **Passo 1:** identificar, para as tabelas SIDRA 5877 e 5817 (ou outra tabela oficial com linha declarada, ex. Síntese de Indicadores Sociais em ftp.ibge.gov.br), qual linha de pobreza é usada (ex.: US$ 2,15 e US$ 6,85 PPC 2017; US$ 3,00 e US$ 8,30 PPC 2021; frações do salário mínimo). Evidência: descrição oficial da tabela (`desctabapi.aspx`), notas técnicas da SIS, e conferência de pelo menos 3 valores contra uma publicação do IBGE.
 - [ ] **Passo 2:** se identificada e conferida: declarar a linha na `descricao`/`metodologia`/`unidade`, `verificado: true` no trecho conferido; se a fonte mudou de linha no tempo, separar em séries. Se não: manter `verificado: false` e registrar o que foi tentado.
 - [ ] **Passo 3:** testes do dicionário, ensaio offline, suíte; commit.
+
+### Tarefa C3b: Pobreza verificada pela confirmação do Ipeadata (decisão do usuário)
+
+**Arquivos:** `metadados/indicadores/pobreza.yaml`, `extrema_pobreza.yaml`, dicionário, testes do dicionário.
+
+**Contexto:** a C3 identificou a linha (US$ 8,30/dia na 5877 e US$ 3,00/dia na 5817, PPC 2021) pela metadata do Ipeadata, com 195/195 valores do SIDRA iguais aos do Ipeadata, e manteve `verificado: false` por falta de conferência contra publicação do IBGE (descrição SIDRA e biblioteca do IBGE recusam robôs). Em 2026-11-01 o usuário decidiu aceitar o Ipeadata como confirmação.
+
+- [ ] **Passo 1:** nas duas fichas: `verificado: true`; `fim` fechado no último ano com download real conferido (2024, se a evidência da C3 cobrir até lá; conferir no dicionário); linha declarada em `descricao`/`unidade`/`metodologia`; nota explícita: "Linha declarada segundo o Ipeadata (metadados da série); não conferida contra publicação do IBGE, que recusa acesso automatizado; aceita como confirmação por decisão do usuário em 2026-11-01." Manter a nota da quebra de consolidação (primeiras entrevistas 2012–2019 e 2023–2024; quintas entrevistas 2020–2022).
+- [ ] **Passo 2:** dicionário: evidência por ano já existente da C3 referenciada; nova entrada na lista de divergências (o foco de revisão 5 previa conferência contra o IBGE); risco registrado (se o IBGE trocar a linha e o Ipeadata não atualizar a metadata, a ficha fica desatualizada — reverificar a linha a cada atualização anual).
+- [ ] **Passo 3:** testes do dicionário (pobreza verificada exige a nota de origem e a quebra de consolidação), ensaio offline, suíte; commit.
 
 ### Tarefa C4: Matrículas 2022–2025 e 2000–2002
 
