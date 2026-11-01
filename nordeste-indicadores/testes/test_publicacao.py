@@ -7,7 +7,7 @@ from nordeste.coletores import coletar_serie
 from nordeste.coletores.registro import ler_registro
 from nordeste.consolidacao import Pendencia, consolidar
 from nordeste.derivados import brasil_fora_ne, metricas_convergencia
-from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, normalizar_base
+from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, COLUNAS_DERIVADOS, normalizar_base
 from nordeste.fichas import carregar_fichas
 from nordeste.governos import carregar_governos
 from nordeste.publicacao import ErroPublicacao, mudancas, publicar, versao_completa
@@ -42,7 +42,6 @@ def montar_trabalho(projeto, origem):
     base = base.sort_values(CHAVE_BASE, kind="stable").reset_index(drop=True)
     projeto.trabalho.mkdir(parents=True, exist_ok=True)
     base.to_csv(projeto.trabalho / "base.csv", index=False)
-    metricas_convergencia(base, fichas, territorios).to_csv(projeto.trabalho / "derivados.csv", index=False)
     gravar_pendencias(projeto, [])
     derivacoes.to_csv(projeto.registro_derivacoes, index=False)
     if origem == "rede":
@@ -155,10 +154,16 @@ def test_grava_parquet_e_derivados_iguais_ao_trabalho(trabalho_aprovado):
     csv = ler_publicada(trabalho_aprovado)
     assert list(parquet.columns) == COLUNAS_BASE and len(parquet) == len(csv)
     assert parquet.valor.equals(csv.valor) and parquet.valor.isna().any()
-    derivados = pd.read_csv(trabalho_aprovado.base / "derivados.csv", keep_default_na=False)
-    de_trabalho = pd.read_csv(trabalho_aprovado.trabalho / "derivados.csv", keep_default_na=False)
-    assert len(derivados) == len(de_trabalho) > 0
-    assert set(derivados.metrica) == set(de_trabalho.metrica)
+    esperados = metricas_convergencia(
+        ler_publicada(trabalho_aprovado), carregar_fichas(trabalho_aprovado.fichas),
+        carregar_territorios(trabalho_aprovado.territorios_csv),
+    )
+    derivados = pd.read_csv(
+        trabalho_aprovado.base / "derivados.csv", keep_default_na=False, float_precision="round_trip",
+    )
+    assert len(derivados) == len(esperados) > 0
+    assert derivados.valor.equals(esperados.valor)
+    assert list(derivados.columns) == COLUNAS_DERIVADOS
 
 
 def test_republicar_sem_mudanca_e_idempotente(trabalho_aprovado):
@@ -216,6 +221,78 @@ def test_pendencia_mantem_dado_publicado(trabalho_aprovado):
     assert nominal.equals(publicada[publicada.indicador_id == "pib_nominal"])
     assert (trabalho_aprovado.base / "base_nordeste.csv").read_bytes() == antes
     assert pd.read_csv(trabalho_aprovado.relatorios / "mudancas.csv").empty
+
+
+def test_derivados_publicados_incluem_serie_pendente_reaproveitada(trabalho_aprovado):
+    publicar(trabalho_aprovado, hoje=HOJE)
+    derivados_antes = (trabalho_aprovado.base / "derivados.csv").read_bytes()
+    base = ler_base_de_trabalho(trabalho_aprovado)
+    base[base.indicador_id != "pib_per_capita"].to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
+    gravar_pendencias(trabalho_aprovado, [Pendencia("pib_per_capita", "scr_ref2010", "sem coleta")])
+
+    publicar(trabalho_aprovado, hoje=HOJE)
+
+    derivados = pd.read_csv(trabalho_aprovado.base / "derivados.csv", keep_default_na=False)
+    assert "pib_per_capita" in set(derivados.indicador_id)
+    assert (trabalho_aprovado.base / "derivados.csv").read_bytes() == derivados_antes
+
+
+def test_series_pendente_descarta_linhas_do_trabalho_e_usa_as_publicadas(trabalho_aprovado):
+    publicar(trabalho_aprovado, hoje=HOJE)
+    publicada = ler_publicada(trabalho_aprovado)
+    base = ler_base_de_trabalho(trabalho_aprovado)
+    base.loc[base.indicador_id == "pib_nominal", "valor"] *= 3
+    base.to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
+    gravar_pendencias(trabalho_aprovado, [Pendencia("pib_nominal", "scr_ref2010", "sem coleta")])
+
+    resultado = publicar(trabalho_aprovado, hoje=HOJE)
+
+    assert "R03" not in {f.regra for f in resultado.erros}
+    nova = ler_publicada(trabalho_aprovado)
+    assert nova.equals(publicada)
+    assert pd.read_csv(trabalho_aprovado.relatorios / "mudancas.csv").empty
+
+
+@pytest.mark.parametrize("com_publicacao_anterior", [False, True])
+def test_falha_na_versao_completa_nao_toca_na_base(trabalho_aprovado, com_publicacao_anterior):
+    arquivos = ("base_nordeste.csv", "base_nordeste.parquet", "derivados.csv", "base_nordeste_completa.csv")
+    if com_publicacao_anterior:
+        publicar(trabalho_aprovado, hoje=HOJE)
+    antes = {n: (trabalho_aprovado.base / n).read_bytes() for n in arquivos if (trabalho_aprovado.base / n).exists()}
+    # Remove os governos que cobrem 2002: o ano esta na base e a versao completa nao tem presidente para ele.
+    governos = pd.read_csv(trabalho_aprovado.governos_csv, dtype=str, keep_default_na=False)
+    governos[governos.fim != "2002-12-31"].to_csv(trabalho_aprovado.governos_csv, index=False)
+    if com_publicacao_anterior:  # forca uma mudanca para a publicacao nao ser um no-op
+        base = ler_base_de_trabalho(trabalho_aprovado)
+        base.loc[(base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "pib_per_capita"]), "valor"] *= 2
+        base.to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
+
+    with pytest.raises(ValueError, match="2002"):
+        publicar(trabalho_aprovado, hoje=HOJE)
+
+    depois = {n: (trabalho_aprovado.base / n).read_bytes() for n in arquivos if (trabalho_aprovado.base / n).exists()}
+    assert depois == antes
+    if com_publicacao_anterior:
+        assert not list(trabalho_aprovado.base.glob(".*.tmp"))
+    else:
+        assert not trabalho_aprovado.base.exists()
+
+
+def test_falha_ao_gravar_nao_deixa_publicacao_parcial(trabalho_aprovado, monkeypatch):
+    publicar(trabalho_aprovado, hoje=HOJE)
+    antes = {p.name: p.read_bytes() for p in trabalho_aprovado.base.iterdir()}
+    base = ler_base_de_trabalho(trabalho_aprovado)
+    base.loc[(base.ano == 2002) & base.indicador_id.isin(["pib_nominal", "pib_per_capita"]), "valor"] *= 2
+    base.to_csv(trabalho_aprovado.trabalho / "base.csv", index=False)
+
+    def parquet_falha(self, *args, **kwargs):
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", parquet_falha)
+    with pytest.raises(OSError, match="disco cheio"):
+        publicar(trabalho_aprovado, hoje=HOJE)
+
+    assert {p.name: p.read_bytes() for p in trabalho_aprovado.base.iterdir()} == antes
 
 
 def test_pendencia_sem_publicacao_anterior_nao_inventa_linhas(trabalho_aprovado):
