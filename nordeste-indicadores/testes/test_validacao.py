@@ -9,11 +9,12 @@ import pytest
 
 from nordeste.derivados import brasil_fora_ne, metricas_convergencia
 from nordeste.esquema import normalizar_base
-from nordeste.fichas import carregar_fichas
+from nordeste.fichas import carregar_ficha
 from nordeste.territorios import REGIOES, UFS_NE, carregar_territorios
 from nordeste.validacao import Falha, ResultadoValidacao, _diverge, validar
 
 METADADOS = Path(__file__).resolve().parent.parent / "metadados"
+AMOSTRA = Path(__file__).resolve().parent / "amostra" / "indicadores"  # fichas de teste (ver conftest.py)
 SERIE = "scr_ref2010"
 ANOS = (2002, 2003)
 
@@ -64,8 +65,10 @@ def cenario(fim=_DA_FICHA, ultimo_ano=None, hoje=date(2026, 11, 1), per_capita_n
     base para (ultimo_ano - 1, ultimo_ano). `per_capita_ne` (ano -> valor) define o PIB per capita do NE
     por ano, escalando o PIB nominal de todos os territorios para manter somas e razao coerentes.
     """
-    todas = carregar_fichas(METADADOS / "indicadores")
-    fichas = {i: todas[i] for i in ("pib_nominal", "populacao_contas_regionais", "pib_per_capita")}
+    fichas = {
+        "pib_nominal": carregar_ficha(METADADOS / "indicadores" / "pib_nominal.yaml"),
+        **{i: carregar_ficha(AMOSTRA / f"{i}.yaml") for i in ("populacao_contas_regionais", "pib_per_capita")},
+    }
     if fim is not _DA_FICHA:
         fichas = {i: dataclasses.replace(f, series=tuple(dataclasses.replace(s, fim=fim) for s in f.series))
                   for i, f in fichas.items()}

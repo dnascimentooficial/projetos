@@ -1,5 +1,8 @@
 """Gera as fixtures sinteticas em testes/fixtures/<indicador_id>/<serie_id>.<ext>.
 
+Tambem gera as fixtures das fichas de teste da amostra (testes/amostra/fixtures/), que a fixture
+`projeto` dos testes copia para testes/fixtures/ do projeto temporario.
+
 Uso, a partir da raiz do projeto: python testes/fixtures/gerar_fixtures.py
 Os valores sao derivados de 99999 e nao representam dado oficial.
 """
@@ -15,6 +18,7 @@ from pathlib import Path
 from openpyxl import Workbook
 
 PASTA = Path(__file__).resolve().parent
+PASTA_AMOSTRA = PASTA.parent / "amostra" / "fixtures"
 ANOS = range(2002, 2024)
 BASE = 99999
 
@@ -239,10 +243,6 @@ ANOS_ESTIMATIVA_POS_CENSO2022 = [2024, 2025, 2026]
 GERADORES = {
     "pib_nominal/scr_ref2010.json": lambda: json_sidra(
         "PIB a preços correntes (sintético)", "99999", "Mil Reais", _soma),
-    "populacao_contas_regionais/scr_ref2010.json": lambda: json_sidra(
-        "População (sintético)", "99998", "Pessoas", _soma),
-    "pib_per_capita/scr_ref2010.json": lambda: json_sidra(
-        "PIB per capita (sintético)", "99997", "Reais", _per_capita),
     "pib_volume/scr_ref2010.zip": zip_tabela3_volume,
     "pib_participacao/scr_ref2010.json": lambda: json_sidra(
         "Participação do PIB no PIB do Brasil (sintético)", "2", "%", _participacao),
@@ -257,6 +257,15 @@ GERADORES = {
         classificacoes=(("Situação do domicílio", "0"), ("Sexo", "0"))),
     "populacao/censo_2022.json": lambda: json_sidra(
         "População residente (sintético)", "45", "Pessoas", _soma, anos=[2022]),
+}
+
+
+# Fichas de teste da amostra (testes/amostra/indicadores/): uma razao com valor oficial e seu denominador.
+GERADORES_AMOSTRA = {
+    "populacao_contas_regionais/scr_ref2010.json": lambda: json_sidra(
+        "População (sintético)", "99998", "Pessoas", _soma),
+    "pib_per_capita/scr_ref2010.json": lambda: json_sidra(
+        "PIB per capita (sintético)", "99997", "Reais", _per_capita),
 }
 
 
@@ -276,11 +285,12 @@ def _escrever(destino: Path, conteudo) -> None:
 
 
 def main() -> None:
-    for relativo, gerar in GERADORES.items():
-        destino = PASTA / relativo
-        destino.parent.mkdir(parents=True, exist_ok=True)
-        _escrever(destino, gerar())
-        print(f"gerado: {destino.relative_to(PASTA.parent.parent)}")
+    for pasta, geradores in ((PASTA, GERADORES), (PASTA_AMOSTRA, GERADORES_AMOSTRA)):
+        for relativo, gerar in geradores.items():
+            destino = pasta / relativo
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            _escrever(destino, gerar())
+            print(f"gerado: {destino.relative_to(PASTA.parent.parent)}")
 
 
 if __name__ == "__main__":

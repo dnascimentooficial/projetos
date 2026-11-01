@@ -1,0 +1,46 @@
+# Ficha de TESTE da amostra dos testes de mecanica (fixture `projeto` em testes/conftest.py).
+# Nao e ficha do dicionario: guarda o arranjo de uma razao com valor oficial e dois insumos (soma),
+# usado para exercitar coleta, consolidacao, R07, R08, publicacao e CLI. O pib_per_capita real
+# (metadados/indicadores/pib_per_capita.yaml) e calculado pelo projeto (calculo: razao_por_ano).
+id: pib_per_capita
+nome: PIB per capita
+descricao: >-
+  Produto Interno Bruto a preços correntes dividido pela população residente,
+  por Brasil, região e unidade da federação.
+eixo: economia
+categoria: renda
+unidade: R$ correntes
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Calculado como razão entre o PIB nominal (R$ mil) e a população das Contas
+  Regionais, multiplicada por 1000. Fonte: Sistema de Contas Regionais do
+  IBGE, referência 2010, série a partir de 2002. O agregado Brasil fora do
+  Nordeste é refeito pela razão das somas, não pela média dos per capita.
+observacoes: >-
+  Valores a preços correntes de cada ano; a comparação entre territórios usa
+  a razão NE sobre a referência, sem deflacionar. As Contas Regionais saem
+  com cerca de 23 meses de defasagem em relação ao ano de referência.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 23
+tratamento_monetario: {modo: razao}
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: razao
+  numerador: pib_nominal
+  denominador: populacao_contas_regionais
+  fator: 1000
+series:
+  - id: scr_ref2010
+    inicio: 2002
+    fim: 2023
+    fonte: IBGE, Sistema de Contas Regionais (referência 2010)
+    base_origem: SIDRA, Contas Regionais do Brasil
+    url: https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9054-contas-regionais-do-brasil.html
+    coletor: sidra
+    parametros: {}
+    compatibilidade: >-
+      Não comparável com a série de referência 2002 (anos 2000 a 2001):
+      mudança de base metodológica e de classificações.
+    verificado: false

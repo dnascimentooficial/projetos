@@ -49,13 +49,14 @@ def test_carrega_pib_per_capita(projeto):
 def test_fichas_do_repositorio_sao_validas_e_auxiliares(projeto_completo):
     assert verificar_fichas(projeto_completo.fichas) == []
     fichas = carregar_fichas(projeto_completo.fichas)
-    assert {"pib_per_capita", "pib_nominal", "populacao_contas_regionais"} <= set(fichas)
-    assert {i for i, f in fichas.items() if f.auxiliar} == {"pib_nominal", "populacao_contas_regionais"}
+    assert {"pib_per_capita", "pib_nominal", "populacao"} <= set(fichas)
+    assert {i for i, f in fichas.items() if f.auxiliar} == {"pib_nominal"}
     assert not fichas["pib_per_capita"].auxiliar
     assert fichas["pib_per_capita"].defasagem_meses == 23
     assert fichas["pib_nominal"].unidade == "R$ mil"
     assert fichas["pib_nominal"].tratamento_monetario == {"modo": "razao"}
-    assert all(s.parametros for f in fichas.values() for s in f.series if s.verificado)
+    assert {i for i, f in fichas.items() if f.calculo is not None} == {"pib_per_capita"}
+    assert all(s.parametros for f in fichas.values() for s in f.series if s.verificado and f.calculo is None)
 
 
 def test_serie_inexistente_levanta_keyerror(fichas):
@@ -170,3 +171,105 @@ def test_ids_duplicados_sao_recusados(tmp_path, ficha_minima):
     assert any("duplicado" in m for m in verificar_fichas(tmp_path))
     with pytest.raises(ErroFicha, match="duplicado"):
         carregar_fichas(tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# calculo: indicador calculado pelo projeto (razao_por_ano)
+# ---------------------------------------------------------------------------
+
+def _insumo(ficha_minima, id, series):
+    insumo = copy.deepcopy(ficha_minima)
+    insumo["id"], insumo["auxiliar"] = id, True
+    insumo["series"] = [{**ficha_minima["series"][0], "id": s} for s in series]
+    return insumo
+
+
+@pytest.fixture
+def pasta_com_calculo(tmp_path, ficha_minima):
+    """Tres fichas: numerador `num` (serie_a), denominador `den` (est e censo) e o indicador calculado."""
+    _gravar(tmp_path, _insumo(ficha_minima, "num", ["serie_a"]), "num.yaml")
+    _gravar(tmp_path, _insumo(ficha_minima, "den", ["est", "censo"]), "den.yaml")
+    calculada = copy.deepcopy(ficha_minima)
+    calculada["comparacao"] = {"referencia": "brasil_fora_ne"}
+    calculada["series"][0].update(coletor="calculo", verificado=True)
+    calculada["calculo"] = {
+        "metodo": "razao_por_ano",
+        "numerador": {"indicador": "num", "serie": "serie_a"},
+        "denominador": {"indicador": "den", "series_por_ano": {
+            "2002-2006": "est", 2010: "censo", "2011": {"serie": "censo", "ano": 2010},
+        }},
+        "fator": 1000,
+    }
+    _gravar(tmp_path, calculada, "calculada.yaml")
+    return tmp_path, calculada
+
+
+def test_calculo_e_lido_com_faixas_e_ano_fixo(pasta_com_calculo):
+    pasta, _ = pasta_com_calculo
+    calc = carregar_fichas(pasta)["indicador_teste"].calculo
+    assert (calc.metodo, calc.numerador, calc.serie_numerador, calc.denominador, calc.fator) == (
+        "razao_por_ano", "num", "serie_a", "den", 1000.0)
+    assert calc.denominador_do_ano(2002) == ("est", 2002)
+    assert calc.denominador_do_ano(2006) == ("est", 2006)
+    assert calc.denominador_do_ano(2010) == ("censo", 2010)
+    assert calc.denominador_do_ano(2011) == ("censo", 2010)  # ano fixo: a populacao de 2010 serve a 2011
+    assert calc.denominador_do_ano(2007) is None  # ano sem denominador mapeado
+    assert carregar_fichas(pasta)["num"].calculo is None
+
+
+def test_calculo_dispensa_metodo_de_comparacao(pasta_com_calculo):
+    pasta, _ = pasta_com_calculo
+    assert verificar_fichas(pasta) == []
+
+
+def test_calculo_recusa_metodo_de_comparacao(pasta_com_calculo):
+    pasta, calculada = pasta_com_calculo
+    calculada["comparacao"] = {"referencia": "brasil_fora_ne", "metodo": "soma"}
+    _gravar(pasta, calculada, "calculada.yaml")
+    assert any("comparacao.metodo" in m and "calculo" in m for m in verificar_fichas(pasta))
+
+
+@pytest.mark.parametrize("series_por_ano, trecho", [
+    ({"2002-2006": "est", "2006-2008": "censo"}, "sobrepoe"),
+    ({"2002-2006": "est", "2004": "est"}, "sobrepoe"),
+    ({"2006-2002": "est"}, "faixa"),
+    ({"20x0": "est"}, "faixa"),
+    ({}, "series_por_ano"),
+    ({"2010": {"serie": "censo", "ano": "2010"}}, "ano"),
+    ({"2010": ""}, "serie"),
+    ({"2000-2003": "est"}, "fora da cobertura"),
+])
+def test_mapeamento_invalido_e_recusado(pasta_com_calculo, series_por_ano, trecho):
+    pasta, calculada = pasta_com_calculo
+    calculada["calculo"]["denominador"]["series_por_ano"] = series_por_ano
+    _gravar(pasta, calculada, "calculada.yaml")
+    mensagens = verificar_fichas(pasta)
+    assert any("calculada.yaml" in m and trecho in m for m in mensagens), mensagens
+    with pytest.raises(ErroFicha):
+        carregar_fichas(pasta)
+
+
+def test_serie_inexistente_no_mapeamento_e_recusada(pasta_com_calculo):
+    pasta, calculada = pasta_com_calculo
+    calculada["calculo"]["denominador"]["series_por_ano"]["2012"] = "fantasma"
+    _gravar(pasta, calculada, "calculada.yaml")
+    assert any("den/fantasma" in m for m in verificar_fichas(pasta))
+    with pytest.raises(ErroFicha, match="fantasma"):
+        carregar_fichas(pasta)
+
+
+def test_insumo_inexistente_do_calculo_e_recusado(pasta_com_calculo):
+    pasta, calculada = pasta_com_calculo
+    calculada["calculo"]["numerador"] = {"indicador": "sumido", "serie": "serie_a"}
+    _gravar(pasta, calculada, "calculada.yaml")
+    assert any("calculo.numerador" in m and "sumido" in m for m in verificar_fichas(pasta))
+
+
+def test_calculo_exige_metodo_conhecido_fator_positivo_e_uma_serie(pasta_com_calculo):
+    pasta, calculada = pasta_com_calculo
+    calculada["calculo"].update(metodo="media", fator=0)
+    calculada["series"].append({**calculada["series"][0], "id": "serie_b"})
+    _gravar(pasta, calculada, "calculada.yaml")
+    mensagens = " | ".join(verificar_fichas(pasta))
+    assert "calculo.metodo" in mensagens and "calculo.fator" in mensagens
+    assert "uma unica serie" in mensagens

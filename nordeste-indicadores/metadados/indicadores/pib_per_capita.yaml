@@ -2,20 +2,32 @@ id: pib_per_capita
 nome: PIB per capita
 descricao: >-
   Produto Interno Bruto a preços correntes dividido pela população residente,
-  por Brasil, região e unidade da federação.
+  por Brasil, região e unidade da federação. Calculado pelo projeto com dados
+  oficiais do IBGE.
 eixo: economia
 categoria: renda
 unidade: R$ correntes
 orgao: IBGE
 periodicidade: anual
 metodologia: >-
-  Calculado como razão entre o PIB nominal (R$ mil) e a população das Contas
-  Regionais, multiplicada por 1000. Fonte: Sistema de Contas Regionais do
-  IBGE, referência 2010, série a partir de 2002. O agregado Brasil fora do
-  Nordeste é refeito pela razão das somas, não pela média dos per capita.
+  Cálculo do projeto: PIB a preços correntes (R$ mil, Sistema de Contas
+  Regionais do IBGE, referência 2010, SIDRA 5938) dividido pela população
+  residente e multiplicado por 1000, território a território. A população de
+  cada ano é a que o IBGE usou no PIB per capita que divulga: a estimativa do
+  próprio ano (SIDRA 6579) de 2002 a 2006, em 2008 e 2009 e de 2011 a 2021; o
+  Censo 2010 (SIDRA 202) em 2010; o Censo 2022 (SIDRA 4709) em 2022 e também em
+  2023, ano sem estimativa publicada. O IBGE não publica o PIB per capita de
+  regiões e UFs em formato legível por máquina; o cálculo foi conferido contra
+  os valores divulgados (diferença de no máximo 0,1% nos pontos conferidos,
+  ver docs/dicionario-verificacao.md). O agregado Brasil fora do Nordeste é a
+  razão das diferenças, (PIB do Brasil − PIB do Nordeste) ÷ (população do
+  Brasil − população do Nordeste) × 1000, não a média dos per capita.
 observacoes: >-
-  Valores a preços correntes de cada ano; a comparação entre territórios usa
-  a razão NE sobre a referência, sem deflacionar. As Contas Regionais saem
+  2007 fica sem valor: a tabela de estimativas não tem o ano (Contagem da
+  População) e não houve valor publicado para conferir o denominador. Valores
+  a preços correntes de cada ano; a comparação entre territórios usa a razão
+  NE sobre a referência, sem deflacionar. O denominador muda de natureza entre
+  anos (estimativa ou censo), como no número do IBGE. As Contas Regionais saem
   com cerca de 23 meses de defasagem em relação ao ano de referência.
 sentido: maior_melhor
 limites: {min: 0}
@@ -23,20 +35,35 @@ defasagem_meses: 23
 tratamento_monetario: {modo: razao}
 comparacao:
   referencia: brasil_fora_ne
-  metodo: razao
-  numerador: pib_nominal
-  denominador: populacao_contas_regionais
+calculo:
+  metodo: razao_por_ano
+  numerador: {indicador: pib_nominal, serie: scr_ref2010}
+  denominador:
+    indicador: populacao
+    series_por_ano:
+      "2002-2006": estimativa_pre_censo2022
+      "2008-2009": estimativa_pre_censo2022
+      "2010": censo_2000_2010
+      "2011-2021": estimativa_pre_censo2022
+      "2022": censo_2022
+      "2023": {serie: censo_2022, ano: 2022}
   fator: 1000
 series:
   - id: scr_ref2010
     inicio: 2002
     fim: 2023
-    fonte: IBGE, Sistema de Contas Regionais (referência 2010)
-    base_origem: SIDRA, Contas Regionais do Brasil
+    fonte: >-
+      Cálculo do projeto com dados do IBGE: PIB a preços correntes (Contas
+      Regionais, SIDRA 5938) ÷ população residente (estimativas SIDRA 6579;
+      Censos SIDRA 202 e 4709) × 1000
+    base_origem: >-
+      SIDRA 5938 (variável 37) e SIDRA 6579 (variável 9324), 202 e 4709
+      (variável 93), já coletadas nas fichas pib_nominal e populacao
     url: https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9054-contas-regionais-do-brasil.html
-    coletor: sidra
+    coletor: calculo
     parametros: {}
     compatibilidade: >-
-      Não comparável com a série de referência 2002 (anos 2000 a 2001):
-      mudança de base metodológica e de classificações.
-    verificado: false
+      Segue a série do PIB de referência 2010 (2002 em diante); não comparável
+      com a referência 2002 (anos 2000 e 2001). A troca de estimativa para censo
+      no denominador (2010, 2022 e 2023) acompanha o número divulgado pelo IBGE.
+    verificado: true

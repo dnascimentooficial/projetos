@@ -19,8 +19,8 @@ observacoes: >-
   censo, nem 2023, que o IBGE não publicou: esses anos não são preenchidos e
   as séries de censo mostram os valores contados. Cada edição das estimativas
   tem base própria, por isso há salto entre 2021 e 2024, quando as estimativas
-  passaram a partir do Censo 2022. As estimativas não são o denominador das
-  Contas Regionais (ver populacao_contas_regionais).
+  passaram a partir do Censo 2022. Estimativas e censos são também o
+  denominador do PIB per capita calculado pelo projeto (ver pib_per_capita).
 sentido: maior_melhor
 limites: {min: 0}
 defasagem_meses: 0

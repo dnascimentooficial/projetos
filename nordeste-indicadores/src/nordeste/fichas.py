@@ -1,5 +1,6 @@
 """Fichas de indicador: leitura, validacao de completude e consulta das series."""
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ SENTIDOS: tuple[str, ...] = ("maior_melhor", "menor_melhor")
 REFERENCIAS: tuple[str, ...] = ("brasil", "brasil_fora_ne", "nenhuma")
 METODOS: tuple[str, ...] = ("soma", "razao", "razao_encadeada")
 MODOS_MONETARIOS: tuple[str, ...] = ("razao", "reais_constantes")
+METODOS_CALCULO: tuple[str, ...] = ("razao_por_ano",)
 
 _METODOS_COM_TERMOS = ("razao", "razao_encadeada")
 _TEXTOS_FICHA = (
@@ -17,6 +19,7 @@ _TEXTOS_FICHA = (
     "periodicidade", "metodologia", "observacoes",
 )
 _TEXTOS_SERIE = ("id", "fonte", "base_origem", "url", "coletor", "compatibilidade")
+_FAIXA_DE_ANOS = re.compile(r"^(\d{4})(?:-(\d{4}))?$")
 
 
 class ErroFicha(ValueError):
@@ -47,6 +50,33 @@ class Comparacao:
 
 
 @dataclass(frozen=True)
+class FaixaDenominador:
+    """Anos `inicio` a `fim` (fechado) usam o denominador da `serie`; `ano` fixo ou None (o proprio ano)."""
+    inicio: int
+    fim: int
+    serie: str
+    ano: int | None = None
+
+
+@dataclass(frozen=True)
+class Calculo:
+    """Indicador calculado pelo projeto, territorio a territorio, a partir de duas fichas da base."""
+    metodo: str
+    numerador: str
+    serie_numerador: str
+    denominador: str
+    faixas: tuple[FaixaDenominador, ...]
+    fator: float = 1.0
+
+    def denominador_do_ano(self, ano: int) -> tuple[str, int] | None:
+        """(serie, ano) do denominador usado no ano; None se o ano nao esta mapeado."""
+        for faixa in self.faixas:
+            if faixa.inicio <= ano <= faixa.fim:
+                return faixa.serie, ano if faixa.ano is None else faixa.ano
+        return None
+
+
+@dataclass(frozen=True)
 class Ficha:
     id: str
     nome: str
@@ -66,6 +96,7 @@ class Ficha:
     tratamento_monetario: dict | None = None
     auxiliar: bool = False
     limiar_salto_pct: float = 50.0
+    calculo: Calculo | None = None
 
     def serie(self, serie_id: str) -> Serie:
         for s in self.series:
@@ -92,14 +123,17 @@ def _texto_ok(valor: Any) -> bool:
     return isinstance(valor, str) and bool(valor.strip())
 
 
-def _validar_comparacao(comp: Any) -> list[str]:
+def _validar_comparacao(comp: Any, calculada: bool) -> list[str]:
+    """`calculada`: a ficha tem `calculo`, que ja produz o Brasil fora do Nordeste; metodo proibido."""
     if not isinstance(comp, dict):
         return ["comparacao deve ser um mapa"]
     problemas: list[str] = []
     referencia, metodo = comp.get("referencia"), comp.get("metodo")
     if referencia not in REFERENCIAS:
         problemas.append(f"comparacao.referencia deve ser um de {', '.join(REFERENCIAS)}")
-    if referencia == "brasil_fora_ne" and metodo is None:
+    if calculada and metodo is not None:
+        problemas.append("comparacao.metodo nao se usa em ficha com calculo: o calculo ja gera o Brasil fora do Nordeste")
+    if referencia == "brasil_fora_ne" and metodo is None and not calculada:
         problemas.append("comparacao.metodo obrigatorio quando a referencia e brasil_fora_ne")
     if metodo is not None and metodo not in METODOS:
         problemas.append(f"comparacao.metodo deve ser um de {', '.join(METODOS)}")
@@ -137,6 +171,78 @@ def _validar_serie(serie: Any, posicao: int) -> list[str]:
     return problemas
 
 
+def _faixa(chave: Any) -> tuple[int, int] | None:
+    """"AAAA" ou "AAAA-AAAA" (ou o ano inteiro) -> (inicio, fim); None se a chave nao for faixa valida."""
+    achado = _FAIXA_DE_ANOS.match(str(chave)) if isinstance(chave, (int, str)) and not isinstance(chave, bool) else None
+    if achado is None:
+        return None
+    inicio = int(achado.group(1))
+    fim = int(achado.group(2) or inicio)
+    return (inicio, fim) if inicio <= fim else None
+
+
+def _ler_faixas(series_por_ano: dict) -> tuple[list[FaixaDenominador], list[str]]:
+    faixas: list[FaixaDenominador] = []
+    problemas: list[str] = []
+    for chave, destino in series_por_ano.items():
+        nome = f"calculo.denominador.series_por_ano[{chave}]"
+        anos = _faixa(chave)
+        if anos is None:
+            problemas.append(f"{nome}: faixa de anos invalida (use AAAA ou AAAA-AAAA, inicio <= fim)")
+            continue
+        if isinstance(destino, dict):
+            serie, ano = destino.get("serie"), destino.get("ano")
+            if not set(destino) <= {"serie", "ano"} or not _inteiro(ano):
+                problemas.append(f"{nome}: use {{serie: <id>, ano: <ano inteiro>}} para fixar o ano do denominador")
+                continue
+        else:
+            serie, ano = destino, None
+        if not _texto_ok(serie):
+            problemas.append(f"{nome}: serie do denominador obrigatoria (texto nao vazio)")
+            continue
+        faixas.append(FaixaDenominador(*anos, serie, ano))
+    faixas.sort(key=lambda f: f.inicio)
+    for anterior, atual in zip(faixas, faixas[1:]):
+        if atual.inicio <= anterior.fim:
+            problemas.append(
+                f"calculo.denominador.series_por_ano: a faixa {atual.inicio}-{atual.fim} "
+                f"se sobrepoe a {anterior.inicio}-{anterior.fim}"
+            )
+    return faixas, problemas
+
+
+def _validar_calculo(calculo: Any, series: Any) -> list[str]:
+    if not isinstance(calculo, dict):
+        return ["calculo deve ser um mapa"]
+    problemas: list[str] = []
+    if calculo.get("metodo") not in METODOS_CALCULO:
+        problemas.append(f"calculo.metodo deve ser um de {', '.join(METODOS_CALCULO)}")
+    numerador, denominador = calculo.get("numerador"), calculo.get("denominador")
+    if not isinstance(numerador, dict) or not all(_texto_ok(numerador.get(c)) for c in ("indicador", "serie")):
+        problemas.append("calculo.numerador deve ser um mapa com indicador e serie")
+    if not isinstance(denominador, dict) or not _texto_ok(denominador.get("indicador")):
+        problemas.append("calculo.denominador deve ser um mapa com indicador e series_por_ano")
+    elif not isinstance(denominador.get("series_por_ano"), dict) or not denominador["series_por_ano"]:
+        problemas.append("calculo.denominador.series_por_ano obrigatorio (mapa de faixa de anos para serie)")
+    else:
+        faixas, achados = _ler_faixas(denominador["series_por_ano"])
+        problemas += achados
+        if isinstance(series, list) and len(series) == 1 and isinstance(series[0], dict):
+            inicio, fim = series[0].get("inicio"), series[0].get("fim")
+            for f in faixas:
+                if _inteiro(inicio) and (f.inicio < inicio or (_inteiro(fim) and f.fim > fim)):
+                    problemas.append(
+                        f"calculo.denominador.series_por_ano: a faixa {f.inicio}-{f.fim} esta fora da cobertura "
+                        f"da serie da ficha ({inicio} a {fim if fim is not None else 'em curso'})"
+                    )
+    fator = calculo.get("fator", 1.0)
+    if not _numero(fator) or fator <= 0:
+        problemas.append("calculo.fator deve ser um numero positivo")
+    if not isinstance(series, list) or len(series) != 1:
+        problemas.append("ficha com calculo deve ter uma unica serie (a serie do resultado)")
+    return problemas
+
+
 def _validar(dados: Any) -> list[str]:
     """Lista os problemas de completude e coerencia de uma ficha lida do YAML."""
     if not isinstance(dados, dict):
@@ -159,7 +265,10 @@ def _validar(dados: Any) -> list[str]:
         elif {"min", "max"} <= set(limites) and limites["min"] > limites["max"]:
             problemas.append("limites.min nao pode superar limites.max")
 
-    problemas += _validar_comparacao(dados.get("comparacao"))
+    calculada = dados.get("calculo") is not None
+    problemas += _validar_comparacao(dados.get("comparacao"), calculada)
+    if calculada:
+        problemas += _validar_calculo(dados["calculo"], dados.get("series"))
 
     defasagem = dados.get("defasagem_meses")
     if not _inteiro(defasagem) or defasagem < 0:
@@ -202,12 +311,21 @@ def _montar(dados: dict) -> Ficha:
         Serie(**{campo: s[campo] for campo in Serie.__dataclass_fields__}) for s in dados["series"]
     )
     campos = {campo: dados[campo] for campo in _TEXTOS_FICHA}
+    calculo = None
+    if dados.get("calculo") is not None:
+        c = dados["calculo"]
+        calculo = Calculo(
+            metodo=c["metodo"], numerador=c["numerador"]["indicador"], serie_numerador=c["numerador"]["serie"],
+            denominador=c["denominador"]["indicador"],
+            faixas=tuple(_ler_faixas(c["denominador"]["series_por_ano"])[0]), fator=float(c.get("fator", 1.0)),
+        )
     return Ficha(
         **campos, sentido=dados["sentido"], limites=dict(dados["limites"]),
         comparacao=comparacao, defasagem_meses=dados["defasagem_meses"], series=series,
         tratamento_monetario=dados.get("tratamento_monetario"),
         auxiliar=dados.get("auxiliar", False),
         limiar_salto_pct=float(dados.get("limiar_salto_pct", 50.0)),
+        calculo=calculo,
     )
 
 
@@ -256,13 +374,37 @@ def _examinar(diretorio: Path) -> tuple[dict[str, Ficha], list[str]]:
                 problemas.append(
                     f"{origem[ficha.id]}: comparacao.{termo} aponta para ficha inexistente: {alvo}"
                 )
+        problemas += [f"{origem[ficha.id]}: {m}" for m in _insumos_do_calculo(ficha, fichas, declarados)]
     return fichas, problemas
+
+
+def _insumos_do_calculo(ficha: Ficha, fichas: dict[str, Ficha], declarados: set[str]) -> list[str]:
+    """Numerador e denominador do calculo existem, nao sao calculados e tem as series mapeadas."""
+    calculo = ficha.calculo
+    if calculo is None:
+        return []
+    problemas: list[str] = []
+    termos = (
+        ("numerador", calculo.numerador, {calculo.serie_numerador}),
+        ("denominador", calculo.denominador, {f.serie for f in calculo.faixas}),
+    )
+    for termo, indicador, series in termos:
+        if indicador not in declarados:
+            problemas.append(f"calculo.{termo} aponta para ficha inexistente: {indicador}")
+        elif indicador in fichas:  # ficha declarada mas invalida: os problemas dela ja foram listados
+            insumo = fichas[indicador]
+            if insumo.calculo is not None:
+                problemas.append(f"calculo.{termo} aponta para outra ficha calculada: {indicador}")
+            for serie in sorted(series - {s.id for s in insumo.series}):
+                problemas.append(f"calculo.{termo} aponta para serie inexistente: {indicador}/{serie}")
+    return problemas
 
 
 def carregar_fichas(diretorio: Path) -> dict[str, Ficha]:
     """Carrega todas as fichas *.yaml do diretorio, indexadas por id.
 
-    Confere tambem se numerador e denominador apontam para fichas existentes.
+    Confere tambem se numerador e denominador (da comparacao e do calculo) apontam para fichas e series
+    existentes.
     """
     fichas, problemas = _examinar(diretorio)
     if problemas:

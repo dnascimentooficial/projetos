@@ -14,9 +14,7 @@ from nordeste.fichas import carregar_fichas
 TERRITORIOS_COMPLETOS = {
     "BR", "N", "NE", "SE", "S", "CO", "MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE_UF", "BA",
 }
-FICHAS_PARTE_A = {
-    "populacao", "pib_participacao", "pib_nominal", "pib_per_capita", "populacao_contas_regionais",
-}
+FICHAS_PARTE_A = {"populacao", "pib_participacao", "pib_nominal", "pib_per_capita"}
 FICHAS_COMPLETAS = FICHAS_PARTE_A | {"pib_volume"}  # as que trazem os 15 territorios em todo ano
 HOJE = ["--hoje", "2026-11-01"]
 DICIONARIO = Path(__file__).resolve().parent.parent / "docs" / "dicionario-verificacao.md"
@@ -30,6 +28,11 @@ def fichas(projeto_completo):
 
 def _series(fichas):
     return [(f, s) for f in fichas.values() for s in f.series]
+
+
+def _coletaveis(fichas):
+    """Series que o coletor busca: as de fichas sem `calculo`."""
+    return [(f, s) for f, s in _series(fichas) if f.calculo is None]
 
 
 @pytest.fixture
@@ -48,11 +51,12 @@ def test_fichas_da_parte_a_existem(fichas):
 def test_toda_serie_tem_exatamente_uma_fixture(projeto_completo, fichas):
     for f, s in _series(fichas):
         achadas = sorted((projeto_completo.fixtures / f.id).glob(f"{s.id}.*"))
-        assert len(achadas) == 1, f"{f.id}/{s.id}: {achadas}"
+        esperadas = 0 if f.calculo is not None else 1  # indicador calculado nao e coletado: sem fixture
+        assert len(achadas) == esperadas, f"{f.id}/{s.id}: {achadas}"
 
 
 def test_serie_verificada_tem_parametros_de_coleta_completos(fichas):
-    verificadas = [(f, s) for f, s in _series(fichas) if s.verificado]
+    verificadas = [(f, s) for f, s in _coletaveis(fichas) if s.verificado]
     assert verificadas, "esperava ao menos uma serie verificada"
     for f, s in verificadas:
         assert s.coletor in URL_DO_COLETOR, f"{f.id}/{s.id}: coletor inesperado {s.coletor}"
@@ -65,7 +69,7 @@ def test_dicionario_tem_uma_secao_por_serie_e_a_url_das_verificadas(fichas):
     titulos = [linha for linha in texto.splitlines() if linha.startswith("#")]
     for f, s in _series(fichas):
         assert any(f"{f.id} / {s.id}" in titulo for titulo in titulos), f"{f.id}/{s.id} sem secao"
-        if s.verificado:  # a evidencia citada e a URL exata que o coletor monta a partir da ficha
+        if s.verificado and f.calculo is None:  # a evidencia citada e a URL exata que o coletor monta
             assert f"`{URL_DO_COLETOR[s.coletor](s.parametros)}`" in texto, f"{f.id}/{s.id}"
 
 
@@ -183,6 +187,85 @@ def test_pib_volume_offline_vem_do_xls_sintetico_sem_brasil_fora_ne(base):
     assert len(v) == 15 * 22  # as 27 UFs do arquivo ficam so as 9 do Nordeste, mais BR e as 5 regioes
 
 
-def test_series_sem_fonte_legivel_seguem_nao_verificadas(fichas):
-    for ficha, serie in (("pib_per_capita", "scr_ref2010"), ("populacao_contas_regionais", "scr_ref2010")):
-        assert not fichas[ficha].serie(serie).verificado
+def test_populacao_contas_regionais_saiu_do_dicionario(fichas):
+    assert "populacao_contas_regionais" not in fichas
+
+
+# Populacao que o IBGE usou como denominador do PIB per capita das Contas Regionais, por ano
+# (conferida contra valores publicados; ver docs/dicionario-verificacao.md).
+DENOMINADOR_ESPERADO = {
+    **{ano: ("estimativa_pre_censo2022", ano) for ano in [*range(2002, 2007), 2008, 2009, *range(2011, 2022)]},
+    2010: ("censo_2000_2010", 2010),
+    2022: ("censo_2022", 2022),
+    2023: ("censo_2022", 2022),  # o IBGE dividiu o PIB de 2023 pela populacao do Censo 2022
+}
+
+
+def test_pib_per_capita_e_calculado_pelo_projeto(fichas):
+    f = fichas["pib_per_capita"]
+    calc = f.calculo
+    assert (calc.metodo, calc.numerador, calc.serie_numerador, calc.denominador, calc.fator) == (
+        "razao_por_ano", "pib_nominal", "scr_ref2010", "populacao", 1000.0)
+    for ano in range(2002, 2024):
+        assert calc.denominador_do_ano(ano) == DENOMINADOR_ESPERADO.get(ano), ano
+    assert calc.denominador_do_ano(2007) is None  # sem populacao conferida para 2007
+    assert f.comparacao.referencia == "brasil_fora_ne" and f.comparacao.metodo is None
+    assert f.tratamento_monetario == {"modo": "razao"} and not f.auxiliar
+    (s,) = f.series
+    assert (s.id, s.inicio, s.fim, s.coletor, s.parametros, s.verificado) == (
+        "scr_ref2010", 2002, 2023, "calculo", {}, True)
+    assert s.fonte.startswith("Cálculo do projeto com dados do IBGE")
+    for trecho in ("5938", "6579", "202", "4709"):
+        assert trecho in s.fonte
+    assert "populacao_contas_regionais" not in f.metodologia + f.observacoes
+
+
+def test_pib_per_capita_offline_vem_do_calculo_sobre_as_fixtures(base, projeto_completo):
+    pc = base[base.indicador_id == "pib_per_capita"]
+    assert set(pc.tipo_dado) == {"derivado"} and set(pc.serie_id) == {"scr_ref2010"}
+    assert set(pc.ano) == set(range(2002, 2024)) - {2007}  # 2007 sem denominador: sem linha
+    assert set(pc.territorio_id) == TERRITORIOS_COMPLETOS | {"BR_FORA_NE"}
+    assert len(pc) == 16 * 21
+    assert set(pc.valor) == {1000.0}  # 99999 x m / (99999 x m) x 1000, inclusive (13 - 9) / (13 - 9) x 1000
+    (coleta_id,) = set(pc.coleta_id)
+    derivacoes = pd.read_csv(projeto_completo.registro_derivacoes, dtype=str, keep_default_na=False)
+    (insumos,) = derivacoes.loc[derivacoes.coleta_id == coleta_id, "insumos"]
+    origem = {c.split(".")[0] + "/" + c.split(".")[1] for c in insumos.split(";")}
+    assert origem == {
+        "pib_nominal/scr_ref2010", "populacao/estimativa_pre_censo2022",
+        "populacao/censo_2000_2010", "populacao/censo_2022",
+    }
+
+
+def test_indicador_calculado_nao_e_coletado(projeto_completo):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline", "--indicador", "pib_per_capita"]) == 0
+    assert not projeto_completo.registro_coletas.exists()
+    assert main(raiz + ["coletar", "--offline"]) == 0
+    coletas = pd.read_csv(projeto_completo.registro_coletas)
+    assert "pib_per_capita" not in set(coletas.indicador_id)
+
+
+def test_insumo_pendente_deixa_o_indicador_calculado_pendente(projeto_completo, capsys):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline", "--indicador", "pib_nominal"]) == 0
+    assert main(raiz + ["consolidar"]) == 0
+    pendencias = pd.read_csv(projeto_completo.trabalho / "pendencias.csv", keep_default_na=False)
+    pc = pendencias[pendencias.indicador_id == "pib_per_capita"]
+    assert pc.serie_id.tolist() == ["scr_ref2010"]
+    assert pc.motivo.iloc[0].startswith("insumo pendente: populacao/")
+    assert "pib_per_capita/scr_ref2010: insumo pendente" in capsys.readouterr().out
+
+
+def test_mapeamento_sobreposto_na_ficha_barra_a_publicacao_pela_r10(projeto_completo):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline"]) == 0
+    assert main(raiz + ["consolidar"]) == 0
+    ficha = projeto_completo.fichas / "pib_per_capita.yaml"
+    texto = ficha.read_text(encoding="utf-8")
+    assert '"2010": censo_2000_2010' in texto
+    ficha.write_text(texto.replace('"2010": censo_2000_2010', '"2009-2010": censo_2000_2010'), encoding="utf-8")
+    assert main(raiz + ["validar"]) == 1
+    validacao = pd.read_csv(projeto_completo.relatorios / "validacao.csv")
+    r10 = validacao.query("regra == 'R10'").mensagem
+    assert any("sobrepoe" in m for m in r10)

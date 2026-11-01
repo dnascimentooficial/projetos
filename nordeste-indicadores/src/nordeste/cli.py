@@ -11,7 +11,7 @@ from nordeste.caminhos import Caminhos
 from nordeste.cobertura import relatorio_cobertura
 from nordeste.coletores import ErroColeta, coletar_serie
 from nordeste.consolidacao import Pendencia, consolidar
-from nordeste.derivados import brasil_fora_ne, metricas_convergencia
+from nordeste.derivados import aplicar_calculos, brasil_fora_ne, metricas_convergencia
 from nordeste.esquema import CHAVE_BASE
 from nordeste.fichas import ErroFicha, carregar_fichas
 from nordeste.publicacao import ErroPublicacao, gravar_csv, ler_derivacoes, mensagem_de_reprovacao, publicar
@@ -56,8 +56,8 @@ def _coletar(caminhos: Caminhos, hoje: date, indicador: str | None, offline: boo
         return 1
     falhas: list[str] = []
     for ficha in fichas.values():
-        if indicador is not None and ficha.id != indicador:
-            continue
+        if (indicador is not None and ficha.id != indicador) or ficha.calculo is not None:
+            continue  # indicador calculado nao tem arquivo bruto: sai do consolidar
         for serie in ficha.series:
             try:
                 coletar_serie(ficha, serie, caminhos, offline=offline, hoje=hoje)
@@ -79,8 +79,10 @@ def _consolidar(caminhos: Caminhos) -> int:
     fichas = _fichas(caminhos)
     territorios = carregar_territorios(caminhos.territorios_csv)
     observada, pendencias = consolidar(caminhos, fichas, territorios)
+    calculada, derivacoes_calculo = aplicar_calculos(observada, fichas)
     fora_ne, derivacoes = brasil_fora_ne(observada, fichas)
-    base = pd.concat([observada, fora_ne], ignore_index=True)
+    derivacoes = pd.concat([derivacoes, derivacoes_calculo], ignore_index=True)
+    base = pd.concat([observada, calculada, fora_ne], ignore_index=True)
     base = base.sort_values(CHAVE_BASE, kind="stable").reset_index(drop=True)
 
     caminhos.trabalho.mkdir(parents=True, exist_ok=True)

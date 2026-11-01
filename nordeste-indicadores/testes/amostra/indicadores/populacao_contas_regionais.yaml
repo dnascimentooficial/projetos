@@ -1,3 +1,7 @@
+# Ficha de TESTE da amostra dos testes de mecanica (fixture `projeto` em testes/conftest.py).
+# Nao e ficha do dicionario: guarda o arranjo de uma razao com valor oficial e dois insumos (soma),
+# usado para exercitar coleta, consolidacao, R07, R08, publicacao e CLI. O pib_per_capita real
+# (metadados/indicadores/pib_per_capita.yaml) e calculado pelo projeto (calculo: razao_por_ano).
 id: populacao_contas_regionais
 nome: População das Contas Regionais
 descricao: >-

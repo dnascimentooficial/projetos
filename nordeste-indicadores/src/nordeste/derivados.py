@@ -1,4 +1,4 @@
-"""Derivados da base: o agregado Brasil fora do Nordeste e as metricas de convergencia."""
+"""Derivados da base: indicadores calculados, o agregado Brasil fora do Nordeste e as metricas de convergencia."""
 
 import hashlib
 
@@ -117,23 +117,12 @@ def _id_da_derivacao(indicador_id: str, serie_id: str, insumos: str) -> str:
     return f"deriv.{indicador_id}.{serie_id}.{resumo}"
 
 
-def brasil_fora_ne(
-    base: pd.DataFrame, fichas: dict[str, Ficha],
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Calcula o agregado BR_FORA_NE dos indicadores cuja ficha define um metodo exato.
+def _com_registro(linhas: list[dict]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Linhas derivadas (com `insumos`) -> (linhas no formato da base, registro de derivacoes).
 
-    Devolve (linhas BR_FORA_NE no formato da base, com tipo_dado "derivado";
-    registro de derivacoes, uma linha por indicador e serie, listando os coleta_id usados).
-    Fichas com outra referencia, ou sem metodo, nao geram linhas.
+    Uma derivacao por indicador e serie: o registro lista os coleta_id usados e todas as linhas
+    daquele indicador e serie apontam para ele.
     """
-    linhas: list[dict] = []
-    for ficha in fichas.values():
-        comp = ficha.comparacao
-        if comp.referencia != "brasil_fora_ne" or comp.metodo not in _CALCULOS:
-            continue
-        for linha in _CALCULOS[comp.metodo](base, ficha):
-            linhas.append({"indicador_id": ficha.id, **linha})
-
     if not linhas:
         return (
             normalizar_base(pd.DataFrame(columns=COLUNAS_BASE)),
@@ -155,14 +144,109 @@ def brasil_fora_ne(
 
     saida = pd.DataFrame([
         {
-            **{c: linha[c] for c in ("indicador_id", *_GRUPO, "ano", "valor", "serie_id")},
-            "territorio_id": TERRITORIO_DERIVADO, "tipo_dado": "derivado",
+            **{c: linha[c] for c in ("indicador_id", *_GRUPO, "territorio_id", "ano", "valor", "serie_id")},
+            "tipo_dado": "derivado",
             "coleta_id": coleta_de[(linha["indicador_id"], linha["serie_id"])], "nota": "",
         }
         for linha in linhas
     ])
     saida = normalizar_base(saida).sort_values(CHAVE_BASE, kind="stable").reset_index(drop=True)
     return saida, registro_df
+
+
+def brasil_fora_ne(
+    base: pd.DataFrame, fichas: dict[str, Ficha],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Calcula o agregado BR_FORA_NE dos indicadores cuja ficha define um metodo exato.
+
+    Devolve (linhas BR_FORA_NE no formato da base, com tipo_dado "derivado";
+    registro de derivacoes, uma linha por indicador e serie, listando os coleta_id usados).
+    Fichas com outra referencia, ou sem metodo, nao geram linhas.
+    """
+    linhas: list[dict] = []
+    for ficha in fichas.values():
+        comp = ficha.comparacao
+        if comp.referencia != "brasil_fora_ne" or comp.metodo not in _CALCULOS:
+            continue
+        for linha in _CALCULOS[comp.metodo](base, ficha):
+            linhas.append({"indicador_id": ficha.id, "territorio_id": TERRITORIO_DERIVADO, **linha})
+    return _com_registro(linhas)
+
+
+# ---------------------------------------------------------------------------
+# Indicadores calculados pelo projeto (ficha com `calculo`)
+# ---------------------------------------------------------------------------
+
+def _por_chave(linhas: pd.DataFrame, chave: list[str]) -> dict[tuple, tuple[float, str]]:
+    return {
+        tuple(r[c] for c in chave): (r["valor"], r["coleta_id"])
+        for r in linhas[[*chave, "valor", "coleta_id"]].to_dict("records")
+    }
+
+
+def _linhas_razao_por_ano(base: pd.DataFrame, ficha: Ficha) -> list[dict]:
+    """num / den x fator por territorio e ano, com o denominador da serie (e ano) que o mapeamento indica.
+
+    Sem denominador mapeado, sem valor ou com denominador zero, o ano fica sem linha. Com referencia
+    brasil_fora_ne, o agregado e (num_BR - num_NE) / (den_BR - den_NE) x fator, com o mesmo mapeamento.
+    """
+    calculo, serie_id = ficha.calculo, ficha.series[0].id
+    presentes = base[base.valor.notna() & (base.territorio_id != TERRITORIO_DERIVADO)]
+    chave = [*_GRUPO, "territorio_id", "serie_id", "ano"]
+    numeradores = _por_chave(presentes[
+        (presentes.indicador_id == calculo.numerador) & (presentes.serie_id == calculo.serie_numerador)
+    ], chave)
+    denominadores = _por_chave(presentes[presentes.indicador_id == calculo.denominador], chave)
+
+    def termos(grupo: tuple, territorio: str, ano: int) -> tuple | None:
+        alvo = calculo.denominador_do_ano(ano)
+        num = numeradores.get((*grupo, territorio, calculo.serie_numerador, ano))
+        den = denominadores.get((*grupo, territorio, *alvo)) if alvo else None
+        return (num, den) if num is not None and den is not None else None
+
+    linhas: list[dict] = []
+    for (*grupo, territorio, _, ano) in sorted(numeradores):
+        if not _cobre(ficha, serie_id, ano):
+            continue
+        achados = termos(tuple(grupo), territorio, ano)
+        if achados is not None and achados[1][0] != 0:
+            (num, coleta_num), (den, coleta_den) = achados
+            linhas.append({
+                **dict(zip(_GRUPO, grupo)), "territorio_id": territorio, "ano": ano, "serie_id": serie_id,
+                "valor": num / den * calculo.fator, "insumos": (coleta_num, coleta_den),
+            })
+        if territorio != "BR" or ficha.comparacao.referencia != "brasil_fora_ne":
+            continue
+        br, ne = achados, termos(tuple(grupo), "NE", ano)
+        if br is None or ne is None or br[1][0] == ne[1][0]:
+            continue
+        linhas.append({
+            **dict(zip(_GRUPO, grupo)), "territorio_id": TERRITORIO_DERIVADO, "ano": ano, "serie_id": serie_id,
+            "valor": (br[0][0] - ne[0][0]) / (br[1][0] - ne[1][0]) * calculo.fator,
+            "insumos": (br[0][1], ne[0][1], br[1][1], ne[1][1]),
+        })
+    return linhas
+
+
+_CALCULOS_DE_FICHA = {"razao_por_ano": _linhas_razao_por_ano}
+
+
+def aplicar_calculos(
+    base: pd.DataFrame, fichas: dict[str, Ficha],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Linhas dos indicadores cuja ficha declara `calculo`, a partir das linhas observadas da base.
+
+    Devolve (linhas de todos os territorios com numerador e denominador no ano, mais BR_FORA_NE quando a
+    referencia e brasil_fora_ne, com tipo_dado "derivado" e a serie da ficha; registro de derivacoes,
+    uma linha por indicador e serie, com os coleta_id de numerador e denominador usados).
+    """
+    linhas: list[dict] = []
+    for ficha in fichas.values():
+        if ficha.calculo is None:
+            continue
+        for linha in _CALCULOS_DE_FICHA[ficha.calculo.metodo](base, ficha):
+            linhas.append({"indicador_id": ficha.id, **linha})
+    return _com_registro(linhas)
 
 
 # ---------------------------------------------------------------------------
