@@ -1,7 +1,11 @@
+import hashlib
 import shutil
+import ssl
 from dataclasses import replace
 from datetime import date
+from pathlib import Path
 
+import certifi
 import pytest
 import requests
 
@@ -30,6 +34,7 @@ class SessaoFalsa:
     def get(self, url, **kwargs):
         self.chamadas += 1
         self.urls.append(url)
+        self.kwargs = getattr(self, "kwargs", []) + [kwargs]
         if self.chamadas <= self.falhas:
             raise requests.ConnectionError("sem rede")
         return RespostaFalsa(self.conteudo)
@@ -189,3 +194,101 @@ def test_rede_coletor_desconhecido(projeto, fichas):
     s = replace(f.serie("scr_ref2010"), verificado=True, coletor="inventado")
     with pytest.raises(ErroColeta, match="inventado"):
         coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoFalsa())
+
+
+# ---------------------------------------------------------------------------
+# ca_extra: intermediaria publica que o servidor do INEP nao envia na cadeia TLS
+# ---------------------------------------------------------------------------
+
+RAIZ_REPOSITORIO = Path(__file__).resolve().parent.parent
+CERTIFICADO_RNP = RAIZ_REPOSITORIO / "metadados" / "certificados" / "rnp-icpedu-gr46-ov-tls-ca-2025.pem"
+SHA256_RNP = "E1:07:47:D4:DA:7B:AB:09:CB:A9:95:2F:01:9D:35:34:CB:9F:BA:07:0B:F1:3D:87:91:B1:69:9C:D2:FF:59:DD"
+
+
+class SessaoQueLeOBundle(SessaoFalsa):
+    """Le o arquivo passado em `verify` durante a chamada: o bundle e temporario e some depois."""
+
+    def __init__(self, **campos):
+        super().__init__(**campos)
+        self.verificacoes, self.bundles = [], []
+
+    def get(self, url, **kwargs):
+        verify = kwargs.get("verify")
+        self.verificacoes.append(verify)
+        if isinstance(verify, str):
+            self.bundles.append(Path(verify).read_text(encoding="utf-8"))
+        return super().get(url, **kwargs)
+
+
+def _pem(tmp_path, nome, rotulo) -> Path:
+    arquivo = tmp_path / nome
+    arquivo.write_text(f"-----BEGIN CERTIFICATE-----\n{rotulo}\n-----END CERTIFICATE-----", encoding="utf-8")  # sem \n final
+    return arquivo
+
+
+def test_certificado_da_intermediaria_do_inep_e_o_da_rnp_com_o_fingerprint_declarado():
+    texto = CERTIFICADO_RNP.read_text(encoding="ascii")
+    assert texto.count("BEGIN CERTIFICATE") == 1
+    der = ssl.PEM_cert_to_DER_cert(texto)
+    obtido = hashlib.sha256(der).hexdigest().upper()
+    assert ":".join(obtido[i:i + 2] for i in range(0, len(obtido), 2)) == SHA256_RNP
+
+
+def test_baixar_com_ca_extra_verifica_com_o_bundle_padrao_mais_a_intermediaria(tmp_path, monkeypatch):
+    padrao, extra = _pem(tmp_path, "padrao.pem", "PADRAO"), _pem(tmp_path, "extra.pem", "EXTRA")
+    monkeypatch.setenv("REQUESTS_CA_BUNDLE", str(padrao))
+    sessao = SessaoQueLeOBundle(conteudo=b"ok")
+    assert baixar("https://x", sessao=sessao, ca_extra=extra) == b"ok"
+    (bundle,) = sessao.bundles
+    assert bundle.index("PADRAO") < bundle.index("EXTRA")
+    assert bundle.count("BEGIN CERTIFICATE") == 2 and "END CERTIFICATE-----BEGIN" not in bundle
+    assert sessao.verificacoes[0] != str(padrao) and sessao.kwargs[0]["timeout"] == 120
+
+
+def test_baixar_com_ca_extra_sem_variavel_usa_o_bundle_do_certifi(tmp_path, monkeypatch):
+    monkeypatch.delenv("REQUESTS_CA_BUNDLE", raising=False)
+    sessao = SessaoQueLeOBundle(conteudo=b"ok")
+    baixar("https://x", sessao=sessao, ca_extra=CERTIFICADO_RNP)
+    (bundle,) = sessao.bundles
+    assert bundle.startswith(Path(certifi.where()).read_text(encoding="utf-8").rstrip("\n"))
+    assert bundle.rstrip().endswith(CERTIFICADO_RNP.read_text(encoding="ascii").strip())
+    assert bundle.count("BEGIN CERTIFICATE") == Path(certifi.where()).read_text().count("BEGIN CERTIFICATE") + 1
+
+
+def test_verify_nunca_e_false_e_o_bundle_temporario_some_ao_fim(tmp_path, monkeypatch):
+    monkeypatch.delenv("REQUESTS_CA_BUNDLE", raising=False)
+    sessao = SessaoQueLeOBundle(falhas=2, conteudo=b"ok")  # as 3 tentativas usam o mesmo bundle
+    baixar("https://x", sessao=sessao, ca_extra=CERTIFICADO_RNP, esperar=lambda s: None)
+    assert sessao.chamadas == 3 and len(set(sessao.verificacoes)) == 1
+    (verify,) = set(sessao.verificacoes)
+    assert isinstance(verify, str) and verify is not False and not Path(verify).exists()
+    sem_extra = SessaoQueLeOBundle(conteudo=b"ok")  # sem ca_extra: nada de verify=False; o padrao do requests vale
+    baixar("https://x", sessao=sem_extra)
+    assert sem_extra.verificacoes == [None] and False not in sem_extra.verificacoes
+
+
+def test_baixar_com_ca_extra_inexistente_falha_alto(tmp_path):
+    sessao = SessaoFalsa(conteudo=b"ok")
+    with pytest.raises(ErroColeta, match="ausente.pem"):
+        baixar("https://x", sessao=sessao, ca_extra=tmp_path / "ausente.pem")
+    assert sessao.chamadas == 0
+
+
+def test_coletor_arquivo_resolve_ca_extra_a_partir_da_raiz(projeto, fichas):
+    f = fichas["amostra_per_capita"]
+    assert (projeto.raiz / "metadados" / "certificados" / CERTIFICADO_RNP.name).exists()  # a fixture copia metadados/
+    s = replace(f.serie("scr_ref2010"), verificado=True, coletor="arquivo", parametros={
+        "url": "https://download.inep.gov.br/x/planilha.zip",
+        "ca_extra": f"metadados/certificados/{CERTIFICADO_RNP.name}"})
+    sessao = SessaoQueLeOBundle(conteudo=b"zip")
+    c = coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=sessao)
+    assert c.url == s.parametros["url"] and c.arquivo.endswith(".zip")
+    assert CERTIFICADO_RNP.read_text(encoding="ascii").strip() in sessao.bundles[0]
+
+
+def test_coletor_arquivo_com_ca_extra_ausente_na_raiz_falha_alto(projeto, fichas):
+    f = fichas["amostra_per_capita"]
+    s = replace(f.serie("scr_ref2010"), verificado=True, coletor="arquivo", parametros={
+        "url": "https://download.inep.gov.br/x/planilha.zip", "ca_extra": "metadados/certificados/nao_existe.pem"})
+    with pytest.raises(ErroColeta, match="nao_existe.pem"):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoFalsa(conteudo=b"zip"))

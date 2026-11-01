@@ -102,7 +102,8 @@ def _coletar_da_rede(
         extensao = PurePosixPath(urlparse(url).path).suffix.lstrip(".").lower() or "bin"
     else:
         raise ErroColeta(f"coletor desconhecido em {ficha.id}/{serie.id}: {serie.coletor}")
-    conteudo = baixar(url, sessao=sessao)
+    ca_extra = serie.parametros.get("ca_extra")
+    conteudo = baixar(url, sessao=sessao, ca_extra=caminhos.raiz / ca_extra if ca_extra else None)
     return _guardar(ficha, serie, caminhos, conteudo, url, extensao, "rede", hoje)
 
 

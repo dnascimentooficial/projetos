@@ -641,3 +641,43 @@ componente (`IDHM`/`ADH_IDHM`, `IDHMRE`/`ADH_IDHM_R`, `IDHMED`/`ADH_IDHM_E`, `ID
 - Série fechada em 2024 (`fim: 2024`): uma edição nova do Radar exige rever `fim` e `periodos` da ficha.
 - Não comparável com `censo` (pesquisa e método diferentes); sem variação calculada entre as duas.
 - Comparação `brasil`; não há Brasil fora do Nordeste.
+
+## Bloco INEP: acesso confirmado, fichas pendentes (Tarefa 15)
+
+Data: 2026-11-01. Nenhuma ficha do INEP foi escrita: os arquivos reais do INEP não cabem no mecanismo atual de coleta e
+padronização (uma série = uma URL, uma aba, sem filtro de linhas). Detalhes do que foi baixado e lido:
+
+**Acesso.** `download.inep.gov.br` responde com a cadeia TLS incompleta (só a folha `*.inep.gov.br`); falta a intermediária
+"RNP ICPEdu GR46 OV TLS CA 2025" (emitida por GlobalSign Root R46, sha256
+`E1:07:47:D4:DA:7B:AB:09:CB:A9:95:2F:01:9D:35:34:CB:9F:BA:07:0B:F1:3D:87:91:B1:69:9C:D2:FF:59:DD`). A intermediária pública está em
+`metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem` e o parâmetro de série `ca_extra` (caminho relativo à raiz) faz o
+`baixar` verificar com o bundle em uso (REQUESTS_CA_BUNDLE, senão certifi) mais essa intermediária; a verificação TLS nunca é
+desligada. Com `ca_extra`, os downloads abaixo funcionaram. Os arquivos grandes de `informacoes_estatisticas/sinopses_estatisticas/...`
+(sinopses de 2010 e 2024, Censo Escolar 2025) ficaram pendurados por mais de dois minutos e não foram lidos.
+
+**IDEB** (`https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb/resultados/2005-2025`).
+Há resultados de 2005 a **2025** (publicado em 05/08/2026), não só até 2023. Arquivos lidos:
+`https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_2025.zip` (regiões e UFs) e
+`.../divulgacao_brasil_ideb_2025.zip` (Brasil). Layout: uma pasta `.xlsx` por arquivo, com três abas (anos iniciais, anos finais, ensino
+médio), cabeçalho em quatro linhas (a linha 10 traz códigos como `VL_OBSERVADO_2023`; as linhas 7 a 9 trazem rótulos como
+`IDEB\n2023\n(N x P)`; o rótulo de 2021 está digitado `20215` por causa de uma chamada de nota), várias linhas por território, uma por
+`Rede` (`Total`, `Pública`, `Privada`, `Estadual`, `Municipal`, com marcas de nota no texto: `Total (3)(4)`, `Total (4)`), e o Brasil
+num arquivo à parte. O IDEB de cada território e ano está nas colunas `VL_OBSERVADO_<ano>`.
+
+**abandono_em.** Taxas de rendimento escolar: um zip por ano, `https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/<ano>/tx_rend_brasil_regioes_ufs_<ano>.zip`
+(2025, 2015 em outro caminho; 2007 em três `.xls` separados: regiões, Brasil e UFs). Cada arquivo tem um só ano na coluna `NU_ANO_CENSO`,
+uma linha por unidade geográfica x localização x dependência administrativa, e as taxas de aprovação, reprovação e abandono por etapa em
+colunas (`1_CAT_FUN`, ...).
+
+**matriculas_basica.** Sinopses estatísticas da educação básica: um arquivo por ano, de caminhos diferentes (2000 a 2006:
+`download/censo/<ano>/...`, com `.xls` de ~350 abas, uma tabela por aba; 2007 a 2019: `informacoes_estatisticas/.../sinopse_estatistica_da_educacao_basica_<ano>.zip`;
+2020 a 2025: `dados_abertos/sinopses_estatisticas/...`). Lida: `https://download.inep.gov.br/download/censo/2006/resultados_censo_escolar2006.zip`
+(`Resultados Censo Escolar 2006.xls`, 353 abas `1.1`...`1.60`... com matrículas por etapa, dependência e UF em abas diferentes).
+
+**superior.** Sinopses da educação superior: um arquivo por ano (2009 a 2024 em
+`informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_<ano>.zip`; 2004 a 2008 em outros caminhos). Lida:
+`https://download.inep.gov.br/download/superior/censo/2006/Sinopse_EducacaoSuperior_2006.zip` (um `.xls` de 12 MB com 37 abas de tabelas
+nacionais, por UF e por organização acadêmica).
+
+Conclusão: nenhuma série do INEP tem uma só URL com os anos em colunas. Faltam, para escrever as fichas, a série com várias URLs (uma por ano),
+o mapa de aba e coluna por ano, o filtro de linhas (`Rede = Total`) e, no IDEB, mais de uma aba e mais de um arquivo por série.
