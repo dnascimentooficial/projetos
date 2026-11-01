@@ -96,16 +96,16 @@ def test_a03_atraso_so_em_serie_em_curso():
 
 
 def test_a03_vence_depois_do_ultimo_dia_do_mes_previsto():
-    # Ultimo ano 2020 + 23 meses de defasagem = 2022-11.
-    assert _avisos(cenario(fim=None, ultimo_ano=2020, hoje=date(2022, 11, 30)), "A03") == []
-    assert len(_avisos(cenario(fim=None, ultimo_ano=2020, hoje=date(2022, 12, 1)), "A03")) == 3
+    # Proxima publicacao apos o ultimo ano 2020: dezembro de 2021 + 23 meses de defasagem = 2023-11.
+    assert _avisos(cenario(fim=None, ultimo_ano=2020, hoje=date(2023, 11, 30)), "A03") == []
+    assert len(_avisos(cenario(fim=None, ultimo_ano=2020, hoje=date(2023, 12, 1)), "A03")) == 3
 
 
 def test_a03_usa_o_maior_ano_com_valor_do_ne():
-    c = cenario(fim=None, ultimo_ano=2020, hoje=date(2022, 12, 1))
+    c = cenario(fim=None, ultimo_ano=2020, hoje=date(2023, 12, 1))
     base = c["base"].copy()
     base.loc[(base.territorio_id == "NE") & (base.ano == 2020), ["valor", "tipo_dado"]] = [np.nan, "indisponivel"]
-    # Sem valor do NE em 2020, o ultimo ano passa a 2019 (proxima publicacao 2021-11, tambem vencida).
+    # Sem valor do NE em 2020, o ultimo ano passa a 2019 (proxima publicacao 2022-11, tambem vencida).
     mensagens = [a.mensagem for a in _avisos({**c, "base": base}, "A03")]
     assert mensagens and all("2019" in m for m in mensagens)
 

@@ -34,12 +34,12 @@ def base_anos_ne(valores, indisponivel=(), territorio="NE", indicador="x"):
 
 
 def test_proxima_publicacao():
-    assert proxima_publicacao(2023, 23) == "2025-11"
+    assert proxima_publicacao(2023, 23) == "2026-11"
 
 
-def test_proxima_publicacao_sem_defasagem_e_dezembro():
-    assert proxima_publicacao(2023, 0) == "2023-12"
-    assert proxima_publicacao(2023, 1) == "2024-01"
+def test_proxima_publicacao_sem_defasagem_e_dezembro_do_ano_seguinte():
+    assert proxima_publicacao(2023, 0) == "2024-12"
+    assert proxima_publicacao(2023, 1) == "2025-01"
 
 
 def test_anos_faltantes():
@@ -58,7 +58,7 @@ def test_colunas_e_primeiro_ultimo_ano():
     ]
     linha = c.iloc[0]
     assert (linha.indicador_id, linha.serie_id, linha.territorio_id) == ("x", "s", "NE")
-    assert (linha.primeiro_ano, linha.ultimo_ano, linha.proxima_publicacao) == (2002, 2004, "2006-11")
+    assert (linha.primeiro_ano, linha.ultimo_ano, linha.proxima_publicacao) == (2002, 2004, "2007-11")
 
 
 def test_fim_nulo_usa_ultimo_ano_disponivel_da_serie():

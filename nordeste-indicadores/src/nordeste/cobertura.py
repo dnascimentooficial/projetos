@@ -11,8 +11,13 @@ COLUNAS_COBERTURA: list[str] = [
 
 
 def proxima_publicacao(ultimo_ano: int, defasagem_meses: int) -> str:
-    """"AAAA-MM" da proxima publicacao: conta `defasagem_meses` a partir de dezembro do ultimo ano."""
-    ano, mes_zero = divmod(ultimo_ano * 12 + 11 + defasagem_meses, 12)
+    """"AAAA-MM" da proxima publicacao esperada.
+
+    A proxima publicacao e a do ano seguinte ao ultimo disponivel: conta `defasagem_meses` a partir
+    de dezembro de `ultimo_ano + 1`. (Dezembro de `ultimo_ano` mais a defasagem e a data em que o
+    proprio `ultimo_ano` ja saiu.)
+    """
+    ano, mes_zero = divmod((ultimo_ano + 1) * 12 + 11 + defasagem_meses, 12)
     return f"{ano:04d}-{mes_zero + 1:02d}"
 
 
