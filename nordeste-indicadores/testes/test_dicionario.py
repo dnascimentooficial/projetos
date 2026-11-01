@@ -432,3 +432,64 @@ def test_series_da_parte_b_offline_sao_observadas(base):
         linhas = base[(base.indicador_id == indicador) & (base.territorio_id != "BR_FORA_NE")
                       & (base.tipo_dado != "indisponivel")]
         assert set(linhas.tipo_dado) == {"observado"}, indicador
+
+
+# ---------------------------------------------------------------------------
+# PNUD: IDHM e componentes (Ipeadata, series encadeadas do Ipea a partir do Atlas)
+# ---------------------------------------------------------------------------
+
+SUBINDICADORES_IDHM = ["educacao", "idhm", "longevidade", "renda"]
+UFS_NE = TERRITORIOS_COMPLETOS - {"BR", "N", "NE", "SE", "S", "CO"}
+
+
+def test_idhm_tem_quatro_subindicadores_em_duas_series_do_ipeadata(fichas):
+    f = fichas["idhm"]
+    assert [s.id for s in f.series] == ["censo", "pnadc"] and not f.auxiliar
+    codigos = {"idhm": "IDHM", "renda": "IDHMRE", "educacao": "IDHMED", "longevidade": "IDHMLO"}
+    for s, janela, (inicio, fim) in ((f.serie("censo"), "2000-2010", (2000, 2010)),
+                                     (f.serie("pnadc"), "2012-2024", (2012, 2024))):
+        assert (s.coletor, s.verificado, s.inicio, s.fim) == ("ipeadata", True, inicio, fim)
+        assert s.parametros == {"codigos": codigos, "periodos": janela}
+    assert (f.sentido, f.limites, f.unidade) == ("maior_melhor", {"min": 0, "max": 1}, "índice (0 a 1)")
+    assert f.comparacao.referencia == "brasil" and f.comparacao.metodo is None
+    assert f.tratamento_monetario is None and f.limiar_salto_pct == 100
+
+
+def test_idhm_declara_o_que_a_serie_nao_cobre(fichas):
+    f = fichas["idhm"]
+    texto = " ".join((f.observacoes, f.serie("censo").compatibilidade, f.serie("pnadc").compatibilidade))
+    for trecho in ("Nordeste fica sem valor", "não se recompõe", "não foi cotejada", "não são comparáveis"):
+        assert trecho in texto, trecho
+
+
+def test_idhm_offline_censo_so_tem_brasil_e_ufs_sem_nordeste_nem_regioes(base):
+    censo = base[(base.indicador_id == "idhm") & (base.serie_id == "censo")]
+    assert set(censo.ano) == {2000, 2010}  # nem 1991 (fora da janela) nem anos entre censos
+    assert set(censo.territorio_id) == {"BR", *UFS_NE}
+    assert set(censo.tipo_dado) == {"observado"}
+    for _, grupo in censo.groupby(["subindicador", "ano"]):
+        assert len(grupo) == 10
+    assert sorted(set(censo.subindicador)) == SUBINDICADORES_IDHM
+
+
+def test_idhm_offline_pnadc_tem_os_15_territorios_em_cada_ano(base):
+    pnadc = base[(base.indicador_id == "idhm") & (base.serie_id == "pnadc")]
+    assert set(pnadc.ano) == set(range(2012, 2025))
+    for (subindicador, ano), grupo in pnadc.groupby(["subindicador", "ano"]):
+        assert set(grupo.territorio_id) == TERRITORIOS_COMPLETOS, (subindicador, ano)
+    assert sorted(set(pnadc.subindicador)) == SUBINDICADORES_IDHM
+
+
+def test_idhm_offline_cada_subindicador_vem_do_seu_codigo_e_nao_ha_brasil_fora_ne(base):
+    idhm = base[base.indicador_id == "idhm"]
+    assert idhm.groupby("subindicador").valor.agg(lambda v: set(v)).to_dict() == {
+        "idhm": {0.5}, "renda": {0.6}, "educacao": {0.4}, "longevidade": {0.7}}
+    assert "BR_FORA_NE" not in set(idhm.territorio_id)
+    assert set(idhm.etapa) == {""} and set(idhm.rede) == {""}
+
+
+def test_idhm_coleta_offline_registra_um_arquivo_por_serie(projeto_completo):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline", "--indicador", "idhm"]) == 0
+    coletas = pd.read_csv(projeto_completo.registro_coletas)
+    assert sorted(coletas.serie_id) == ["censo", "pnadc"] and set(coletas.origem) == {"fixture"}

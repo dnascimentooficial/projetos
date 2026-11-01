@@ -155,3 +155,114 @@ def test_sem_periodos_a_serie_vem_inteira(ficha_ipeadata, territorios):
     conteudo = json_ipea([("Brasil", "", f"{ano}-01-01T00:00:00-02:00", 1.0) for ano in (1976, 2001)])
     df = padronizar_ipeadata(conteudo, ficha_ipeadata, ficha_ipeadata.series[0], "c1", territorios)
     assert sorted(df.ano) == [1976, 2001]
+
+
+# ---------------------------------------------------------------------------
+# `codigos`: varias series do Ipeadata (uma por subindicador) reunidas em um unico arquivo bruto
+# ---------------------------------------------------------------------------
+
+CODIGOS = {"idhm": "IDHM", "renda": "IDHMRE"}
+URL_IDHM = "https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHM')"
+URL_RENDA = "https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHMRE')"
+
+
+@pytest.fixture
+def ficha_codigos(ficha_ipeadata):
+    serie = replace(ficha_ipeadata.series[0], parametros={"codigos": CODIGOS, "periodos": "2000-2010"})
+    return replace(ficha_ipeadata, series=(serie,))
+
+
+def combinado(**respostas) -> bytes:
+    return json.dumps({"subindicadores": {k: montar_json(v) for k, v in respostas.items()}}).encode("utf-8")
+
+
+def test_url_ipeadata_com_codigos_lista_as_urls_na_ordem_do_mapa():
+    assert url_ipeadata({"codigos": CODIGOS}) == f"{URL_IDHM} {URL_RENDA}"
+
+
+@pytest.mark.parametrize("parametros, trecho", [
+    ({"codigos": {}}, "codigos"),
+    ({"codigos": ["IDHM"]}, "codigos"),
+    ({"codigos": {"idhm": ""}}, "codigos"),
+    ({"codigos": {"": "IDHM"}}, "codigos"),
+    ({"codigos": {"idhm": "IDHM"}, "codigo": "IDHM"}, "codigo"),
+])
+def test_url_ipeadata_com_codigos_invalidos(parametros, trecho):
+    with pytest.raises(ErroColeta, match=trecho):
+        url_ipeadata(parametros)
+
+
+def test_coletar_serie_com_codigos_baixa_cada_codigo_e_guarda_um_arquivo(projeto, ficha_codigos):
+    class Sessao:
+        def __init__(self):
+            self.urls = []
+
+        def get(self, url, **kwargs):
+            self.urls.append(url)
+            resposta = _Resposta()
+            resposta.content = json.dumps(montar_json([("Brasil", "", DATA_2001, float(len(self.urls)))])).encode()
+            return resposta
+
+    serie = replace(ficha_codigos.series[0], verificado=True)
+    sessao = Sessao()
+    coleta = coletar_serie(ficha_codigos, serie, projeto, offline=False, hoje=date(2026, 11, 1), sessao=sessao)
+    assert sessao.urls == [URL_IDHM, URL_RENDA]
+    assert coleta.url == f"{URL_IDHM} {URL_RENDA}" and coleta.origem == "rede" and coleta.arquivo.endswith(".json")
+    guardado = json.loads((projeto.raiz / coleta.arquivo).read_bytes())
+    assert list(guardado["subindicadores"]) == ["idhm", "renda"]
+    assert [v["value"][0]["VALVALOR"] for v in guardado["subindicadores"].values()] == [1.0, 2.0]
+
+
+def test_coletar_serie_com_codigos_recusa_resposta_que_nao_e_json(projeto, ficha_codigos):
+    class Sessao:
+        def get(self, url, **kwargs):
+            return _Resposta()  # `{"value": []}` valido
+
+    class SessaoRuim:
+        def get(self, url, **kwargs):
+            resposta = _Resposta()
+            resposta.content = b"<html>"
+            return resposta
+
+    serie = replace(ficha_codigos.series[0], verificado=True)
+    coletar_serie(ficha_codigos, serie, projeto, offline=False, hoje=date(2026, 11, 1), sessao=Sessao())
+    with pytest.raises(ErroColeta, match="IDHM"):
+        coletar_serie(ficha_codigos, serie, projeto, offline=False, hoje=date(2026, 11, 1), sessao=SessaoRuim())
+
+
+def test_padronizar_com_codigos_preenche_o_subindicador(ficha_codigos, territorios):
+    conteudo = combinado(
+        idhm=[("Brasil", "", DATA_2001, 0.5), ("Estados", "23", "2010-01-01T00:00:00-02:00", 0.682)],
+        renda=[("Brasil", "", DATA_2001, 0.6), ("Regiões", "2", "2012-01-01T00:00:00-02:00", 0.7)],  # 2012: fora da janela
+    )
+    df = padronizar_ipeadata(conteudo, ficha_codigos, ficha_codigos.series[0], "c1", territorios)
+    lido = {(r.subindicador, r.territorio_id, r.ano): r.valor for r in df.itertuples()}
+    assert lido == {("idhm", "BR", 2001): 0.5, ("idhm", "CE", 2010): 0.682, ("renda", "BR", 2001): 0.6}
+    assert list(df.columns) == COLUNAS_BASE and set(df.coleta_id) == {"c1"}
+
+
+def test_padronizar_com_codigos_exige_o_formato_combinado(ficha_codigos, territorios):
+    with pytest.raises(ErroLayout, match="subindicadores"):
+        padronizar_ipeadata(json_ipea([("Brasil", "", DATA_2001, 1.0)]), ficha_codigos,
+                            ficha_codigos.series[0], "c1", territorios)
+
+
+def test_padronizar_com_codigos_confere_os_subindicadores_do_arquivo(ficha_codigos, territorios):
+    so_um = combinado(idhm=[("Brasil", "", DATA_2001, 0.5)])
+    with pytest.raises(ErroLayout, match="renda"):
+        padronizar_ipeadata(so_um, ficha_codigos, ficha_codigos.series[0], "c1", territorios)
+    sobra = combinado(idhm=[], renda=[], extra=[])
+    with pytest.raises(ErroLayout, match="extra"):
+        padronizar_ipeadata(sobra, ficha_codigos, ficha_codigos.series[0], "c1", territorios)
+
+
+def test_padronizar_com_codigos_aponta_a_resposta_ilegivel(ficha_codigos, territorios):
+    ruim = json.dumps({"subindicadores": {"idhm": {"value": []}, "renda": {"x": 1}}}).encode()
+    with pytest.raises(ErroLayout, match="renda"):
+        padronizar_ipeadata(ruim, ficha_codigos, ficha_codigos.series[0], "c1", territorios)
+
+
+def test_serie_com_codigo_unico_segue_sem_subindicador(ficha_ipeadata, territorios):
+    df = padronizar_ipeadata(json_ipea([("Brasil", "", DATA_2001, 1.0)]), ficha_ipeadata,
+                             ficha_ipeadata.series[0], "c1", territorios)
+    assert set(df.subindicador) == {""}

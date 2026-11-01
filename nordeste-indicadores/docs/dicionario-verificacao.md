@@ -54,6 +54,8 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `informais` (auxiliar) | `pnadc` | SIDRA 4680, v4090, c1350/57303 | 2016 a 2025 | sim |
 | `ocupados` (auxiliar) | `pnadc` | SIDRA 4680, v4090, c1350/57302 | 2016 a 2025 | sim |
 | `rendimento_trabalho` | `pnadc` | SIDRA 4566, v5935 | 2012 a 2025 | sim |
+| `idhm` | `censo` | Ipeadata `IDHM`, `IDHMRE`, `IDHMED`, `IDHMLO` (janela 2000-2010) | 2000 e 2010, só Brasil e 9 UFs (sem regiões e sem NE) | sim (para o subconjunto declarado) |
+| `idhm` | `pnadc` | Ipeadata `IDHM`, `IDHMRE`, `IDHMED`, `IDHMLO` (janela 2012-2024) | 2012 a 2024, 15 territórios | sim (fonte Ipeadata; não cotejada com o arquivo oficial do Radar IDHM) |
 
 ## pib_nominal / scr_ref2010
 
@@ -574,3 +576,68 @@ tabela não está confirmada.
 11. `rendimento_trabalho`: só `pnadc` (2012 a 2025), comparação com o Brasil, como na spec.
 12. Mudanças de código desta tarefa: o parâmetro `periodos` do padronizador do Ipeadata (corta os anos anteriores a 2001); o campo `anos_sem_publicacao` da série
     (linhas `indisponivel` no ano sem pesquisa, 2010 na `pnad`); o campo `comparacao.precisao_oficial` e a tolerância correspondente na R08.
+
+## Bloco PNUD: IDHM
+
+Tarefa 16. Data da verificação: 2026-11-01. Método: `python -I -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar
+--indicador idhm` (o coletor do projeto monta as quatro URLs a partir dos `parametros` da ficha), `consolidar` e `validar`,
+numa raiz temporária fora do repositório. `validar` saiu com código 0 e sem nenhuma linha em `validacao.csv`
+(nem regra bloqueante nem aviso, com o limiar de A01 em 100% explicado abaixo).
+
+Fonte: Ipeadata, séries encadeadas do Ipea a partir do Atlas do Desenvolvimento Humano no Brasil. O Ipeadata descreve as
+séries como "Série encadeada, 1991-2010 (Censo) e 2012-2024 (Pnad)", atualizadas em 2026-05-29. Cada código é um
+subindicador; a API OData não aceita vários códigos numa consulta (`Valores?$filter=...` responde 404).
+
+| Subindicador | Código Ipeadata | Página no Ipeadata |
+|---|---|---|
+| `idhm` | `IDHM` | https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40037 |
+| `renda` | `IDHMRE` | https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40040 |
+| `educacao` | `IDHMED` | https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40039 |
+| `longevidade` | `IDHMLO` | https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40038 |
+
+Mecanismo novo (Tarefa 16, `parametros.codigos`): o coletor `ipeadata` aceita `codigos` (mapa subindicador → código),
+além do `codigo` único. Baixa cada código e grava um único arquivo bruto JSON por série,
+`{"subindicadores": {"idhm": <resposta OData do IDHM>, "renda": <...>, ...}}`, na ordem do mapa, com uma coleta e um
+sha256 por série. A `url` registrada em `coletas.csv` é a lista das quatro URLs, separadas por um espaço, na ordem do mapa.
+O padronizador `ipeadata` lê esse formato, confere que as chaves são as do mapa e preenche `subindicador`. Como as
+séries `censo` e `pnadc` usam os mesmos quatro downloads e diferem só na janela (`periodos`), o arquivo bruto das duas é o
+mesmo (mesmo sha256, em pastas de séries diferentes).
+
+Os dois subconjuntos de séries do Ipeadata não se completam: as regiões (N, NE, SE, S, CO) só existem de 2012 em diante
+nos quatro códigos. Nem as séries do Atlas por Censo (`ADH_IDHM`, `ADH_IDHM_E`, `ADH_IDHM_L`, `ADH_IDHM_R`: só Brasil e
+UFs, em 1991, 2000 e 2010) trazem regiões. O IDHM não se recalcula a partir das UFs, e não há Brasil fora do Nordeste.
+
+Cotejo com o Atlas por Censo (códigos `ADH_*`, baixados na mesma data): Brasil e UFs de 1991, 2000 e 2010, 84 pontos por
+componente (`IDHM`/`ADH_IDHM`, `IDHMRE`/`ADH_IDHM_R`, `IDHMED`/`ADH_IDHM_E`, `IDHMLO`/`ADH_IDHM_L`), diferença zero em todos.
+
+### idhm / censo
+
+- Página oficial: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40037 (a base é o Atlas, https://www.atlasbrasil.org.br/).
+- URLs de coleta (uma por subindicador, na ordem da ficha): `https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHM') https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHMRE') https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHMED') https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHMLO')`
+- Janela: `periodos: "2000-2010"`; o Ipeadata traz também 1991, que fica fora.
+- Obtido: 80 linhas = 2 anos (2000 e 2010) x 10 territórios (BR e as 9 UFs do Nordeste) x 4 subindicadores, todas
+  `observado`. Exemplo: Brasil 2000 = 0,612 e 2010 = 0,727; Ceará 2010 = 0,682.
+- **Sem regiões e sem Nordeste.** O Ipeadata não publica o IDHM das regiões em 2000 e 2010, e o índice não se recalcula a
+  partir das UFs: o Nordeste fica sem valor nesses anos, sem estimativa e sem linha `indisponivel`. A verificação vale para o
+  subconjunto Brasil + 9 UFs, que a ficha declara em `observacoes` e em `compatibilidade`.
+- Série decenal: não há linhas para 2001 a 2009 (nem 1991 na série).
+- Aviso A01: de 2000 a 2010 o componente educação subiu até 84% nas UFs do Nordeste (Alagoas, de 0,282 a 0,520);
+  é variação real, por isso a ficha declara `limiar_salto_pct: 100` (com o padrão de 50%, o aviso apontaria 9 casos).
+- Comparação `brasil`; não há Brasil fora do Nordeste.
+
+### idhm / pnadc
+
+- Página oficial: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40037 (Radar IDHM, PNUD: relatório de 26/05/2026, "Radar
+  IDHM: evolução do IDHM e de seus componentes, período de 2012 a 2024").
+- URLs de coleta (uma por subindicador, na ordem da ficha): `https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHM') https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHMRE') https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHMED') https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='IDHMLO')`
+- Janela: `periodos: "2012-2024"`.
+- Obtido: 780 linhas = 13 anos (2012 a 2024) x 15 territórios (BR, 5 regiões e as 9 UFs) x 4 subindicadores, todas
+  `observado`. Exemplo: Brasil 2012 = 0,744 e 2024 = 0,805; Nordeste 2012 = 0,687 e 2024 = 0,762.
+- **Não cotejada com o arquivo oficial do Radar IDHM.** O site do PNUD (`www.undp.org`) responde 403 e a busca na web só
+  achou o relatório em PDF, sem planilha. Os arquivos da Biblioteca do Atlas vêm de uma API de CMS que o ambiente negou
+  (e que não foi usada). O Ipeadata descreve a série 2012-2024 como "Pnad" do Atlas; é a fonte acessível, e a ficha diz
+  isso. O que passou pela regra de verificação foi o download real das quatro respostas com os parâmetros da ficha, o
+  padronizador do projeto e a cobertura completa (15 territórios, 2012 a 2024).
+- Série fechada em 2024 (`fim: 2024`): uma edição nova do Radar exige rever `fim` e `periodos` da ficha.
+- Não comparável com `censo` (pesquisa e método diferentes); sem variação calculada entre as duas.
+- Comparação `brasil`; não há Brasil fora do Nordeste.

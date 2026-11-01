@@ -240,6 +240,27 @@ def json_ipeadata_anual(anos, valor: float, metropoles: bool = False) -> dict:
     return json_ipeadata(registros)
 
 
+# IDHM (Ipeadata, series encadeadas): um codigo por subindicador, reunidos pelo coletor num JSON combinado
+# {"subindicadores": {<subindicador>: <resposta OData>}}. Valores constantes e distintos por subindicador (um indice
+# nao soma nem se compoe a partir das UFs). Como na resposta real: 1991, 2000 e 2010 so com Brasil e UFs, e as
+# regioes (e o Brasil) so de 2012 em diante; a ficha recorta a janela de cada serie (`periodos`).
+VALORES_IDHM = {"idhm": 0.5, "renda": 0.6, "educacao": 0.4, "longevidade": 0.7}
+ANOS_IDHM_CENSO = [1991, 2000, 2010]
+ANOS_IDHM_PNADC = range(2012, 2025)
+
+
+def json_idhm_combinado() -> dict:
+    def resposta(valor: float) -> dict:
+        registros = [
+            (_NIVEL_IPEADATA[nc], "" if nc == "1" else codigo, f"{ano}-01-01T00:00:00-02:00", valor)
+            for ano in [*ANOS_IDHM_CENSO, *ANOS_IDHM_PNADC] for nc, codigo, _, _ in _TERRITORIOS
+            if nc != "2" or ano >= 2012
+        ]
+        return json_ipeadata(registros)
+
+    return {"subindicadores": {nome: resposta(valor) for nome, valor in VALORES_IDHM.items()}}
+
+
 def _soma(nc, codigo, ano, multiplicador) -> str:
     return str(BASE * multiplicador)
 
@@ -343,6 +364,9 @@ GERADORES = {
     "ocupados/pnadc.json": lambda: json_sidra(
         "Pessoas ocupadas (sintético)", "49", "Mil pessoas", _soma_vezes(2), anos=ANOS_INFORMALIDADE,
         classificacoes=(("Situação de informalidade", "57302"),)),
+    # As duas series do IDHM saem dos mesmos quatro downloads do Ipeadata: o arquivo bruto e o mesmo.
+    "idhm/censo.json": json_idhm_combinado,
+    "idhm/pnadc.json": json_idhm_combinado,
     "rendimento_trabalho/pnadc.json": lambda: json_sidra(
         "Rendimento médio mensal real do trabalho (sintético)", "38", "Reais", _constante("99999"),
         anos=ANOS_PNADC),

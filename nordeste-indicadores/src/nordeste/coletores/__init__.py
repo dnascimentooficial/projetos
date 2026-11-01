@@ -1,6 +1,7 @@
 """Coleta dos arquivos brutos: rede (SIDRA, arquivos por URL) ou fixtures no modo offline."""
 
 import hashlib
+import json
 from datetime import date
 from pathlib import PurePosixPath
 from urllib.parse import urlparse
@@ -11,7 +12,7 @@ from nordeste.caminhos import Caminhos
 from nordeste.coletores.arquivo import url_arquivo
 from nordeste.coletores.erros import ErroColeta
 from nordeste.coletores.http import baixar
-from nordeste.coletores.ipeadata import url_ipeadata
+from nordeste.coletores.ipeadata import url_ipeadata, urls_ipeadata
 from nordeste.coletores.registro import Coleta, ler_registro, registrar
 from nordeste.coletores.sidra import url_sidra
 from nordeste.fichas import Ficha, Serie
@@ -67,6 +68,24 @@ def _coletar_offline(ficha: Ficha, serie: Serie, caminhos: Caminhos, hoje: date)
     )
 
 
+def _baixar_ipeadata(parametros: dict, sessao: requests.Session | None) -> bytes:
+    """Resposta do Ipeadata; com `codigos`, as respostas de cada codigo num unico JSON {"subindicadores": {...}}.
+
+    Um arquivo por serie mantem uma coleta e um sha256 por serie. A ordem dos subindicadores e a da ficha.
+    """
+    urls = urls_ipeadata(parametros)
+    if "codigos" not in parametros:
+        return baixar(urls[""], sessao=sessao)
+    respostas = {}
+    for subindicador, url in urls.items():
+        conteudo = baixar(url, sessao=sessao)
+        try:
+            respostas[subindicador] = json.loads(conteudo)
+        except ValueError as erro:
+            raise ErroColeta(f"resposta do Ipeadata ilegivel em {url} ({erro})") from erro
+    return json.dumps({"subindicadores": respostas}, ensure_ascii=False).encode("utf-8")
+
+
 def _coletar_da_rede(
     ficha: Ficha, serie: Serie, caminhos: Caminhos, hoje: date, sessao: requests.Session | None,
 ) -> Coleta:
@@ -76,6 +95,8 @@ def _coletar_da_rede(
         url, extensao = url_sidra(serie.parametros), "json"
     elif serie.coletor == "ipeadata":
         url, extensao = url_ipeadata(serie.parametros), "json"
+        conteudo = _baixar_ipeadata(serie.parametros, sessao)
+        return _guardar(ficha, serie, caminhos, conteudo, url, extensao, "rede", hoje)
     elif serie.coletor == "arquivo":
         url = url_arquivo(serie.parametros)
         extensao = PurePosixPath(urlparse(url).path).suffix.lstrip(".").lower() or "bin"

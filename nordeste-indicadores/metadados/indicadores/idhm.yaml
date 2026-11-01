@@ -1,0 +1,74 @@
+id: idhm
+nome: Índice de Desenvolvimento Humano Municipal (IDHM) e componentes
+descricao: >-
+  IDHM e os seus três componentes (renda, educação e longevidade) do Brasil, das
+  regiões e das unidades da federação. Vai de 0 a 1; quanto mais perto de 1,
+  maior o desenvolvimento humano.
+eixo: social
+categoria: desenvolvimento_humano
+unidade: índice (0 a 1)
+orgao: PNUD/Ipea/FJP (Atlas do Desenvolvimento Humano no Brasil)
+periodicidade: decenal (Censo) e anual (PNAD Contínua)
+metodologia: >-
+  Quatro subindicadores: `idhm` (índice sintético dos três componentes), `renda`,
+  `educacao` e `longevidade`. Cada um é uma série encadeada do Ipeadata (códigos
+  IDHM, IDHMRE, IDHMED e IDHMLO), elaborada pelo Ipea a partir do Atlas do
+  Desenvolvimento Humano no Brasil. Duas séries, nunca unidas: `censo`, com os
+  Censos de 2000 e 2010 (só Brasil e UFs), e `pnadc`, com a PNAD Contínua anual
+  de 2012 a 2024 (Radar IDHM, 15 territórios); uma edição nova do Radar exige
+  rever `fim` e `periodos` da série. O Ipeadata guarda também 1991,
+  que não entra. O IDHM não se recalcula a partir das UFs nem de totais, por isso
+  não há Brasil fora do Nordeste; a comparação é com o Brasil.
+observacoes: >-
+  (1) Na série `censo` o Ipeadata não publica o IDHM das regiões nem do Nordeste
+  (só do Brasil e das 27 UFs), e o índice não se recompõe a partir das UFs: o
+  Nordeste fica sem valor em 2000 e 2010, sem estimativa e sem linha. (2) A série
+  `pnadc` vem do Ipeadata (séries encadeadas do Ipea, "1991-2010 (Censo) e
+  2012-2024 (Pnad)") e não foi cotejada com o arquivo oficial do Radar IDHM do
+  PNUD: o site do PNUD recusa robôs (403) e a API de arquivos do Atlas não foi
+  usada. O que foi cotejado: 2000 e 2010 do Ipeadata batem com as séries do
+  Atlas por Censo (ADH_IDHM, ADH_IDHM_E, ADH_IDHM_L e ADH_IDHM_R) em 84 pontos por
+  componente. (3) `censo` e `pnadc` não são comparáveis entre si (pesquisas e
+  métodos distintos; o IDHM de 2012 a 2024 é uma estimativa com a PNAD
+  Contínua): ficam em `serie_id` diferentes e não se calcula variação entre elas.
+  Não há linhas para 2001 a 2009 nem para 2011: a série não publica esses anos.
+  (4) Limiar do aviso A01 em 100%: de 2000 a 2010 o componente educação subiu até
+  84% nas UFs do Nordeste (Alagoas, de 0,282 a 0,520), valor real do Censo e não
+  erro de coleta; com o limiar padrão de 50% o aviso apontaria 9 casos.
+sentido: maior_melhor
+limites: {min: 0, max: 1}
+defasagem_meses: 17
+limiar_salto_pct: 100
+comparacao:
+  referencia: brasil
+series:
+  - id: censo
+    inicio: 2000
+    fim: 2010
+    fonte: PNUD/Ipea/FJP, Atlas do Desenvolvimento Humano no Brasil (Censos Demográficos), via Ipeadata
+    base_origem: Ipeadata, séries IDHM, IDHMRE, IDHMED e IDHMLO (Brasil e estados; janela 2000-2010)
+    url: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40037
+    coletor: ipeadata
+    parametros:
+      codigos: {idhm: IDHM, renda: IDHMRE, educacao: IDHMED, longevidade: IDHMLO}
+      periodos: "2000-2010"
+    compatibilidade: >-
+      Censos de 2000 e 2010 (decenal), só Brasil e as 27 UFs: sem as regiões e
+      sem o Nordeste, que não se recalculam. Não comparável com a série `pnadc`
+      (PNAD Contínua), que tem outra pesquisa e outro método.
+    verificado: true
+  - id: pnadc
+    inicio: 2012
+    fim: 2024
+    fonte: PNUD/Ipea/FJP, Radar IDHM (PNAD Contínua), via Ipeadata
+    base_origem: Ipeadata, séries IDHM, IDHMRE, IDHMED e IDHMLO (Brasil, regiões e estados; janela 2012-2024)
+    url: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=40037
+    coletor: ipeadata
+    parametros:
+      codigos: {idhm: IDHM, renda: IDHMRE, educacao: IDHMED, longevidade: IDHMLO}
+      periodos: "2012-2024"
+    compatibilidade: >-
+      PNAD Contínua (2012 a 2024), anual, com Brasil, regiões e UFs. Série do
+      Ipeadata não cotejada com o arquivo oficial do Radar IDHM. Não comparável
+      com a série `censo` (Censos de 2000 e 2010).
+    verificado: true
