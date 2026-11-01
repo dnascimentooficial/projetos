@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import date
 
 import pandas as pd
@@ -17,7 +18,7 @@ HOJE = date(2026, 11, 1)
 COLUNAS_MUDANCAS = [*CHAVE_BASE, "valor_anterior", "valor_novo", "tipo"]
 COLUNAS_EXTRAS = [
     "territorio_nome", "indicador_nome", "unidade", "fonte", "orgao", "url", "periodicidade",
-    "presidente", "mandato", "compatibilidade",
+    "presidente", "mandato", "metodologia", "compatibilidade",
 ]
 
 
@@ -393,5 +394,27 @@ def test_versao_completa_traz_ficha_serie_e_governo(projeto):
     assert a.indicador_nome == ficha.nome and a.unidade == ficha.unidade
     assert a.orgao == ficha.orgao and a.periodicidade == ficha.periodicidade
     assert (a.fonte, a.url, a.compatibilidade) == (serie.fonte, serie.url, serie.compatibilidade)
+    assert a.metodologia == ficha.metodologia and b.metodologia == ficha.metodologia
     assert (a.presidente, a.mandato) == ("transicao_dilma_temer", "")
     assert (b.presidente, b.mandato) == ("Luiz Inácio Lula da Silva", "3")
+
+
+def test_versao_completa_resolve_o_ano_da_unidade_em_reais_do_ultimo_ano(projeto):
+    fichas = carregar_fichas(projeto.fichas)
+    fichas["amostra_per_capita"] = replace(
+        fichas["amostra_per_capita"], unidade="R$ por mês, a preços médios do último ano da série",
+        tratamento_monetario={"modo": "reais_constantes", "deflator": "d", "ano_base": "ultimo_ano"},
+    )
+    base = pd.concat([
+        base_com_valor(1.0, indicador_id="amostra_per_capita", territorio_id="PE", ano=2016, serie_id="scr_ref2010"),
+        base_com_valor(2.0, indicador_id="amostra_per_capita", territorio_id="NE", ano=2022, serie_id="scr_ref2010"),
+        # linha indisponivel nao conta como ano com valor
+        base_com_valor(None, indicador_id="amostra_per_capita", territorio_id="NE", ano=2023, serie_id="scr_ref2010",
+                       tipo_dado="indisponivel"),
+        base_com_valor(5.0, indicador_id="pib_nominal", territorio_id="NE", ano=2023, serie_id="scr_ref2010"),
+    ], ignore_index=True)
+    completa = versao_completa(
+        base, fichas, carregar_territorios(projeto.territorios_csv), carregar_governos(projeto.governos_csv))
+    por_indicador = completa.groupby("indicador_id").unidade.unique()
+    assert por_indicador["amostra_per_capita"].tolist() == ["R$ por mês, a preços médios de 2022"]
+    assert por_indicador["pib_nominal"].tolist() == [fichas["pib_nominal"].unidade]

@@ -392,8 +392,11 @@ dentro da meia casa (0,05), em 11 anos conferidos.
 - Obtido: 210 linhas = 14 anos (2012 a 2025) x 15 territórios, todas `observado`. Brasil 2012 = 1.782 e 2025 = 2.264; Nordeste
   2012 = 1.088 e 2025 = 1.470 (reais de 2025).
 - Preços: "médios do último ano" da divulgação (2025 hoje); a série inteira é reapresentada a cada ano novo. A variante "a preços
-  médios do ano" (tabela 7531, v10824) não deflaciona entre anos e não foi usada. A ficha declara `reais_constantes`, ano base
-  2025, com o deflator descrito como o da PNAD Contínua (a nota da tabela não pôde ser consultada para nomear o índice).
+  médios do ano" (tabela 7531, v10824) não deflaciona entre anos e não foi usada. A ficha declara `reais_constantes` com
+  `ano_base: ultimo_ano` (revisão final, decisão R-AE: a série é reapresentada a cada divulgação, então nenhum ano fixo é
+  gravado na ficha; a unidade diz "a preços médios do último ano da série" e a versão completa troca o trecho pelo maior ano
+  com valor da série na base publicada, hoje "de 2025"), com o deflator descrito como o da PNAD Contínua (a nota da tabela não
+  pôde ser consultada para nomear o índice). O mesmo vale para `massa_renda_dom_pc` e `rendimento_trabalho`.
 - Brasil fora do Nordeste: exato, por razão das diferenças, (massa BR − massa NE) ÷ (população BR − população NE) × 1000, com as
   séries auxiliares abaixo. O valor oficial do Nordeste confere com a razão em todos os 14 anos, a até 0,14% (2012). Brasil fora do Nordeste:
   2.043 em 2012 e 2.554 em 2025.
@@ -556,7 +559,7 @@ tabela não está confirmada.
 - URL de coleta: `https://apisidra.ibge.gov.br/values/t/4566/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/5935/p/all`
 - Variável 5935: "Rendimento médio mensal real das pessoas de 14 anos ou mais de idade ocupadas na semana de referência com rendimento de trabalho, efetivamente recebido
   em todos os trabalhos", Reais. A tabela traz também o nominal (5931) e os coeficientes de variação, não usados. O valor real de 2025 (Brasil 3.694) difere do
-  nominal (3.674), então o real não está em preços de 2025 exatos do ano; a ficha declara ano base 2025 e o deflator da PNAD Contínua, sem nomear o índice.
+  nominal (3.674), então o real não está em preços de 2025 exatos do ano; a ficha declara `ano_base: ultimo_ano` (resolvido na versão completa; ver `renda_dom_pc`) e o deflator da PNAD Contínua, sem nomear o índice.
 - Obtido: 210 linhas = 14 anos (2012 a 2025) x 15 territórios, `observado`. Brasil 2012 = 3.114 e 2025 = 3.694; Nordeste 2012 = 2.074 e 2025 = 2.528.
 - Comparação: Brasil (seção 4 da spec); não se recompõe Brasil fora do Nordeste.
 

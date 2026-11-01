@@ -375,8 +375,12 @@ def test_comparacoes_da_parte_b(fichas):
 
 def test_valores_monetarios_da_pnadc_declaram_deflator_e_ano_base(fichas):
     for indicador in ("renda_dom_pc", "massa_renda_dom_pc", "rendimento_trabalho"):
-        t = fichas[indicador].tratamento_monetario
-        assert t["modo"] == "reais_constantes" and t["ano_base"] == 2025 and t["deflator"], indicador
+        f = fichas[indicador]
+        t = f.tratamento_monetario
+        # o IBGE reapresenta a serie inteira a precos do ultimo ano a cada divulgacao: nada de ano fixo no texto
+        assert t["modo"] == "reais_constantes" and t["ano_base"] == "ultimo_ano" and t["deflator"], indicador
+        assert "do último ano da série" in f.unidade and "2025" not in f.unidade + f.descricao, indicador
+        assert f.unidade_resolvida(2026).endswith("a preços médios de 2026"), indicador
     for indicador in FICHAS_PARTE_B - {"renda_dom_pc", "massa_renda_dom_pc", "rendimento_trabalho"}:
         assert fichas[indicador].tratamento_monetario is None, indicador
 

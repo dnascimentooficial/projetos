@@ -14,6 +14,10 @@ REFERENCIAS: tuple[str, ...] = ("brasil", "brasil_fora_ne", "nenhuma")
 METODOS: tuple[str, ...] = ("soma", "razao", "razao_encadeada")
 MODOS_MONETARIOS: tuple[str, ...] = ("razao", "reais_constantes")
 METODOS_CALCULO: tuple[str, ...] = ("razao_por_ano",)
+# `tratamento_monetario.ano_base` de serie reapresentada a precos do ultimo ano a cada divulgacao (PNAD Continua);
+# a unidade traz MARCA_ULTIMO_ANO, que a versao completa troca por "de <ano>" com o ano resolvido na base.
+ULTIMO_ANO = "ultimo_ano"
+MARCA_ULTIMO_ANO = "do último ano da série"
 
 _METODOS_COM_TERMOS = ("razao", "razao_encadeada")
 _TEXTOS_FICHA = (
@@ -103,6 +107,12 @@ class Ficha:
     auxiliar: bool = False
     limiar_salto_pct: float = 50.0
     calculo: Calculo | None = None
+
+    def unidade_resolvida(self, ultimo_ano: int) -> str:
+        """A unidade com o ano-base resolvido: em reais do ultimo ano, MARCA_ULTIMO_ANO vira "de <ultimo_ano>"."""
+        if (self.tratamento_monetario or {}).get("ano_base") != ULTIMO_ANO:
+            return self.unidade
+        return self.unidade.replace(MARCA_ULTIMO_ANO, f"de {ultimo_ano}")
 
     def serie(self, serie_id: str) -> Serie:
         for s in self.series:
@@ -300,6 +310,33 @@ def _validar_calculo(calculo: Any, series: Any) -> list[str]:
     return problemas
 
 
+def _validar_tratamento_monetario(tratamento: Any, unidade: Any) -> list[str]:
+    """`razao` (exibido como razao, sem deflacionar) ou `reais_constantes` com `deflator` e `ano_base`.
+
+    `ano_base` e um ano inteiro ou ULTIMO_ANO; neste caso a unidade precisa trazer MARCA_ULTIMO_ANO.
+    """
+    if tratamento is None:
+        if isinstance(unidade, str) and unidade.startswith("R$"):
+            return ["tratamento_monetario obrigatorio quando a unidade e monetaria (R$)"]
+        return []
+    if not isinstance(tratamento, dict) or tratamento.get("modo") not in MODOS_MONETARIOS:
+        return [f"tratamento_monetario.modo deve ser um de {', '.join(MODOS_MONETARIOS)}"]
+    if tratamento["modo"] != "reais_constantes":
+        return []
+    problemas: list[str] = []
+    if not _texto_ok(tratamento.get("deflator")):
+        problemas.append("tratamento_monetario.deflator obrigatorio em reais_constantes (texto nao vazio)")
+    ano_base = tratamento.get("ano_base")
+    if not (_inteiro(ano_base) or ano_base == ULTIMO_ANO):
+        problemas.append(f"tratamento_monetario.ano_base obrigatorio em reais_constantes (ano inteiro ou {ULTIMO_ANO})")
+    elif ano_base == ULTIMO_ANO and not (isinstance(unidade, str) and MARCA_ULTIMO_ANO in unidade):
+        problemas.append(
+            f"tratamento_monetario.ano_base {ULTIMO_ANO}: a unidade deve conter \"{MARCA_ULTIMO_ANO}\" "
+            "(a versao completa troca o trecho pelo ano resolvido)"
+        )
+    return problemas
+
+
 def _validar(dados: Any) -> list[str]:
     """Lista os problemas de completude e coerencia de uma ficha lida do YAML."""
     if not isinstance(dados, dict):
@@ -331,13 +368,7 @@ def _validar(dados: Any) -> list[str]:
     if not _inteiro(defasagem) or defasagem < 0:
         problemas.append("campo obrigatorio ausente ou invalido: defasagem_meses (inteiro >= 0)")
 
-    tratamento = dados.get("tratamento_monetario")
-    unidade = dados.get("unidade")
-    if tratamento is None:
-        if isinstance(unidade, str) and unidade.startswith("R$"):
-            problemas.append("tratamento_monetario obrigatorio quando a unidade e monetaria (R$)")
-    elif not isinstance(tratamento, dict) or tratamento.get("modo") not in MODOS_MONETARIOS:
-        problemas.append(f"tratamento_monetario.modo deve ser um de {', '.join(MODOS_MONETARIOS)}")
+    problemas += _validar_tratamento_monetario(dados.get("tratamento_monetario"), dados.get("unidade"))
 
     if not isinstance(dados.get("auxiliar", False), bool):
         problemas.append("auxiliar deve ser true ou false")

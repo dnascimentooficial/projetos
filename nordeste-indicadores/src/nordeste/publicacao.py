@@ -53,9 +53,11 @@ def mudancas(nova: pd.DataFrame, publicada: pd.DataFrame | None) -> pd.DataFrame
 def versao_completa(
     base: pd.DataFrame, fichas: dict[str, Ficha], territorios: pd.DataFrame, governos: pd.DataFrame,
 ) -> pd.DataFrame:
-    """A base com nome do territorio, dados da ficha e da serie, e o governo do ano.
+    """A base com nome do territorio, dados da ficha e da serie (inclusive a metodologia), e o governo do ano.
 
-    Exige base validada: territorio, indicador ou serie desconhecidos levantam KeyError.
+    Em ficha com `tratamento_monetario.ano_base: ultimo_ano`, a unidade traz o ano resolvido: o maior ano com
+    valor daquela serie nesta base. Exige base validada: territorio, indicador ou serie desconhecidos levantam
+    KeyError.
     """
     nomes = dict(zip(territorios["territorio_id"], territorios["nome"]))
     series = {
@@ -64,17 +66,24 @@ def versao_completa(
     governo_do_ano = {ano: atribuir_governo(int(ano), governos) for ano in base["ano"].unique()}
     por_serie = [series[i, s] for i, s in zip(base["indicador_id"], base["serie_id"])]
     por_ficha = [fichas[i] for i in base["indicador_id"]]
+    com_valor = base[base["valor"].notna()]
+    ultimo_ano = com_valor.groupby(["indicador_id", "serie_id"])["ano"].max().to_dict()
+    unidade = {
+        (i, s): fichas[i].unidade_resolvida(int(ultimo_ano[i, s])) if (i, s) in ultimo_ano else fichas[i].unidade
+        for i, s in series
+    }
 
     completa = base.copy()
     completa["territorio_nome"] = [nomes[t] for t in base["territorio_id"]]
     completa["indicador_nome"] = [f.nome for f in por_ficha]
-    completa["unidade"] = [f.unidade for f in por_ficha]
+    completa["unidade"] = [unidade[i, s] for i, s in zip(base["indicador_id"], base["serie_id"])]
     completa["fonte"] = [s.fonte for s in por_serie]
     completa["orgao"] = [f.orgao for f in por_ficha]
     completa["url"] = [s.url for s in por_serie]
     completa["periodicidade"] = [f.periodicidade for f in por_ficha]
     completa["presidente"] = [governo_do_ano[a][0] for a in base["ano"]]
     completa["mandato"] = [governo_do_ano[a][1] for a in base["ano"]]
+    completa["metodologia"] = [f.metodologia for f in por_ficha]
     completa["compatibilidade"] = [s.compatibilidade for s in por_serie]
     return completa
 

@@ -98,6 +98,41 @@ def test_unidade_monetaria_exige_tratamento(tmp_path, ficha_minima):
     assert any("tratamento_monetario" in m for m in verificar_fichas(tmp_path))
 
 
+@pytest.mark.parametrize("retirado", ["deflator", "ano_base"])
+def test_reais_constantes_exige_deflator_e_ano_base(tmp_path, ficha_minima, retirado):
+    ficha_minima["unidade"] = "R$ de 2020"
+    ficha_minima["tratamento_monetario"] = {"modo": "reais_constantes", "deflator": "IPCA", "ano_base": 2020}
+    del ficha_minima["tratamento_monetario"][retirado]
+    _gravar(tmp_path, ficha_minima)
+    assert any(f"tratamento_monetario.{retirado}" in m for m in verificar_fichas(tmp_path))
+
+
+@pytest.mark.parametrize("ano_base", ["2025", "ultimo", True, 2025.0, None])
+def test_ano_base_e_inteiro_ou_ultimo_ano(tmp_path, ficha_minima, ano_base):
+    ficha_minima["unidade"] = "R$ a preços médios do último ano da série"
+    ficha_minima["tratamento_monetario"] = {"modo": "reais_constantes", "deflator": "IPCA", "ano_base": ano_base}
+    _gravar(tmp_path, ficha_minima)
+    assert any("tratamento_monetario.ano_base" in m for m in verificar_fichas(tmp_path))
+
+
+def test_ano_base_ultimo_ano_e_aceito_com_a_marca_na_unidade(tmp_path, ficha_minima):
+    ficha_minima["unidade"] = "R$ por mês, a preços médios do último ano da série"
+    ficha_minima["tratamento_monetario"] = {"modo": "reais_constantes", "deflator": "IPCA", "ano_base": "ultimo_ano"}
+    f = carregar_ficha(_gravar(tmp_path, ficha_minima))
+    assert f.tratamento_monetario["ano_base"] == "ultimo_ano"
+    assert f.unidade_resolvida(2025) == "R$ por mês, a preços médios de 2025"
+    ficha_minima["tratamento_monetario"]["ano_base"] = 2020
+    ficha_minima["unidade"] = "R$ de 2020"
+    assert carregar_ficha(_gravar(tmp_path, ficha_minima)).unidade_resolvida(2025) == "R$ de 2020"
+
+
+def test_ano_base_ultimo_ano_exige_a_marca_na_unidade(tmp_path, ficha_minima):
+    ficha_minima["unidade"] = "R$ por mês (reais de 2025)"
+    ficha_minima["tratamento_monetario"] = {"modo": "reais_constantes", "deflator": "IPCA", "ano_base": "ultimo_ano"}
+    _gravar(tmp_path, ficha_minima)
+    assert any("do último ano da série" in m for m in verificar_fichas(tmp_path))
+
+
 def test_razao_exige_numerador(tmp_path, ficha_minima):
     ficha_minima["comparacao"] = {"referencia": "brasil_fora_ne", "metodo": "razao"}
     _gravar(tmp_path, ficha_minima)

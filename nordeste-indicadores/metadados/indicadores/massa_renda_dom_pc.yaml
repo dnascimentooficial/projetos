@@ -6,7 +6,7 @@ descricao: >-
   renda domiciliar per capita, não exibido por si.
 eixo: economia
 categoria: renda
-unidade: R$ milhões (reais de 2025)
+unidade: R$ milhões, a preços médios do último ano da série
 orgao: IBGE
 periodicidade: anual
 metodologia: >-
@@ -17,8 +17,8 @@ metodologia: >-
   agregado Brasil fora do Nordeste é a soma dos demais territórios.
 observacoes: >-
   Os valores são reais a preços médios do último ano da série; quando o IBGE
-  divulga um novo ano, toda a série é reapresentada nos preços do novo ano
-  (hoje 2025). Serve só de numerador da renda domiciliar per capita.
+  divulga um novo ano, toda a série é reapresentada nos preços do novo ano.
+  Serve só de numerador da renda domiciliar per capita.
 sentido: maior_melhor
 limites: {min: 0}
 defasagem_meses: 5
@@ -26,7 +26,7 @@ auxiliar: true
 tratamento_monetario:
   modo: reais_constantes
   deflator: deflator da PNAD Contínua (IBGE), rendimento real a preços médios do último ano da série
-  ano_base: 2025
+  ano_base: ultimo_ano
 comparacao:
   referencia: brasil_fora_ne
   metodo: soma

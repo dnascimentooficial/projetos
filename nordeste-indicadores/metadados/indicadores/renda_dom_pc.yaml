@@ -2,17 +2,17 @@ id: renda_dom_pc
 nome: Renda domiciliar per capita
 descricao: >-
   Rendimento médio mensal real domiciliar per capita de todas as fontes, por
-  Brasil, região e unidade da federação, em reais de 2025. Mostra o quanto cada
-  pessoa dispõe, em média, de renda do domicílio.
+  Brasil, região e unidade da federação, a preços médios do último ano da
+  série. Mostra o quanto cada pessoa dispõe, em média, de renda do domicílio.
 eixo: social
 categoria: renda
-unidade: R$ por mês (reais de 2025)
+unidade: R$ por mês, a preços médios do último ano da série
 orgao: IBGE
 periodicidade: anual
 metodologia: >-
   Rendimento médio mensal real domiciliar per capita da PNAD Contínua anual,
   rendimento de todas as fontes (SIDRA 7533), a preços médios do último ano da
-  série (2025). Brasil fora do Nordeste é a razão das diferenças, (massa de
+  série (o ano aparece na unidade da versão completa). Brasil fora do Nordeste é a razão das diferenças, (massa de
   rendimento do Brasil − massa do Nordeste) ÷ (população do Brasil − população
   do Nordeste) × 1000, com as fichas `massa_renda_dom_pc` (SIDRA 7427) e
   `populacao_pnadc` (SIDRA 7436); o valor oficial do Nordeste confere com essa
@@ -32,7 +32,7 @@ defasagem_meses: 5
 tratamento_monetario:
   modo: reais_constantes
   deflator: deflator da PNAD Contínua (IBGE), rendimento real a preços médios do último ano da série
-  ano_base: 2025
+  ano_base: ultimo_ano
 comparacao:
   referencia: brasil_fora_ne
   metodo: razao
