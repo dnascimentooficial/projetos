@@ -1,11 +1,12 @@
-"""Derivados da base: o agregado Brasil fora do Nordeste e, adiante, as metricas de convergencia."""
+"""Derivados da base: o agregado Brasil fora do Nordeste e as metricas de convergencia."""
 
 import hashlib
 
 import pandas as pd
 
-from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, normalizar_base
+from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, COLUNAS_DERIVADOS, normalizar_base
 from nordeste.fichas import Ficha
+from nordeste.territorios import REGIOES, UFS_NE
 
 TERRITORIO_DERIVADO = "BR_FORA_NE"
 COLUNAS_REGISTRO: list[str] = ["coleta_id", "indicador_id", "serie_id", "insumos"]
@@ -162,3 +163,129 @@ def brasil_fora_ne(
     ])
     saida = normalizar_base(saida).sort_values(CHAVE_BASE, kind="stable").reset_index(drop=True)
     return saida, registro_df
+
+
+# ---------------------------------------------------------------------------
+# Metricas de convergencia
+# ---------------------------------------------------------------------------
+
+_REFERENCIAS = {"brasil": "BR", "brasil_fora_ne": TERRITORIO_DERIVADO}
+_ALVOS = ("NE", *UFS_NE)  # territorios que recebem razao, diferenca, variacao e crescimento
+_CHAVE_METRICA = [*_GRUPO, "serie_id"]
+
+
+def _exigir_uma_serie(*partes: pd.DataFrame) -> None:
+    series = pd.concat([p["serie_id"] for p in partes]).unique()
+    if len(series) > 1:
+        raise ErroSerie(
+            f"a conta mistura observacoes de series diferentes: {', '.join(sorted(map(str, series)))}"
+        )
+
+
+def _variacoes_pct(valores: pd.Series) -> pd.Series:
+    """Variacao percentual entre observacoes consecutivas; valor anterior nulo ou zero nao gera ponto."""
+    anterior = valores.shift(1)
+    return ((valores / anterior - 1) * 100).where(anterior != 0).dropna()
+
+
+def variacao_acumulada(df: pd.DataFrame) -> pd.Series:
+    """(v / v_primeiro - 1) * 100, indexada por ano, de uma unica serie de um unico territorio."""
+    _exigir_uma_serie(df)
+    valores = df[df.valor.notna()].sort_values("ano").set_index("ano").valor
+    if valores.empty or valores.iloc[0] == 0:
+        return pd.Series(dtype=float, name="valor")
+    return ((valores / valores.iloc[0] - 1) * 100).rename("valor")
+
+
+def crescimento_relativo(df_territorio: pd.DataFrame, df_referencia: pd.DataFrame) -> pd.Series:
+    """Variacao (%) do territorio menos a da referencia entre observacoes consecutivas, em pontos percentuais.
+
+    So conta os anos observados nas duas series; o indice e o ano da observacao mais recente do par.
+    """
+    _exigir_uma_serie(df_territorio, df_referencia)
+    validos = [d[d.valor.notna()].drop_duplicates("ano").set_index("ano").valor for d in (df_territorio, df_referencia)]
+    comuns = validos[0].index.intersection(validos[1].index).sort_values()
+    territorio, referencia = (_variacoes_pct(v.loc[comuns]) for v in validos)
+    return (territorio - referencia).dropna().rename("valor")
+
+
+def _serie_por_ano(df: pd.DataFrame) -> pd.Series:
+    return df.drop_duplicates("ano").set_index("ano").valor
+
+
+def _metricas_da_serie(ficha: Ficha, serie: pd.DataFrame, ident: dict) -> list[dict]:
+    """Metricas de um grupo (subindicador, etapa, rede) numa unica serie_id."""
+    referencia = _REFERENCIAS.get(ficha.comparacao.referencia)
+    por_territorio = {t: g for t, g in serie.groupby("territorio_id")}
+    linhas: list[dict] = []
+
+    def emite(metrica: str, territorio_id: str, valores: pd.Series, ref: str = "") -> None:
+        linhas.extend(
+            {**ident, "metrica": metrica, "referencia": ref, "territorio_id": territorio_id,
+             "ano": int(ano), "valor": float(valor)}
+            for ano, valor in valores.dropna().items()
+        )
+
+    for alvo in _ALVOS:
+        if alvo not in por_territorio:
+            continue
+        emite("variacao_acumulada", alvo, variacao_acumulada(por_territorio[alvo]))
+        if referencia is None or referencia not in por_territorio:
+            continue
+        t, r = por_territorio[alvo], por_territorio[referencia]
+        valor_t = _serie_por_ano(t)
+        valor_r = _serie_por_ano(r)
+        valor_r_sem_zero = valor_r.where(valor_r != 0)
+        emite("razao", alvo, valor_t / valor_r_sem_zero * 100, referencia)
+        emite("diferenca", alvo, valor_t - valor_r, referencia)
+        emite("crescimento_relativo", alvo, crescimento_relativo(t, r), referencia)
+
+    regioes = _anos_completos(serie, REGIOES)
+    if not regioes.empty:
+        menor_melhor = ficha.sentido == "menor_melhor"
+        emite("posicao_regioes", "NE", regioes.rank(axis=1, method="min", ascending=menor_melhor)["NE"])
+
+    ufs = _anos_completos(serie, UFS_NE)
+    if not ufs.empty:
+        media = ufs.mean(axis=1)
+        emite("dispersao_ufs", "NE", ufs.std(axis=1, ddof=0) / media.where(media != 0) * 100)
+    return linhas
+
+
+def _anos_completos(serie: pd.DataFrame, territorios: tuple[str, ...]) -> pd.DataFrame:
+    """Valores por ano (linhas) e territorio (colunas), so dos anos em que todos os territorios existem."""
+    ano_x_territorio = serie[serie.territorio_id.isin(territorios)].pivot_table(
+        index="ano", columns="territorio_id", values="valor", aggfunc="first",
+    )
+    if not set(territorios) <= set(ano_x_territorio.columns):
+        return ano_x_territorio.iloc[0:0]
+    return ano_x_territorio[list(territorios)].dropna()
+
+
+def metricas_convergencia(
+    base: pd.DataFrame, fichas: dict[str, Ficha], territorios: pd.DataFrame,
+) -> pd.DataFrame:
+    """Metricas de convergencia (esquema COLUNAS_DERIVADOS) de todos os indicadores nao auxiliares.
+
+    Cada conta fica dentro de um unico serie_id; linhas indisponivel nao entram. `territorios` e a
+    tabela oficial: todos os territorios usados nas contas precisam existir nela.
+    """
+    usados = {*REGIOES, *UFS_NE, "BR", TERRITORIO_DERIVADO}
+    desconhecidos = sorted(usados - set(territorios["territorio_id"]))
+    if desconhecidos:
+        raise ValueError(f"territorios ausentes da tabela de territorios: {', '.join(desconhecidos)}")
+
+    linhas: list[dict] = []
+    for ficha in fichas.values():
+        if ficha.auxiliar:
+            continue
+        validas = base[(base.indicador_id == ficha.id) & base.valor.notna()]
+        for chaves, serie in validas.groupby(_CHAVE_METRICA, sort=True):
+            ident = {"indicador_id": ficha.id, **dict(zip(_CHAVE_METRICA, chaves))}
+            linhas.extend(_metricas_da_serie(ficha, serie, ident))
+
+    saida = pd.DataFrame(linhas, columns=COLUNAS_DERIVADOS)
+    saida["ano"] = saida["ano"].astype(int)
+    saida["valor"] = saida["valor"].astype(float)
+    ordem = [c for c in COLUNAS_DERIVADOS if c != "valor"]
+    return saida.sort_values(ordem, kind="stable").reset_index(drop=True)
