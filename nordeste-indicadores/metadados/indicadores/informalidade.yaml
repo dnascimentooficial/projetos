@@ -1,0 +1,43 @@
+id: informalidade
+nome: Taxa de informalidade
+descricao: >-
+  Percentual das pessoas ocupadas que estão em trabalho informal, por Brasil,
+  região e unidade da federação.
+eixo: trabalho
+categoria: mercado_de_trabalho
+unidade: "%"
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Taxa de informalidade das pessoas de 14 anos ou mais de idade ocupadas na
+  semana de referência, média anual da PNAD Contínua (SIDRA 4708, variável
+  12466), de 2016 em diante. Brasil fora do Nordeste é a razão das diferenças,
+  (informais do Brasil − do Nordeste) ÷ (ocupados do Brasil − do Nordeste) × 100,
+  com as fichas `informais` e `ocupados` (SIDRA 4680); o valor oficial do
+  Nordeste confere com a razão dentro de 0,5% (regra R08).
+observacoes: >-
+  A informalidade só é apurada pela PNAD Contínua a partir de 2016; não há série
+  da PNAD antiga. A definição de trabalho informal é a do IBGE, aplicada na
+  própria tabela.
+sentido: menor_melhor
+limites: {min: 0, max: 100}
+defasagem_meses: 2
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: razao
+  numerador: informais
+  denominador: ocupados
+  fator: 100
+series:
+  - id: pnadc
+    inicio: 2016
+    fim: null
+    fonte: IBGE, PNAD Contínua anual
+    base_origem: SIDRA, tabela 4708, variável 12466
+    url: https://sidra.ibge.gov.br/tabela/4708
+    coletor: sidra
+    parametros: {tabela: "4708", variavel: "12466"}
+    compatibilidade: >-
+      PNAD Contínua (2016 em diante). Não há série anterior de informalidade
+      comparável.
+    verificado: true

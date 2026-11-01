@@ -1,0 +1,47 @@
+id: pobreza
+nome: Pobreza
+descricao: >-
+  Proporção da população abaixo da linha de pobreza que o IBGE classifica como
+  nacional (indicador 1.2.1 dos Objetivos de Desenvolvimento Sustentável), por
+  Brasil, região e unidade da federação.
+eixo: social
+categoria: renda
+unidade: "%"
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Proporção da população abaixo da linha de pobreza nacional, tabela do SIDRA
+  5877 (variável 9948, indicador ODS 1.2.1 com a PNAD Contínua), de 2012 em
+  diante. A tabela não informa o valor da linha na própria resposta, e a nota
+  metodológica não pôde ser consultada (a página de descrição do SIDRA responde
+  com desafio anti-robô); por isso a linha em reais ou dólares PPC não está
+  confirmada e a série fica não verificada. Para referência, a Síntese de
+  Indicadores Sociais 2025 (planilha 2.18, ftp.ibge.gov.br) usa US$ 6,85 PPC 2017
+  por dia e dá 27,3% para o Brasil em 2023, contra 29,8% desta tabela; os
+  valores não coincidem, então a linha da tabela 5877 não é a mesma da Síntese.
+observacoes: >-
+  Série não verificada: a linha de pobreza da tabela 5877 não está confirmada.
+  A pobreza extrema é a ficha `extrema_pobreza` (tabela 5817), separada porque
+  cada serie do projeto vem de uma única tabela. A PNAD antiga (2001 a 2015)
+  não tem proporção de pobres por UF em fonte consultada, e fica sem série.
+  Não há Brasil fora do Nordeste: a tabela só traz a proporção, e não foi
+  encontrada contagem de pobres por UF em série anual.
+sentido: menor_melhor
+limites: {min: 0, max: 100}
+defasagem_meses: 12
+comparacao:
+  referencia: brasil
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua (indicador ODS 1.2.1)
+    base_origem: SIDRA, tabela 5877, variável 9948
+    url: https://sidra.ibge.gov.br/tabela/5877
+    coletor: sidra
+    parametros: {tabela: "5877", variavel: "9948"}
+    compatibilidade: >-
+      PNAD Contínua (2012 em diante), linha de pobreza nacional conforme o rótulo
+      do IBGE (valor da linha não confirmado). Não comparável com a série
+      `extrema_pobreza` (outra linha) nem com a PNAD antiga.
+    verificado: false

@@ -16,8 +16,9 @@ Observação sobre a página de descrição das tabelas do SIDRA
 consultada. Variáveis e classificações foram lidas nos cabeçalhos e nos valores devolvidos pela API
 de valores (`/values/t/<tabela>/.../v/all`), que é a própria fonte dos dados.
 
-Bloco IBGE, partes A (população e PIB) e C (`pib_volume`, planilha `.xls`), e Tarefa 14d (`pib_per_capita` calculado
-pelo projeto e conferido contra valores publicados). Data de todas as verificações: 2026-11-01.
+Bloco IBGE, partes A (população e PIB) e C (`pib_volume`, planilha `.xls`), Tarefa 14d (`pib_per_capita` calculado
+pelo projeto e conferido contra valores publicados) e parte B (renda, pobreza, Gini, desocupação, informalidade e
+rendimento do trabalho, PNAD antiga e PNAD Contínua). Data de todas as verificações: 2026-11-01.
 
 Reverificação de ponta a ponta, na mesma data, por outro executor: `python -m nordeste --raiz <tmp> coletar --indicador <id>`
 (rede, só séries `verificado: true`), `consolidar` e `validar` sobre `populacao`, `pib_nominal` e `pib_participacao`.
@@ -38,6 +39,21 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `populacao` | `censo_2022` | SIDRA 4709, v93 | 2022 | sim |
 | `pib_per_capita` | `scr_ref2010` | cálculo do projeto: SIDRA 5938 v37 ÷ população (6579 v9324; 202 e 4709 v93) × 1000 | 2002 a 2023, sem 2007 | sim (32 pontos conferidos em 2002, 2010, 2013-2018 e 2021-2023; 2003-2009 sem conferência) |
 | `pib_volume` | `scr_ref2010` | `tab03.xls` (aba `Tabela3`) de `Especiais_2002_2023_xls.zip` | 2002 a 2023 | sim |
+| `renda_dom_pc` | `pnadc` | SIDRA 7533, v10816 | 2012 a 2025 | sim |
+| `massa_renda_dom_pc` (auxiliar) | `pnadc` | SIDRA 7427, v10495 | 2012 a 2025 | sim |
+| `populacao_pnadc` (auxiliar) | `pnadc` | SIDRA 7436, v606 | 2012 a 2025 | sim |
+| `pobreza` | `pnadc` | SIDRA 5877, v9948 | 2012 a 2024 | **não** (linha de pobreza não confirmada) |
+| `extrema_pobreza` | `pnadc` | SIDRA 5817, v9617 | 2012 a 2024 | **não** (linha de pobreza não confirmada) |
+| `gini` | `pnad` | Ipeadata `PGINI` (janela 2001-2014) | 2001 a 2014, sem 2010 | sim |
+| `gini` | `pnadc` | SIDRA 7435, v10681 | 2012 a 2025 | sim |
+| `desocupacao` | `pnad` | Ipeadata `Dese_Pnad` (janela 2001-2014) | 2001 a 2014, sem 2010 | sim |
+| `desocupacao` | `pnadc` | SIDRA 4562, v4099 | 2012 a 2025 | sim |
+| `desocupados` (auxiliar) | `pnadc` | SIDRA 10364, v4092, c2/6794 | 2012 a 2019 e 2023 a 2025 (2020 a 2022 só Brasil) | sim |
+| `forca_trabalho` (auxiliar) | `pnadc` | SIDRA 10364, v4088, c2/6794 | 2012 a 2019 e 2023 a 2025 (2020 a 2022 só Brasil) | sim |
+| `informalidade` | `pnadc` | SIDRA 4708, v12466 | 2016 a 2025 | sim |
+| `informais` (auxiliar) | `pnadc` | SIDRA 4680, v4090, c1350/57303 | 2016 a 2025 | sim |
+| `ocupados` (auxiliar) | `pnadc` | SIDRA 4680, v4090, c1350/57302 | 2016 a 2025 | sim |
+| `rendimento_trabalho` | `pnadc` | SIDRA 4566, v5935 | 2012 a 2025 | sim |
 
 ## pib_nominal / scr_ref2010
 
@@ -293,6 +309,239 @@ Bloco IBGE, parte C (Tarefa 14c). Data da verificação: 2026-11-01.
 - Comparação: `brasil` (razão NE/BR dos índices = crescimento acumulado do Nordeste frente ao do país desde 2002). Não há "Brasil fora do Nordeste": o IBGE não publica o PIB a preços do ano anterior por região. A aba de Conta da Produção traz "valor do ano anterior" só para valor bruto da produção, consumo intermediário e valor adicionado bruto (VAB), não para o PIB, e uma varredura das 1.056 abas dos quatro zips `xls` da publicação (`Especiais_2002_2023`, `Especiais_2010_2023`, `Conta_da_Producao_2002_2023`, `Conta_da_Producao_2010_2023`) não achou PIB a preços do ano anterior.
 - Alternativa descartada (da 14A): Ipeadata `PIBE` (PIB estadual a preços de 2010) reproduz o índice oficial só para o Brasil; para o Nordeste (167,13 contra 163,40 em 2023) e para as UFs diverge do oficial.
 
+## Bloco IBGE, parte B: PNAD antiga e PNAD Contínua
+
+Tarefa 14b. Data da verificação: 2026-11-01. Método: `python -I -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar
+--indicador <id>` (o coletor do projeto monta a URL a partir dos `parametros` da ficha), `consolidar` e `validar`, numa
+raiz temporária fora do repositório, com as fichas do repositório. Para as duas séries de pobreza, que estão
+`verificado: false` e por isso o coletor recusa, a mesma execução foi feita numa cópia temporária das fichas com
+`verificado: true` (o arquivo do repositório não foi alterado).
+
+Resultado do `validar` com os dados reais das 13 fichas: código 0, nenhuma regra bloqueante (inclusive R07, soma das UFs
+e das regiões, e R08, razão contra o valor oficial do Nordeste) e nenhum aviso, com os limiares de A01 declarados nas
+fichas `desocupacao` (60%) e `extrema_pobreza` (100%), explicados nas seções delas. Com o limiar padrão de 50%, A01 aponta
+1 caso em `desocupacao/pnad` (Alagoas 2008 a 2009, +51,5%) e 7 em `extrema_pobreza/pnadc` (2020 a 2021).
+
+Observação sobre as páginas oficiais: a página de cada tabela, `https://sidra.ibge.gov.br/tabela/<n>`, é a que a ficha
+registra como `url`; o ambiente da verificação não alcança `sidra.ibge.gov.br`, então a evidência é a própria resposta
+da API de valores, que é a fonte dos dados. A descrição das tabelas (`apisidra.ibge.gov.br/desctabapi.aspx`) responde com
+desafio anti-robô e não foi usada. Tabelas, variáveis e categorias foram achadas varrendo a API de valores do SIDRA
+(tabelas 1 a cerca de 11.800, pelo rótulo das variáveis e das classificações) e lidas nos cabeçalhos das respostas.
+
+Séries da PNAD antiga (`pnad`, 2001 a 2015) e da PNAD Contínua (`pnadc`, 2012 em diante) são sempre `serie_id` diferentes;
+as duas se sobrepõem em 2012 a 2014 com valores distintos e nunca são unidas.
+
+Sobre `defasagem_meses` das fichas desta parte: são estimativas do ritmo de divulgação (taxas e informalidade saem com o quarto trimestre, cerca de 2 meses
+depois do ano; rendimento de todas as fontes, cerca de 5; pobreza, cerca de 12, pelo último ano que as tabelas ODS tinham em 2026-11-01). Nenhuma foi
+confirmada por calendário oficial; só alimentam o aviso A03.
+
+### Resultado da busca pela PNAD antiga (2001 a 2015)
+
+- Só `gini` e `desocupacao` têm série da PNAD antiga por região e UF, as duas no Ipeadata (`PGINI` e `Dese_Pnad`, ambas
+  marcadas inativas, calculadas pelo Ipea). Os 4.075 metadados do Ipeadata foram baixados e varridos (nomes e comentários):
+  não há renda domiciliar per capita nem pobreza da PNAD antiga por UF. As demais séries `PNADS_*` (todas as fontes) e
+  `DISOC_*` são de nível país (código `BRA` no metadado; a resposta de `PNADS_GINI` só traz o Brasil).
+- O SIDRA tem a PNAD antiga (tabelas de 2001 a 2015 sem 2010, como 1867 e 1868), mas as tabelas por UF achadas são de
+  população economicamente ativa e pessoas que procuraram trabalho, não de renda domiciliar per capita, pobreza nem
+  contagem de desocupados.
+- A Síntese de Indicadores Sociais antiga (`ftp.ibge.gov.br`) foi examinada só no índice da edição de 2016, que não lista
+  série anual de renda domiciliar per capita ou de pobreza por UF; as demais edições (2004 a 2017) não foram abertas.
+- Consequência: `renda_dom_pc`, `pobreza`, `extrema_pobreza`, `informalidade` e `rendimento_trabalho` ficam só com a série
+  `pnadc`, e `desocupacao/pnad` fica sem Brasil fora do Nordeste (ver abaixo).
+
+### Mudança de código desta tarefa
+
+O Ipeadata devolve a série inteira (o `PGINI` vem desde 1976 e o `Dese_Pnad`, desde 1992). A base só aceita anos dentro da
+cobertura da série (regra R05) e a tabela de governos começa em 1999 (`versao_completa` falha antes disso), então os anos
+anteriores a 2001 precisavam ser cortados. Foi acrescentado ao padronizador do Ipeadata o parâmetro opcional `periodos`
+(`"AAAA"` ou `"AAAA-AAAA"`, como o `periodos` do SIDRA), com testes em `testes/test_padronizacao_ipeadata.py`. Sem o
+parâmetro, o comportamento é o de antes. Reportado ao controlador como mudança fora do escopo de pura ficha.
+
+### Pendência para o controlador: 2010 na série `pnad`
+
+A PNAD não foi a campo em 2010 e o Ipeadata não devolve linha para o ano. O padronizador do Ipeadata não gera linha
+`indisponivel` para anos ausentes, então `gini/pnad` e `desocupacao/pnad` não têm linha de 2010 (buraco dentro de 2001 a
+2014, não linha `indisponivel`). O relatório de cobertura não lista 2010 como faltante, porque nenhum território publica o
+ano. Não foi alterado código para gerar a linha; cabe ao controlador decidir.
+
+### renda_dom_pc / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/7533
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/7533/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/10816/p/all`
+- Variável 10816: "Rendimento médio mensal real domiciliar per capita, a preços médios do último ano", Reais. A tabela 7533 é
+  a de rendimento de todas as fontes por classes de percentual das pessoas; a consulta sem classificação devolve a
+  categoria Total (código 49243).
+- Obtido: 210 linhas = 14 anos (2012 a 2025) x 15 territórios, todas `observado`. Brasil 2012 = 1.782 e 2025 = 2.264; Nordeste
+  2012 = 1.088 e 2025 = 1.470 (reais de 2025).
+- Preços: "médios do último ano" da divulgação (2025 hoje); a série inteira é reapresentada a cada ano novo. A variante "a preços
+  médios do ano" (tabela 7531, v10824) não deflaciona entre anos e não foi usada. A ficha declara `reais_constantes`, ano base
+  2025, com o deflator descrito como o da PNAD Contínua (a nota da tabela não pôde ser consultada para nomear o índice).
+- Brasil fora do Nordeste: exato, por razão das diferenças, (massa BR − massa NE) ÷ (população BR − população NE) × 1000, com as
+  séries auxiliares abaixo. O valor oficial do Nordeste confere com a razão em todos os 14 anos, a até 0,14% (2012). Brasil fora do Nordeste:
+  2.043 em 2012 e 2.554 em 2025.
+- Não bate com o destaque do IBGE: o rendimento domiciliar per capita divulgado pelo IBGE para 2025 é R$ 2.316 (Brasil; valor lido em resultado de busca
+  na web da nota https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/45942-ibge-divulga-rendimento-domiciliar-per-capita-2025-para-brasil-e-unidades-da-federacao,
+  que o ambiente não alcança), contra R$ 2.264 aqui, cerca de 2% a mais; as tabelas de rendimento de todas as fontes trabalham com outro universo (ver
+  `observacoes` da ficha). Maranhão, 2025: R$ 1.219 na nota e R$ 1.231 na tabela.
+- PNAD antiga: sem série (ver a busca acima).
+
+### massa_renda_dom_pc / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/7427
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/7427/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/10495/p/all`
+- Variável 10495: "Massa de rendimento mensal real domiciliar per capita, a preços médios do último ano", Milhões de Reais (categoria Total,
+  código 49243, é o padrão da consulta).
+- Obtido: 210 linhas = 14 anos x 15 territórios, `observado`. Brasil 2025 = 481.389; Nordeste = 83.874 (R$ milhões). A soma das UFs fecha o NE
+  (até 0,003%) e a das regiões fecha o Brasil (R07). Auxiliar: numerador da renda domiciliar per capita.
+
+### populacao_pnadc / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/7436
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/7436/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/606/p/all`
+- Variável 606: "População", Mil pessoas.
+- Obtido: 210 linhas = 14 anos x 15 territórios, `observado`. Brasil 2025 = 212.683; Nordeste = 57.069 (mil pessoas). Soma das UFs e das
+  regiões fecham (R07). Auxiliar: denominador da renda domiciliar per capita; não substitui a ficha `populacao`.
+
+### pobreza / pnadc
+
+**Série não verificada (`verificado: false`).** Os dados foram baixados e passaram pelo padronizador, mas a linha de pobreza da
+tabela não está confirmada.
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/5877
+- URL de coleta (usada na evidência, com a cópia temporária da ficha): `https://apisidra.ibge.gov.br/values/t/5877/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/9948/p/all`
+- Variável 9948: "Proporção da população abaixo da linha de pobreza nacional", Proporção (%) (indicador 1.2.1 dos ODS).
+- Obtido: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, `observado`, sem indisponíveis. Brasil 2012 = 36,8% e 2024 = 26,5%; Nordeste
+  2012 = 58,8% e 2024 = 44,7%.
+- Por que não está verificada: a resposta da API não traz o valor da linha e a nota da tabela não pôde ser lida. A Síntese de Indicadores
+  Sociais 2025 (`ftp.ibge.gov.br`, `2_Distribuicao_Renda_xls.zip`, planilha `Tabela 2.18 (Pobr_Geo).xls`) usa US$ 6,85 por dia em PPC 2017
+  (R$ 2,3273771 por US$ 1,00 PPC, valores mensais) e dá 27,3% para o Brasil em 2023 e 23,1% em 2024, contra 29,8% e 26,5% desta tabela.
+  Os números diferem, então a linha ou o tratamento do rendimento da tabela 5877 não é o da Síntese. Também é a mesma série do Ipeadata
+  `PNADCA_TXPNUF` ("Taxa de pobreza nacional (SIS/IBGE)", 2012 a 2025, Brasil, regiões e estados), que dá os mesmos valores
+  (Brasil 29,8% em 2023). Para promover a `verificado: true` basta confirmar a linha na nota da tabela (ou trocar por tabela com a linha
+  documentada).
+- A ficha `pobreza` é só a medida de pobreza; a extrema pobreza é a ficha `extrema_pobreza` (tabela 5817), porque cada série do projeto vem
+  de uma única tabela e uma ficha não junta duas tabelas em subindicadores.
+- Brasil fora do Nordeste: não há (a tabela só traz a proporção e não foi achada contagem de pobres por UF em série anual); comparação com o
+  Brasil. PNAD antiga: sem série.
+
+### extrema_pobreza / pnadc
+
+**Série não verificada (`verificado: false`).** Mesmo motivo da `pobreza`.
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/5817
+- URL de coleta (usada na evidência, com a cópia temporária da ficha): `https://apisidra.ibge.gov.br/values/t/5817/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/9617/p/all`
+- Variável 9617: "Proporção da população abaixo da linha de pobreza internacional", Proporção (%) (indicador 1.1.1 dos ODS).
+- Obtido: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, `observado`. Brasil 2012 = 8,8% e 2024 = 4,7%; Nordeste 2012 = 18,5% e 2024 = 9,1%.
+- Linha: não confirmada. A Síntese 2025 (planilha 2.18) usa US$ 2,15 PPC 2017 por dia e dá 4,4% para o Brasil em 2023 e 3,5% em 2024, contra 5,8% e
+  4,7% desta tabela. Ipeadata `PNADCA_TXPIUF` ("Taxa de pobreza internacional (SIS/IBGE)") repete os valores da tabela.
+- Aviso A01: com o limiar padrão (50%), 7 casos em 2020 a 2021 (alta depois do auxílio emergencial, por exemplo Rio Grande do Norte de 9,2% para
+  17,9%); a ficha usa 100%.
+- Brasil fora do Nordeste: não há; comparação com o Brasil. PNAD antiga: sem série.
+
+### gini / pnad
+
+- Página oficial: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=1422364745
+- URL de coleta: `https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='PGINI')`
+- Série `PGINI`, "Índice de Gini (Pnad/IBGE) - INATIVA" (Ipea, última atualização do metadado em 2016): desigualdade da renda domiciliar per capita
+  entre os indivíduos, calculada a partir das respostas da PNAD.
+- A resposta traz 1976 a 2014 (sem os anos sem PNAD: 1980, 1991, 1994, 2000 e 2010), com Brasil, 5 regiões e 27 UFs. O parâmetro `periodos: "2001-2014"`
+  guarda só a janela da ficha (ver "Mudança de código").
+- Obtido (já com a janela): 195 linhas = 13 anos (2001 a 2009 e 2011 a 2014) x 15 territórios, `observado`. Brasil 2001 = 0,596 e 2014 = 0,518;
+  Nordeste 2001 = 0,600 e 2014 = 0,516. Escala de 0 a 1, a mesma da PNAD Contínua.
+- 2015: a PNAD de 2015 existe, mas a série do Ipeadata termina em 2014; a série fica com `fim: 2014`. Divergência com a spec (2001 a 2015).
+- 2010: sem linha (pendência para o controlador, acima).
+- Brasil fora do Nordeste: não há (o Gini não se recompõe a partir de totais); comparação com o Brasil.
+
+### gini / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/7435
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/7435/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/10681/p/all`
+- Variável 10681: "Índice de Gini do rendimento domiciliar per capita, a preços médios do ano", Índice. Os valores conferem com os do Ipeadata
+  `PNADCA_GINIUF` (Brasil 2012 = 0,540; Nordeste 2024 = 0,499) e com a planilha 2.13 da Síntese 2025 (Brasil 2024 = 0,504405, SIDRA = 0,504).
+- Obtido: 210 linhas = 14 anos (2012 a 2025) x 15 territórios, `observado`. Brasil 2012 = 0,540 e 2025 = 0,511; Nordeste 2012 = 0,546 e 2025 = 0,503.
+- Brasil fora do Nordeste: não há; comparação com o Brasil.
+
+### desocupacao / pnad
+
+- Página oficial: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=199442121
+- URL de coleta: `https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='Dese_Pnad')`
+- Série `Dese_Pnad`, "Taxa de desemprego (IBGE/Pnad) - INATIVA": percentual das pessoas que procuraram e não encontraram ocupação entre as economicamente ativas,
+  de 10 anos ou mais, na semana de referência; elaboração Disoc/Ipea, série descontinuada.
+- A resposta traz 1992 a 2014 (sem 1994, 2000 e 2010), com Brasil, regiões, UFs e áreas metropolitanas (descartadas). `periodos: "2001-2014"` guarda a janela da ficha.
+- Obtido (já com a janela): 195 linhas = 13 anos (2001 a 2009 e 2011 a 2014) x 15 territórios, `observado`. Brasil 2001 = 10,05% e 2014 = 7,54%;
+  Nordeste 2001 = 9,72% e 2014 = 9,33%.
+- 2015: série do Ipeadata termina em 2014 (divergência com a spec, 2001 a 2015). 2010: sem linha (pendência acima).
+- Brasil fora do Nordeste: **não há na série `pnad`**. Faltam as contagens: o SIDRA traz as pessoas que procuraram trabalho (tabela 1868), que inclui
+  ocupadas que também procuraram, e não os desocupados; o Ipeadata só publica a taxa. A razão não se recompõe, e a comparação da ficha vale só
+  para a `pnadc`.
+- Aviso A01: Alagoas 2008 a 2009 (+51,5%), no valor da fonte; a ficha usa limiar 60%.
+
+### desocupacao / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/4562
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/4562/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/4099/p/all`
+- Variável 4099: "Taxa de desocupação, na semana de referência, das pessoas de 14 anos ou mais de idade", %. Tabela 4562 é anual (média).
+- Obtido: 210 linhas = 14 anos (2012 a 2025) x 15 territórios, `observado`, sem indisponíveis. Brasil 2012 = 7,4% e 2025 = 5,6%; Nordeste 2012 = 9,6% e 2025 = 7,9%.
+- Brasil fora do Nordeste: por razão, (desocupados BR − NE) ÷ (força de trabalho BR − NE) × 100, com as séries `desocupados` e `forca_trabalho`
+  (tabela 10364). Sai em 11 dos 14 anos (2012 a 2019 e 2023 a 2025): em 2020, 2021 e 2022 as contagens por região e UF não são publicadas
+  (só o Brasil), e esses anos ficam sem Brasil fora do Nordeste. Brasil fora do Nordeste: 6,65% em 2012 e 4,96% em 2025.
+- R08: o valor oficial do Nordeste confere com a razão em 11 anos, a até **0,469%** (2014), muito perto da tolerância de 0,5%: a taxa oficial vem com uma
+  casa decimal e as contagens, em mil pessoas. Uma revisão futura pode derrubar a regra; é o ponto mais frágil do bloco.
+
+### desocupados / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/10364
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/10364/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/4092/p/all/c2/6794`
+- Variável 4092: "Pessoas de 14 anos ou mais de idade, desocupadas na semana de referência", Mil pessoas; classificação 2 (sexo), categoria 6794 (Total).
+  A tabela 10364 tem as mesmas variáveis em 14 anos; as tabelas irmãs 10359 (sexo, sem 2020 a 2022) e 10360 a 10363 (outros recortes) não foram usadas.
+- Obtido: 210 linhas = 14 anos x 15 territórios; 168 `observado` e **42 `indisponivel`** (2020, 2021 e 2022, 14 territórios cada; só o Brasil tem valor, os demais
+  vêm como "..."). Brasil 2019 = 12.511 e 2025 = 6.150; Nordeste 2019 = 3.510 e 2025 = 1.991 (mil pessoas).
+- Auxiliar da `desocupacao/pnadc`. Brasil fora do Nordeste por soma: 9.001 em 2019 e 4.159 em 2025.
+
+### forca_trabalho / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/10364
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/10364/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/4088/p/all/c2/6794`
+- Variável 4088: "Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência", Mil pessoas; sexo total.
+- Obtido: 210 linhas = 14 anos x 15 territórios; 168 `observado` e **42 `indisponivel`** (2020 a 2022, só Brasil tem valor). Brasil 2019 = 106.046 e 2025 = 109.132;
+  Nordeste 2019 = 24.671 e 2025 = 25.240.
+- Auxiliar da `desocupacao/pnadc`. Brasil fora do Nordeste por soma: 81.375 em 2019 e 83.892 em 2025.
+
+### informalidade / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/4708
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/4708/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/12466/p/all`
+- Variável 12466: "Taxa de informalidade das pessoas de 14 anos ou mais de idade ocupadas na semana de referência", %.
+- Obtido: 150 linhas = 10 anos (2016 a 2025) x 15 territórios, `observado`. Brasil 2016 = 39,1% e 2025 = 38,1%; Nordeste 2016 = 53,3% e 2025 = 50,8%.
+- Brasil fora do Nordeste: por razão, informais ÷ ocupados × 100 (tabela 4680): 34,79% em 2016 e 34,40% em 2025, nos 10 anos. R08: o Nordeste confere com a razão
+  a até 0,077% (2023). A informalidade só é apurada desde 2016; não há série da PNAD antiga.
+
+### informais / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/4680
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/4680/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/4090/p/all/c1350/57303`
+- Variável 4090: "Pessoas de 14 anos ou mais de idade ocupadas na semana de referência", Mil pessoas; classificação 1350 (situação de informalidade), categoria 57303
+  (Informais). A classificação 1350 foi achada varrendo os códigos de classificação aceitos pela tabela; as categorias são 57302 (Total) e 57303 (Informais).
+- Obtido: 150 linhas = 10 anos x 15 territórios, `observado`. Brasil 2025 = 39.237; Nordeste = 11.809 (mil pessoas); soma das UFs e das regiões fecha (R07).
+  Auxiliar da `informalidade`.
+
+### ocupados / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/4680
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/4680/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/4090/p/all/c1350/57302`
+- Variável 4090, classificação 1350, categoria 57302 (Total de ocupados).
+- Obtido: 150 linhas = 10 anos x 15 territórios, `observado`. Brasil 2025 = 102.983; Nordeste = 23.249. Auxiliar da `informalidade`.
+
+### rendimento_trabalho / pnadc
+
+- Página oficial: https://sidra.ibge.gov.br/tabela/4566
+- URL de coleta: `https://apisidra.ibge.gov.br/values/t/4566/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/5935/p/all`
+- Variável 5935: "Rendimento médio mensal real das pessoas de 14 anos ou mais de idade ocupadas na semana de referência com rendimento de trabalho, efetivamente recebido
+  em todos os trabalhos", Reais. A tabela traz também o nominal (5931) e os coeficientes de variação, não usados. O valor real de 2025 (Brasil 3.694) difere do
+  nominal (3.674), então o real não está em preços de 2025 exatos do ano; a ficha declara ano base 2025 e o deflator da PNAD Contínua, sem nomear o índice.
+- Obtido: 210 linhas = 14 anos (2012 a 2025) x 15 territórios, `observado`. Brasil 2012 = 3.114 e 2025 = 3.694; Nordeste 2012 = 2.074 e 2025 = 2.528.
+- Comparação: Brasil (seção 4 da spec); não se recompõe Brasil fora do Nordeste.
+
 ## Divergências em relação à seção 4 da spec
 
 1. `populacao`: "estimativas e censos IBGE, 2000+" virou quatro séries (`estimativa_pre_censo2022`, `estimativa_pos_censo2022`, `censo_2000_2010`, `censo_2022`). O ano 2000 só existe como Censo; 2007, 2010, 2022 (nas estimativas) e 2023 (em nenhuma fonte) ficam sem valor.
@@ -300,3 +549,17 @@ Bloco IBGE, parte C (Tarefa 14c). Data da verificação: 2026-11-01.
 3. `pib_per_capita`: o IBGE não publica o PIB per capita por território em formato legível; a spec previa coletá-lo das Contas Regionais, e o projeto passou a calculá-lo (PIB 5938 ÷ população do ano que o IBGE usou × 1000), conferido contra valores publicados (32 pontos, diferença máxima 0,050%; 2003 a 2009 sem conferência). Cobre 2002 a 2023 sem 2007 (sem denominador conferido); a fonte da série declara o cálculo.
 4. `populacao_contas_regionais`: removida (a spec a previa como denominador do PIB per capita); o denominador agora são as séries de `populacao`, escolhidas por ano no `calculo` da ficha `pib_per_capita`.
 5. `pib_participacao`: sem divergência (2002 a 2023, comparação `nenhuma`).
+6. `renda_dom_pc`: só a série `pnadc` (2012 a 2025). A PNAD antiga (`pnad`, 2001 a 2015) não tem renda domiciliar per capita por UF em tabela do SIDRA nem no
+   Ipeadata. Brasil fora do Nordeste é exato (massa ÷ população), que a spec previa "se houver totais publicados". O valor não é o destaque do IBGE (R$ 2.264 contra
+   R$ 2.316 em 2025): universo das tabelas de rendimento de todas as fontes.
+7. `pobreza` (e a nova `extrema_pobreza`): só `pnadc` (2012 a 2024), e as duas **não verificadas**: a linha de pobreza das tabelas ODS do SIDRA (5877 e 5817) não pôde ser
+   confirmada e os valores não coincidem com a Síntese de Indicadores Sociais (US$ 6,85 e US$ 2,15 PPC 2017). Pobreza e extrema pobreza viraram duas fichas, e não
+   subindicadores de uma, porque cada série do projeto vem de uma única tabela. Sem `pnad` (PNAD antiga) e sem Brasil fora do Nordeste (não há contagem de pobres por UF em série
+   anual).
+8. `gini`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `PGINI` (a PNAD de 2015 não está na série), sem 2010; `pnadc` de 2012 a 2025. Comparação com o Brasil, como na spec.
+9. `desocupacao`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `Dese_Pnad`, sem 2010 e **sem Brasil fora do Nordeste** (não há contagem de desocupados da PNAD
+   antiga); `pnadc` de 2012 a 2025, com Brasil fora do Nordeste exato em 11 anos (faltam 2020, 2021 e 2022, sem contagem regional). R08 passa por pouco (0,469%).
+10. `informalidade`: só `pnadc` (2016 a 2025), com Brasil fora do Nordeste exato nos 10 anos (informais ÷ ocupados).
+11. `rendimento_trabalho`: só `pnadc` (2012 a 2025), comparação com o Brasil, como na spec.
+12. Pendência de código para o controlador: o Ipeadata não devolve 2010 (PNAD não foi a campo) e o padronizador do Ipeadata não gera linha `indisponivel` para o ano; `gini/pnad`
+    e `desocupacao/pnad` têm buraco em 2010. O parâmetro `periodos` do padronizador do Ipeadata foi acrescentado nesta tarefa para cortar os anos anteriores a 2001.

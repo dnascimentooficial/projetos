@@ -1,0 +1,45 @@
+id: massa_renda_dom_pc
+nome: Massa de rendimento domiciliar per capita
+descricao: >-
+  Soma dos rendimentos domiciliares per capita de todas as pessoas residentes,
+  em milhões de reais, por Brasil, região e unidade da federação. Insumo da
+  renda domiciliar per capita, não exibido por si.
+eixo: economia
+categoria: renda
+unidade: R$ milhões (reais de 2025)
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Massa de rendimento mensal real domiciliar per capita, a preços médios do
+  último ano da série (SIDRA 7427, rendimento de todas as fontes da PNAD
+  Contínua anual). Dividida pela população da mesma pesquisa (ficha
+  `populacao_pnadc`), recompõe o rendimento domiciliar per capita médio. O
+  agregado Brasil fora do Nordeste é a soma dos demais territórios.
+observacoes: >-
+  Os valores são reais a preços médios do último ano da série; quando o IBGE
+  divulga um novo ano, toda a série é reapresentada nos preços do novo ano
+  (hoje 2025). Serve só de numerador da renda domiciliar per capita.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 5
+auxiliar: true
+tratamento_monetario:
+  modo: reais_constantes
+  deflator: deflator da PNAD Contínua (IBGE), rendimento real a preços médios do último ano da série
+  ano_base: 2025
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual (rendimento de todas as fontes)
+    base_origem: SIDRA, tabela 7427, variável 10495
+    url: https://sidra.ibge.gov.br/tabela/7427
+    coletor: sidra
+    parametros: {tabela: "7427", variavel: "10495"}
+    compatibilidade: >-
+      Mesma série da PNAD Contínua (2012 em diante) dos demais indicadores;
+      não é comparável com a PNAD antiga.
+    verificado: true

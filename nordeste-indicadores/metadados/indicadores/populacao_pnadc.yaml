@@ -1,0 +1,42 @@
+id: populacao_pnadc
+nome: População residente da PNAD Contínua
+descricao: >-
+  População residente por Brasil, região e unidade da federação, na projeção
+  usada pela PNAD Contínua para expandir a amostra. Insumo da renda domiciliar
+  per capita, não exibido por si.
+eixo: contexto
+categoria: demografia
+unidade: mil pessoas
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Total da população residente, em mil pessoas, nas tabelas anuais de
+  rendimento de todas as fontes da PNAD Contínua (SIDRA 7436). É o denominador
+  da renda domiciliar per capita médio (massa de rendimento domiciliar per
+  capita dividida pela população). O agregado Brasil fora do Nordeste é a soma
+  dos demais territórios.
+observacoes: >-
+  Não substitui a série `populacao` (estimativas e censos): é a população
+  da pesquisa, e só serve para recompor a renda média de Brasil fora do
+  Nordeste. Cada divulgação anual traz a população de todos os anos
+  revisada.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 5
+auxiliar: true
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual (rendimento de todas as fontes)
+    base_origem: SIDRA, tabela 7436, variável 606
+    url: https://sidra.ibge.gov.br/tabela/7436
+    coletor: sidra
+    parametros: {tabela: "7436", variavel: "606"}
+    compatibilidade: >-
+      Mesma série da PNAD Contínua (2012 em diante) dos demais indicadores;
+      não é comparável com a PNAD antiga.
+    verificado: true

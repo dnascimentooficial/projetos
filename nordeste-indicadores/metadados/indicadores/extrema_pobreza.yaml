@@ -1,0 +1,50 @@
+id: extrema_pobreza
+nome: Extrema pobreza
+descricao: >-
+  Proporção da população abaixo da linha de pobreza que o IBGE classifica como
+  internacional (indicador 1.1.1 dos Objetivos de Desenvolvimento Sustentável),
+  a mais baixa, por Brasil, região e unidade da federação.
+eixo: social
+categoria: renda
+unidade: "%"
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Proporção da população abaixo da linha de pobreza internacional, tabela do
+  SIDRA 5817 (variável 9617, indicador ODS 1.1.1 com a PNAD Contínua), de 2012 em
+  diante. A tabela não informa o valor da linha na própria resposta, e a nota
+  metodológica não pôde ser consultada (a página de descrição do SIDRA responde
+  com desafio anti-robô); por isso a linha não está confirmada e a série fica
+  não verificada. Para referência, a Síntese de Indicadores Sociais 2025
+  (planilha 2.18, ftp.ibge.gov.br) usa US$ 2,15 PPC 2017 por dia e dá 4,4% para o
+  Brasil em 2023, contra 5,8% desta tabela; os valores não coincidem, então a
+  linha da tabela 5817 não é a mesma da Síntese.
+observacoes: >-
+  Série não verificada: a linha da tabela 5817 não está confirmada. É o par da
+  ficha `pobreza` (tabela 5877), separada porque cada serie do projeto vem de
+  uma única tabela. A PNAD antiga (2001 a 2015) não tem proporção de extremamente
+  pobres por UF em fonte consultada, e fica sem série. Não há Brasil fora do
+  Nordeste: a tabela só traz a proporção, e não foi encontrada contagem de pobres
+  por UF em série anual. O limiar do aviso de salto (A01) é 100%, não 50%: em 2021
+  a taxa de várias UFs subiu 50% a 95% sobre 2020 (Rio Grande do Norte, +94,6%;
+  Sergipe, +69,6%), ano do auxílio emergencial, e a alta está na fonte.
+sentido: menor_melhor
+limites: {min: 0, max: 100}
+defasagem_meses: 12
+limiar_salto_pct: 100
+comparacao:
+  referencia: brasil
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua (indicador ODS 1.1.1)
+    base_origem: SIDRA, tabela 5817, variável 9617
+    url: https://sidra.ibge.gov.br/tabela/5817
+    coletor: sidra
+    parametros: {tabela: "5817", variavel: "9617"}
+    compatibilidade: >-
+      PNAD Contínua (2012 em diante), linha de pobreza internacional conforme o
+      rótulo do IBGE (valor da linha não confirmado). Não comparável com a série
+      `pobreza` (outra linha) nem com a PNAD antiga.
+    verificado: false

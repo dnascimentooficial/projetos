@@ -1,0 +1,70 @@
+id: desocupacao
+nome: Taxa de desocupação
+descricao: >-
+  Percentual das pessoas na força de trabalho que estavam desocupadas, por
+  Brasil, região e unidade da federação. É a taxa de desemprego da pesquisa
+  domiciliar do IBGE.
+eixo: trabalho
+categoria: mercado_de_trabalho
+unidade: "%"
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Duas séries, uma por pesquisa, nunca unidas. `pnad`: taxa de desemprego da
+  PNAD antiga, pessoas de 10 anos ou mais, calculada pelo Ipea (série Dese_Pnad
+  do Ipeadata, 2001 a 2014, sem 2010). `pnadc`: taxa de desocupação das pessoas
+  de 14 anos ou mais, média anual da PNAD Contínua (SIDRA 4562, variável 4099),
+  de 2012 em diante. Brasil fora do Nordeste, na `pnadc`, é a razão das
+  diferenças, (desocupados do Brasil − do Nordeste) ÷ (força de trabalho do
+  Brasil − do Nordeste) × 100, com as fichas `desocupados` e `forca_trabalho`
+  (SIDRA 10364); o valor oficial do Nordeste confere com a razão dentro de
+  0,5% (regra R08), mas por pouco: a maior diferença é 0,47% (2014), porque a
+  taxa oficial vem com uma casa decimal.
+observacoes: >-
+  Na série `pnad` não há Brasil fora do Nordeste: não foi encontrada contagem de
+  desocupados da PNAD antiga (o SIDRA traz só as pessoas que procuraram
+  trabalho, o que inclui ocupados, e o Ipeadata só a taxa). Na série `pnadc` a
+  contagem de desocupados e de força de trabalho por região e UF não é
+  publicada em 2020, 2021 e 2022; nesses anos a taxa oficial existe para todos
+  os territórios, mas Brasil fora do Nordeste não é calculado. A PNAD não foi a
+  campo em 2010 (série `pnad`). A PNAD de 2015 existe, mas o Ipeadata termina
+  em 2014. As duas séries se sobrepõem em 2012 a 2014 com valores diferentes
+  (idade mínima de 10 e de 14 anos, pesquisa distinta): servem para ver cada
+  período, não para emendar. O Ipeadata marca a série `pnad` como inativa. O
+  limiar do aviso de salto (A01) é 60%, não 50%: em Alagoas a taxa de 2009
+  ficou 51,5% acima da de 2008, e o valor está na fonte.
+sentido: menor_melhor
+limites: {min: 0, max: 100}
+defasagem_meses: 2
+limiar_salto_pct: 60
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: razao
+  numerador: desocupados
+  denominador: forca_trabalho
+  fator: 100
+series:
+  - id: pnad
+    inicio: 2001
+    fim: 2014
+    fonte: Ipea, Taxa de desemprego (IBGE/PNAD), série Dese_Pnad do Ipeadata
+    base_origem: Ipeadata, série Dese_Pnad (inativa), Brasil, regiões e estados
+    url: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=199442121
+    coletor: ipeadata
+    parametros: {codigo: Dese_Pnad, periodos: "2001-2014"}
+    compatibilidade: >-
+      PNAD antiga (2001 a 2014, sem 2010), pessoas de 10 anos ou mais. Não
+      comparável com a PNAD Contínua (série `pnadc`).
+    verificado: true
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual
+    base_origem: SIDRA, tabela 4562, variável 4099
+    url: https://sidra.ibge.gov.br/tabela/4562
+    coletor: sidra
+    parametros: {tabela: "4562", variavel: "4099"}
+    compatibilidade: >-
+      PNAD Contínua (2012 em diante), pessoas de 14 anos ou mais. Não comparável
+      com a PNAD antiga (série `pnad`): outra pesquisa e outra idade mínima.
+    verificado: true

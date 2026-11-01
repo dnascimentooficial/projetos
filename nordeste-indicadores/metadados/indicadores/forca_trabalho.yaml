@@ -1,0 +1,39 @@
+id: forca_trabalho
+nome: Pessoas na força de trabalho
+descricao: >-
+  Pessoas de 14 anos ou mais na força de trabalho (ocupadas ou desocupadas) na
+  semana de referência, em mil pessoas, por Brasil, região e unidade da
+  federação. Insumo da taxa de desocupação, não exibido por si.
+eixo: trabalho
+categoria: mercado_de_trabalho
+unidade: mil pessoas
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Pessoas de 14 anos ou mais de idade na força de trabalho na semana de
+  referência, total de sexo, nas tabelas anuais da PNAD Contínua (SIDRA 10364,
+  variável 4088). Denominador da taxa de desocupação de Brasil fora do Nordeste.
+  O agregado Brasil fora do Nordeste é a soma dos demais territórios.
+observacoes: >-
+  Como nas pessoas desocupadas, a tabela só traz Brasil em 2020, 2021 e 2022 e
+  os demais territórios vêm sem valor ("...").
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 2
+auxiliar: true
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual (condição de ocupação, por sexo)
+    base_origem: SIDRA, tabela 10364, variável 4088, sexo total
+    url: https://sidra.ibge.gov.br/tabela/10364
+    coletor: sidra
+    parametros: {tabela: "10364", variavel: "4088", classificacoes: {c2: "6794"}}
+    compatibilidade: >-
+      Mesma série da PNAD Contínua (2012 em diante) da taxa de desocupação; não
+      é comparável com a PNAD antiga.
+    verificado: true

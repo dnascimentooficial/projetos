@@ -1,0 +1,41 @@
+id: desocupados
+nome: Pessoas desocupadas
+descricao: >-
+  Pessoas de 14 anos ou mais desocupadas na semana de referência, em mil
+  pessoas, por Brasil, região e unidade da federação. Insumo da taxa de
+  desocupação, não exibido por si.
+eixo: trabalho
+categoria: mercado_de_trabalho
+unidade: mil pessoas
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Pessoas de 14 anos ou mais de idade desocupadas na semana de referência, total
+  de sexo, nas tabelas anuais da PNAD Contínua (SIDRA 10364, variável 4092).
+  Numerador da taxa de desocupação de Brasil fora do Nordeste. O agregado Brasil
+  fora do Nordeste é a soma dos demais territórios.
+observacoes: >-
+  A tabela traz as contagens por região e UF de 2012 a 2019 e de 2023 em diante;
+  em 2020, 2021 e 2022 só o Brasil tem valor e os demais territórios vêm sem
+  valor ("..."). Nesses anos a taxa de desocupação de Brasil fora do Nordeste não
+  é calculada. A taxa oficial (tabela 4562) existe em todos os anos.
+sentido: menor_melhor
+limites: {min: 0}
+defasagem_meses: 2
+auxiliar: true
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual (condição de ocupação, por sexo)
+    base_origem: SIDRA, tabela 10364, variável 4092, sexo total
+    url: https://sidra.ibge.gov.br/tabela/10364
+    coletor: sidra
+    parametros: {tabela: "10364", variavel: "4092", classificacoes: {c2: "6794"}}
+    compatibilidade: >-
+      Mesma série da PNAD Contínua (2012 em diante) da taxa de desocupação; não
+      é comparável com a PNAD antiga.
+    verificado: true

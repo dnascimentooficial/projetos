@@ -1,0 +1,56 @@
+id: gini
+nome: Índice de Gini da renda domiciliar per capita
+descricao: >-
+  Índice de Gini da distribuição do rendimento domiciliar per capita, por
+  Brasil, região e unidade da federação. Vai de 0 (igualdade perfeita) a 1
+  (toda a renda com uma pessoa).
+eixo: social
+categoria: renda
+unidade: índice (0 a 1)
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Duas séries, uma por pesquisa, nunca unidas. `pnad`: Índice de Gini da renda
+  domiciliar per capita calculado pelo Ipea a partir da PNAD antiga (série
+  PGINI do Ipeadata, 2001 a 2014, sem 2010). `pnadc`: Índice de Gini do
+  rendimento domiciliar per capita, a preços médios do ano, da PNAD Contínua
+  anual (SIDRA 7435, variável 10681), de 2012 em diante. Não há Brasil fora do
+  Nordeste: o índice de Gini não se recompõe a partir de totais.
+observacoes: >-
+  A PNAD antiga não foi a campo em 2010 (ano do Censo), por isso a série `pnad`
+  não tem 2010. A PNAD de 2015 existe, mas a série PGINI do Ipeadata termina em
+  2014 e não foi encontrada outra fonte por UF para 2015. As duas séries se
+  sobrepõem em 2012 a 2014 e dão valores diferentes (pesquisa e universo
+  distintos); servem para ver cada período, não para emendar. A série `pnad` do
+  Ipeadata está marcada como inativa (o Ipea indica a PNAD Contínua para
+  dados atualizados).
+sentido: menor_melhor
+limites: {min: 0, max: 1}
+defasagem_meses: 5
+comparacao:
+  referencia: brasil
+series:
+  - id: pnad
+    inicio: 2001
+    fim: 2014
+    fonte: Ipea, Índice de Gini (PNAD/IBGE), série PGINI do Ipeadata
+    base_origem: Ipeadata, série PGINI (inativa), Brasil, regiões e estados
+    url: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=1422364745
+    coletor: ipeadata
+    parametros: {codigo: PGINI, periodos: "2001-2014"}
+    compatibilidade: >-
+      PNAD antiga (2001 a 2014, sem 2010). Não comparável com a PNAD Contínua
+      (série `pnadc`), que tem outra metodologia e outro universo.
+    verificado: true
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual (rendimento de todas as fontes)
+    base_origem: SIDRA, tabela 7435, variável 10681
+    url: https://sidra.ibge.gov.br/tabela/7435
+    coletor: sidra
+    parametros: {tabela: "7435", variavel: "10681"}
+    compatibilidade: >-
+      PNAD Contínua (2012 em diante). Não comparável com a PNAD antiga (série
+      `pnad`): outra pesquisa, outro universo e outra apuração do rendimento.
+    verificado: true

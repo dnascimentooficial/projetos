@@ -1,0 +1,54 @@
+id: renda_dom_pc
+nome: Renda domiciliar per capita
+descricao: >-
+  Rendimento médio mensal real domiciliar per capita de todas as fontes, por
+  Brasil, região e unidade da federação, em reais de 2025. Mostra o quanto cada
+  pessoa dispõe, em média, de renda do domicílio.
+eixo: social
+categoria: renda
+unidade: R$ por mês (reais de 2025)
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Rendimento médio mensal real domiciliar per capita da PNAD Contínua anual,
+  rendimento de todas as fontes (SIDRA 7533), a preços médios do último ano da
+  série (2025). Brasil fora do Nordeste é a razão das diferenças, (massa de
+  rendimento do Brasil − massa do Nordeste) ÷ (população do Brasil − população
+  do Nordeste) × 1000, com as fichas `massa_renda_dom_pc` (SIDRA 7427) e
+  `populacao_pnadc` (SIDRA 7436); o valor oficial do Nordeste confere com essa
+  razão dentro de 0,5% (regra R08).
+observacoes: >-
+  Só há série da PNAD Contínua (2012 em diante). A PNAD antiga (2001 a 2015) não
+  tem renda domiciliar per capita por UF em tabela do SIDRA nem série do
+  Ipeadata, e fica sem série. Os valores são reais a preços médios do último ano
+  da série; quando o IBGE divulga um novo ano, a série inteira é reapresentada
+  nos preços desse ano. O universo é o das tabelas de rendimento de todas as
+  fontes (população residente com os rendimentos de todas as fontes), e pode
+  diferir em cerca de 2% do rendimento domiciliar per capita que o IBGE destaca
+  em divulgação própria (R$ 2.316 em 2025, contra R$ 2.264 aqui).
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 5
+tratamento_monetario:
+  modo: reais_constantes
+  deflator: deflator da PNAD Contínua (IBGE), rendimento real a preços médios do último ano da série
+  ano_base: 2025
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: razao
+  numerador: massa_renda_dom_pc
+  denominador: populacao_pnadc
+  fator: 1000
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual (rendimento de todas as fontes)
+    base_origem: SIDRA, tabela 7533, variável 10816
+    url: https://sidra.ibge.gov.br/tabela/7533
+    coletor: sidra
+    parametros: {tabela: "7533", variavel: "10816"}
+    compatibilidade: >-
+      Série da PNAD Contínua (2012 em diante). Não há série da PNAD antiga; a
+      série não atravessa a troca de pesquisa.
+    verificado: true

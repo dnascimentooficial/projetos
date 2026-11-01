@@ -123,3 +123,35 @@ def test_coletar_serie_ipeadata_baixa_json_verificado(projeto, ficha_ipeadata):
     assert sessao.urls == ["https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='SERIE_SINTETICA')"]
     assert coleta.arquivo.endswith(".json") and coleta.origem == "rede"
     assert (projeto.raiz / coleta.arquivo).read_bytes() == _Resposta.content
+
+
+def _serie_com_periodos(ficha_ipeadata, periodos):
+    serie = replace(ficha_ipeadata.series[0], parametros={"codigo": "SERIE_SINTETICA", "periodos": periodos})
+    return replace(ficha_ipeadata, series=(serie,)), serie
+
+
+def test_periodos_limitam_os_anos_da_serie(ficha_ipeadata, territorios):
+    """O Ipeadata devolve a serie inteira (a PNAD antiga vem desde 1976); `periodos` guarda so a janela da ficha."""
+    ficha, serie = _serie_com_periodos(ficha_ipeadata, "2001-2002")
+    conteudo = json_ipea([("Brasil", "", f"{ano}-01-01T00:00:00-02:00", float(ano)) for ano in (1999, 2001, 2002, 2003)])
+    df = padronizar_ipeadata(conteudo, ficha, serie, "c1", territorios)
+    assert sorted(df.ano) == [2001, 2002]
+
+
+def test_periodos_com_um_ano_so(ficha_ipeadata, territorios):
+    ficha, serie = _serie_com_periodos(ficha_ipeadata, "2002")
+    conteudo = json_ipea([("Brasil", "", f"{ano}-01-01T00:00:00-02:00", 1.0) for ano in (2001, 2002, 2003)])
+    assert list(padronizar_ipeadata(conteudo, ficha, serie, "c1", territorios).ano) == [2002]
+
+
+@pytest.mark.parametrize("periodos", ["2001-", "2002-2001", "abc", "2001/2003", 2001])
+def test_periodos_invalidos_interrompem_com_mensagem_clara(ficha_ipeadata, territorios, periodos):
+    ficha, serie = _serie_com_periodos(ficha_ipeadata, periodos)
+    with pytest.raises(ErroLayout, match="periodos"):
+        padronizar_ipeadata(json_ipea([("Brasil", "", DATA_2001, 1.0)]), ficha, serie, "c1", territorios)
+
+
+def test_sem_periodos_a_serie_vem_inteira(ficha_ipeadata, territorios):
+    conteudo = json_ipea([("Brasil", "", f"{ano}-01-01T00:00:00-02:00", 1.0) for ano in (1976, 2001)])
+    df = padronizar_ipeadata(conteudo, ficha_ipeadata, ficha_ipeadata.series[0], "c1", territorios)
+    assert sorted(df.ano) == [1976, 2001]

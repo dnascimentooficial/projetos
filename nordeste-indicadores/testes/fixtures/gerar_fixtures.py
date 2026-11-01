@@ -50,11 +50,11 @@ def json_sidra(
 ) -> list[dict]:
     """Monta o JSON SIDRA sintetico; `valor(nc, codigo, ano, multiplicador)` devolve o texto de V.
 
-    `classificacoes` e uma tupla de (rotulo, codigo) das classificacoes da tabela, todas no total
-    (colunas D4, D5, ...), como a API devolve quando a consulta fixa a categoria Total.
+    `classificacoes` e uma tupla de (rotulo, codigo) ou (rotulo, codigo, nome da categoria) das classificacoes
+    da tabela (colunas D4, D5, ...), como a API devolve quando a consulta fixa a categoria; sem nome, "Total".
     """
     cabecalho = dict(_CABECALHO)
-    for posicao, (rotulo, _) in enumerate(classificacoes, start=4):
+    for posicao, (rotulo, *_) in enumerate(classificacoes, start=4):
         cabecalho[f"D{posicao}C"], cabecalho[f"D{posicao}N"] = f"{rotulo} (Código)", rotulo
     linhas = [cabecalho]
     for ano in anos:
@@ -65,8 +65,8 @@ def json_sidra(
                 "D1C": codigo, "D1N": nome, "D2C": "99999", "D2N": variavel,
                 "D3C": str(ano), "D3N": str(ano),
             }
-            for posicao, (_, categoria) in enumerate(classificacoes, start=4):
-                linha[f"D{posicao}C"], linha[f"D{posicao}N"] = categoria, "Total"
+            for posicao, (_, categoria, *nome) in enumerate(classificacoes, start=4):
+                linha[f"D{posicao}C"], linha[f"D{posicao}N"] = categoria, (nome or ["Total"])[0]
             linhas.append(linha)
     return linhas
 
@@ -222,6 +222,24 @@ def json_ipeadata(registros: list[tuple]) -> dict:
     ]}
 
 
+_NIVEL_IPEADATA = {"1": "Brasil", "2": "Regiões", "3": "Estados"}
+
+
+def json_ipeadata_anual(anos, valor: float, metropoles: bool = False) -> dict:
+    """Resposta OData do Ipeadata com o mesmo valor em todo territorio e ano.
+
+    Como na resposta real, o Brasil vem com TERCODIGO vazio, e regioes e UFs com o codigo do IBGE.
+    `metropoles` acrescenta uma linha de area metropolitana por ano, que o padronizador descarta.
+    """
+    registros = [
+        (_NIVEL_IPEADATA[nc], "" if nc == "1" else codigo, f"{ano}-01-01T00:00:00-02:00", valor)
+        for ano in anos for nc, codigo, _, _ in _TERRITORIOS
+    ]
+    if metropoles:
+        registros += [("Área metropolitana", "1", f"{ano}-01-01T00:00:00-02:00", valor) for ano in anos]
+    return json_ipeadata(registros)
+
+
 def _soma(nc, codigo, ano, multiplicador) -> str:
     return str(BASE * multiplicador)
 
@@ -240,6 +258,36 @@ def _participacao(nc, codigo, ano, multiplicador) -> str:
 ANOS_ESTIMATIVA_PRE_CENSO2022 = [*range(2001, 2007), 2008, 2009, *range(2011, 2022)]
 ANOS_ESTIMATIVA_POS_CENSO2022 = [2024, 2025, 2026]
 
+# Bloco IBGE, parte B. PNAD Continua anual: rendimento de todas as fontes e taxas desde 2012, informalidade desde 2016,
+# pobreza ate 2024 (a tabela do ODS fecha um ano antes). A PNAD antiga (Ipeadata) nao tem 2010.
+ANOS_PNADC = range(2012, 2026)
+ANOS_INFORMALIDADE = range(2016, 2026)
+ANOS_POBREZA = range(2012, 2025)
+# O Ipeadata devolve a serie inteira da PNAD antiga; a ficha guarda so 2001 a 2014 (parametro `periodos`). A PNAD nao foi a
+# campo nos anos de Censo (1980, 1991, 2000 e 2010) nem em 1994; o PGINI comeca em 1976 e o Dese_Pnad, em 1992.
+ANOS_PNAD_ANTIGA = [*range(2001, 2010), *range(2011, 2015)]
+ANOS_PGINI = [*range(1976, 1980), *range(1981, 1991), 1992, 1993, *range(1995, 2000), *ANOS_PNAD_ANTIGA]
+ANOS_DESE_PNAD = [1992, 1993, *range(1995, 2000), *ANOS_PNAD_ANTIGA]
+ANOS_SEM_CONTAGEM_REGIONAL = (2020, 2021, 2022)  # desocupados e forca de trabalho: so o Brasil tem valor
+_CLASSE_RENDA = (("Classes de percentual das pessoas em ordem crescente de rendimento domiciliar per capita", "49243"),)
+_SEXO_TOTAL = (("Sexo", "6794"),)
+
+
+def _constante(valor: str):
+    return lambda nc, codigo, ano, multiplicador: valor
+
+
+def _soma_vezes(fator: int):
+    return lambda nc, codigo, ano, multiplicador: str(BASE * multiplicador * fator)
+
+
+def _contagem_sem_regioes(fator: int):
+    """Contagem anual com as regioes e UFs sem valor ("...") nos anos em que o IBGE so publica o Brasil."""
+    soma = _soma_vezes(fator)
+    return lambda nc, codigo, ano, multiplicador: (
+        "..." if nc != "1" and ano in ANOS_SEM_CONTAGEM_REGIONAL else soma(nc, codigo, ano, multiplicador))
+
+
 GERADORES = {
     "pib_nominal/scr_ref2010.json": lambda: json_sidra(
         "PIB a preços correntes (sintético)", "99999", "Mil Reais", _soma),
@@ -257,6 +305,47 @@ GERADORES = {
         classificacoes=(("Situação do domicílio", "0"), ("Sexo", "0"))),
     "populacao/censo_2022.json": lambda: json_sidra(
         "População residente (sintético)", "45", "Pessoas", _soma, anos=[2022]),
+    # Rendimento: a razao massa / populacao x 1000 (1000 em todo territorio e no Brasil fora do NE) bate com a media.
+    "populacao_pnadc/pnadc.json": lambda: json_sidra(
+        "População (sintético)", "49", "Mil pessoas", _soma, anos=ANOS_PNADC),
+    "massa_renda_dom_pc/pnadc.json": lambda: json_sidra(
+        "Massa de rendimento mensal real domiciliar per capita (sintético)", "36", "Milhões de Reais", _soma,
+        anos=ANOS_PNADC, classificacoes=_CLASSE_RENDA),
+    "renda_dom_pc/pnadc.json": lambda: json_sidra(
+        "Rendimento médio mensal real domiciliar per capita (sintético)", "38", "Reais", _constante("1000"),
+        anos=ANOS_PNADC, classificacoes=_CLASSE_RENDA),
+    "pobreza/pnadc.json": lambda: json_sidra(
+        "Proporção da população abaixo da linha de pobreza nacional (sintético)", "2", "Proporção (%)",
+        _constante("50.0"), anos=ANOS_POBREZA),
+    "extrema_pobreza/pnadc.json": lambda: json_sidra(
+        "Proporção da população abaixo da linha de pobreza internacional (sintético)", "2", "Proporção (%)",
+        _constante("10.0"), anos=ANOS_POBREZA),
+    "gini/pnad.json": lambda: json_ipeadata_anual(ANOS_PGINI, 0.5),
+    "gini/pnadc.json": lambda: json_sidra(
+        "Índice de Gini do rendimento domiciliar per capita (sintético)", "75", "Índice", _constante("0.5"),
+        anos=ANOS_PNADC),
+    # Desocupacao: desocupados / forca de trabalho x 100 = 10 em todo territorio, e o mesmo valor no Brasil fora do NE.
+    "desocupacao/pnad.json": lambda: json_ipeadata_anual(ANOS_DESE_PNAD, 10.0, metropoles=True),
+    "desocupacao/pnadc.json": lambda: json_sidra(
+        "Taxa de desocupação (sintético)", "2", "%", _constante("10.0"), anos=ANOS_PNADC),
+    "desocupados/pnadc.json": lambda: json_sidra(
+        "Pessoas desocupadas (sintético)", "49", "Mil pessoas", _contagem_sem_regioes(1),
+        anos=ANOS_PNADC, classificacoes=_SEXO_TOTAL),
+    "forca_trabalho/pnadc.json": lambda: json_sidra(
+        "Pessoas na força de trabalho (sintético)", "49", "Mil pessoas", _contagem_sem_regioes(10),
+        anos=ANOS_PNADC, classificacoes=_SEXO_TOTAL),
+    # Informalidade: informais / ocupados x 100 = 50 em todo territorio.
+    "informalidade/pnadc.json": lambda: json_sidra(
+        "Taxa de informalidade (sintético)", "2", "%", _constante("50.0"), anos=ANOS_INFORMALIDADE),
+    "informais/pnadc.json": lambda: json_sidra(
+        "Pessoas ocupadas informais (sintético)", "49", "Mil pessoas", _soma, anos=ANOS_INFORMALIDADE,
+        classificacoes=(("Situação de informalidade", "57303", "Informais"),)),
+    "ocupados/pnadc.json": lambda: json_sidra(
+        "Pessoas ocupadas (sintético)", "49", "Mil pessoas", _soma_vezes(2), anos=ANOS_INFORMALIDADE,
+        classificacoes=(("Situação de informalidade", "57302"),)),
+    "rendimento_trabalho/pnadc.json": lambda: json_sidra(
+        "Rendimento médio mensal real do trabalho (sintético)", "38", "Reais", _constante("99999"),
+        anos=ANOS_PNADC),
 }
 
 

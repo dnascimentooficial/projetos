@@ -15,7 +15,12 @@ TERRITORIOS_COMPLETOS = {
     "BR", "N", "NE", "SE", "S", "CO", "MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE_UF", "BA",
 }
 FICHAS_PARTE_A = {"populacao", "pib_participacao", "pib_nominal", "pib_per_capita"}
-FICHAS_COMPLETAS = FICHAS_PARTE_A | {"pib_volume"}  # as que trazem os 15 territorios em todo ano
+FICHAS_PARTE_B = {
+    "renda_dom_pc", "massa_renda_dom_pc", "populacao_pnadc", "pobreza", "extrema_pobreza", "gini",
+    "desocupacao", "desocupados", "forca_trabalho", "informalidade", "informais", "ocupados",
+    "rendimento_trabalho",
+}
+FICHAS_COMPLETAS = FICHAS_PARTE_A | FICHAS_PARTE_B | {"pib_volume"}  # as que trazem os 15 territorios em todo ano
 HOJE = ["--hoje", "2026-11-01"]
 DICIONARIO = Path(__file__).resolve().parent.parent / "docs" / "dicionario-verificacao.md"
 URL_DO_COLETOR = {"sidra": url_sidra, "ipeadata": url_ipeadata, "arquivo": url_arquivo}
@@ -45,7 +50,7 @@ def base(projeto_completo):
 
 
 def test_fichas_da_parte_a_existem(fichas):
-    assert FICHAS_COMPLETAS <= set(fichas)
+    assert FICHAS_PARTE_A | {"pib_volume"} <= set(fichas)
 
 
 def test_toda_serie_tem_exatamente_uma_fixture(projeto_completo, fichas):
@@ -274,3 +279,140 @@ def test_mapeamento_invalido_na_ficha_barra_a_publicacao_pela_r10(projeto_comple
     validacao = pd.read_csv(projeto_completo.relatorios / "validacao.csv")
     r10 = validacao.query("regra == 'R10'").mensagem
     assert any(mensagem in m for m in r10), r10.tolist()
+
+
+# ---------------------------------------------------------------------------
+# Bloco IBGE, parte B: PNAD antiga (`pnad`) e PNAD Continua (`pnadc`)
+# ---------------------------------------------------------------------------
+
+ANOS_PNADC = list(range(2012, 2026))
+ANOS_SEM_CONTAGEM_REGIONAL = {2020, 2021, 2022}  # as contagens anuais de desocupados e forca de trabalho so saem para o Brasil
+
+
+def _valores(base, indicador, serie, territorio):
+    linhas = base[(base.indicador_id == indicador) & (base.serie_id == serie) & (base.territorio_id == territorio)]
+    return linhas.set_index("ano").valor
+
+
+def test_fichas_da_parte_b_existem(fichas):
+    assert FICHAS_PARTE_B <= set(fichas)
+
+
+def test_series_da_parte_b_separam_pnad_e_pnadc(fichas):
+    esperado = {
+        "renda_dom_pc": ["pnadc"], "pobreza": ["pnadc"], "extrema_pobreza": ["pnadc"],
+        "gini": ["pnad", "pnadc"], "desocupacao": ["pnad", "pnadc"], "informalidade": ["pnadc"],
+        "rendimento_trabalho": ["pnadc"],
+    }
+    for indicador, series in esperado.items():
+        assert [s.id for s in fichas[indicador].series] == series, indicador
+    for auxiliar in ("massa_renda_dom_pc", "populacao_pnadc", "desocupados", "forca_trabalho", "informais", "ocupados"):
+        f = fichas[auxiliar]  # o auxiliar usa o mesmo id de serie do indicador que o consome
+        assert f.auxiliar and [s.id for s in f.series] == ["pnadc"], auxiliar
+
+
+def test_parametros_sidra_da_pnadc(fichas):
+    esperado = {
+        ("renda_dom_pc", "7533", "10816", ()), ("massa_renda_dom_pc", "7427", "10495", ()),
+        ("populacao_pnadc", "7436", "606", ()), ("gini", "7435", "10681", ()),
+        ("desocupacao", "4562", "4099", ()), ("desocupados", "10364", "4092", (("c2", "6794"),)),
+        ("forca_trabalho", "10364", "4088", (("c2", "6794"),)), ("informalidade", "4708", "12466", ()),
+        ("informais", "4680", "4090", (("c1350", "57303"),)), ("ocupados", "4680", "4090", (("c1350", "57302"),)),
+        ("rendimento_trabalho", "4566", "5935", ()), ("pobreza", "5877", "9948", ()),
+        ("extrema_pobreza", "5817", "9617", ()),
+    }
+    obtido = set()
+    for indicador in FICHAS_PARTE_B:
+        s = fichas[indicador].serie("pnadc")
+        assert s.coletor == "sidra", indicador
+        classificacoes = tuple(sorted((s.parametros.get("classificacoes") or {}).items()))
+        obtido.add((indicador, s.parametros["tabela"], s.parametros["variavel"], classificacoes))
+    assert obtido == esperado
+
+
+def test_gini_da_pnad_antiga_vem_do_ipeadata_e_nao_inventa_o_ano_sem_pesquisa(fichas, base):
+    s = fichas["gini"].serie("pnad")
+    assert (s.coletor, s.parametros, s.inicio, s.fim) == (
+        "ipeadata", {"codigo": "PGINI", "periodos": "2001-2014"}, 2001, 2014)
+    anos = set(base[(base.indicador_id == "gini") & (base.serie_id == "pnad")].ano)  # o Ipeadata traz desde 1976: `periodos` corta
+    assert anos == set(range(2001, 2015)) - {2010}  # a PNAD nao foi a campo em 2010: sem linha, sem interpolacao
+
+
+def test_desocupacao_da_pnad_antiga_vem_do_ipeadata(fichas):
+    s = fichas["desocupacao"].serie("pnad")
+    assert (s.coletor, s.parametros, s.inicio, s.fim) == (
+        "ipeadata", {"codigo": "Dese_Pnad", "periodos": "2001-2014"}, 2001, 2014)
+
+
+def test_comparacoes_da_parte_b(fichas):
+    for indicador in ("gini", "pobreza", "extrema_pobreza", "rendimento_trabalho"):
+        c = fichas[indicador].comparacao
+        assert (c.referencia, c.metodo) == ("brasil", None), indicador  # sem contagens por UF: nao ha Brasil fora do NE
+    esperado = {
+        "renda_dom_pc": ("massa_renda_dom_pc", "populacao_pnadc", 1000.0),
+        "desocupacao": ("desocupados", "forca_trabalho", 100.0),
+        "informalidade": ("informais", "ocupados", 100.0),
+    }
+    for indicador, (numerador, denominador, fator) in esperado.items():
+        c = fichas[indicador].comparacao
+        assert (c.referencia, c.metodo, c.numerador, c.denominador, c.fator) == (
+            "brasil_fora_ne", "razao", numerador, denominador, fator), indicador
+    for auxiliar in ("massa_renda_dom_pc", "populacao_pnadc", "desocupados", "forca_trabalho", "informais", "ocupados"):
+        assert fichas[auxiliar].comparacao.metodo == "soma", auxiliar
+
+
+def test_valores_monetarios_da_pnadc_declaram_deflator_e_ano_base(fichas):
+    for indicador in ("renda_dom_pc", "massa_renda_dom_pc", "rendimento_trabalho"):
+        t = fichas[indicador].tratamento_monetario
+        assert t["modo"] == "reais_constantes" and t["ano_base"] == 2025 and t["deflator"], indicador
+    for indicador in FICHAS_PARTE_B - {"renda_dom_pc", "massa_renda_dom_pc", "rendimento_trabalho"}:
+        assert fichas[indicador].tratamento_monetario is None, indicador
+
+
+def test_pobreza_registra_a_linha_e_so_vira_verificada_com_a_linha_confirmada(fichas):
+    for indicador in ("pobreza", "extrema_pobreza"):
+        f = fichas[indicador]
+        (s,) = f.series
+        assert (s.id, s.inicio, s.fim, s.verificado) == ("pnadc", 2012, None, False), indicador
+        assert "linha" in (f.metodologia + s.compatibilidade).lower(), indicador
+        assert f.sentido == "menor_melhor" and f.limites == {"min": 0, "max": 100}, indicador
+
+
+def test_cobertura_das_series_da_pnadc(fichas):
+    for indicador in ("renda_dom_pc", "gini", "desocupacao", "rendimento_trabalho", "massa_renda_dom_pc", "populacao_pnadc",
+                      "desocupados", "forca_trabalho"):
+        s = fichas[indicador].serie("pnadc")
+        assert (s.inicio, s.fim) == (2012, None), indicador
+    for indicador in ("informalidade", "informais", "ocupados"):
+        s = fichas[indicador].serie("pnadc")
+        assert (s.inicio, s.fim) == (2016, None), indicador
+
+
+def test_desocupacao_pnadc_offline_tem_brasil_fora_ne_exceto_onde_faltam_as_contagens(base):
+    br_fora = _valores(base, "desocupacao", "pnadc", "BR_FORA_NE")
+    assert set(br_fora.index) == set(ANOS_PNADC) - ANOS_SEM_CONTAGEM_REGIONAL
+    assert set(br_fora) == {10.0}  # desocupados / forca de trabalho x 100, coerente com os insumos da fixture
+    contagem = base[(base.indicador_id == "desocupados") & (base.ano.isin(ANOS_SEM_CONTAGEM_REGIONAL))]
+    assert set(contagem[contagem.territorio_id != "BR"].tipo_dado) == {"indisponivel"}
+    assert set(contagem[contagem.territorio_id == "BR"].tipo_dado) == {"observado"}
+    taxa = base[(base.indicador_id == "desocupacao") & (base.serie_id == "pnadc") & (base.territorio_id != "BR_FORA_NE")]
+    assert set(taxa.ano) == set(ANOS_PNADC) and set(taxa.tipo_dado) == {"observado"}  # a taxa oficial existe em todos os anos
+
+
+def test_informalidade_e_renda_offline_tem_brasil_fora_ne_calculado_dos_insumos(base):
+    inf = base[(base.indicador_id == "informalidade") & (base.territorio_id == "BR_FORA_NE")]
+    assert set(inf.ano) == set(range(2016, 2026)) and set(inf.valor) == {50.0} and set(inf.serie_id) == {"pnadc"}
+    renda = base[(base.indicador_id == "renda_dom_pc") & (base.territorio_id == "BR_FORA_NE")]
+    assert set(renda.ano) == set(ANOS_PNADC) and set(renda.valor) == {1000.0}
+
+
+def test_indicadores_sem_brasil_fora_ne_na_parte_b(base):
+    for indicador in ("gini", "pobreza", "extrema_pobreza", "rendimento_trabalho"):
+        assert "BR_FORA_NE" not in set(base[base.indicador_id == indicador].territorio_id), indicador
+
+
+def test_series_da_parte_b_offline_sao_observadas(base):
+    for indicador in FICHAS_PARTE_B:
+        linhas = base[(base.indicador_id == indicador) & (base.territorio_id != "BR_FORA_NE")
+                      & (base.tipo_dado != "indisponivel")]
+        assert set(linhas.tipo_dado) == {"observado"}, indicador

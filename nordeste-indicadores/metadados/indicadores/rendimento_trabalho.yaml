@@ -1,0 +1,46 @@
+id: rendimento_trabalho
+nome: Rendimento médio real do trabalho
+descricao: >-
+  Rendimento médio mensal real das pessoas de 14 anos ou mais ocupadas com
+  rendimento de trabalho, de todos os trabalhos, por Brasil, região e unidade da
+  federação, em reais de 2025.
+eixo: trabalho
+categoria: renda
+unidade: R$ por mês (reais de 2025)
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Rendimento médio mensal real das pessoas de 14 anos ou mais de idade ocupadas
+  na semana de referência com rendimento de trabalho, efetivamente recebido em
+  todos os trabalhos, média anual da PNAD Contínua (SIDRA 4566, variável 5935),
+  de 2012 em diante. A tabela traz o valor real; o nominal (variável 5931) não
+  é usado. A comparação é com o Brasil, como na seção 4 da especificação; não
+  se recompõe Brasil fora do Nordeste.
+observacoes: >-
+  O valor é real, a preços do fim da série (2025 hoje); quando o IBGE divulga
+  um novo ano, a série inteira é reapresentada em preços do novo ano. É o
+  rendimento efetivamente recebido, não o habitual. Só há série da PNAD
+  Contínua; a PNAD antiga não entra.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 2
+tratamento_monetario:
+  modo: reais_constantes
+  deflator: deflator da PNAD Contínua (IBGE), rendimento real da tabela 4566 (variável 5935)
+  ano_base: 2025
+comparacao:
+  referencia: brasil
+series:
+  - id: pnadc
+    inicio: 2012
+    fim: null
+    fonte: IBGE, PNAD Contínua anual
+    base_origem: SIDRA, tabela 4566, variável 5935
+    url: https://sidra.ibge.gov.br/tabela/4566
+    coletor: sidra
+    parametros: {tabela: "4566", variavel: "5935"}
+    compatibilidade: >-
+      PNAD Contínua (2012 em diante). Série real, a preços do último ano da
+      divulgação; não é comparável com valores de outra divulgação sem
+      reaplicar o deflator.
+    verificado: true

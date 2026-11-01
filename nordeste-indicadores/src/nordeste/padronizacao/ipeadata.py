@@ -2,6 +2,7 @@
 
 import json
 import math
+import re
 
 import pandas as pd
 
@@ -12,6 +13,7 @@ from nordeste.territorios import territorio_por_codigo
 
 # NIVNOME -> nivel territorial; no Brasil o Ipeadata deixa TERCODIGO vazio e o codigo IBGE e "1".
 _NIVEL_POR_NOME = {"Brasil": "n1", "Regiões": "n2", "Estados": "n3"}
+_PERIODOS = re.compile(r"(\d{4})(?:-(\d{4}))?")
 
 
 def _ano(data) -> int:
@@ -30,12 +32,26 @@ def _valor(bruto) -> tuple[float, str, str]:
     return float(bruto), "observado", ""
 
 
+def _janela(serie: Serie) -> tuple[int, int] | None:
+    """Janela de anos de parametros["periodos"] ("AAAA" ou "AAAA-AAAA", fechada); None se nao declarada."""
+    if "periodos" not in serie.parametros:
+        return None
+    periodos = serie.parametros["periodos"]
+    achado = _PERIODOS.fullmatch(periodos) if isinstance(periodos, str) else None
+    inicio, fim = (int(achado.group(1)), int(achado.group(2) or achado.group(1))) if achado else (1, 0)
+    if inicio > fim:
+        raise ErroLayout(
+            f"Ipeadata: periodos invalido em {serie.id} ({periodos!r}); use AAAA ou AAAA-AAAA, com inicio <= fim")
+    return inicio, fim
+
+
 def padronizar_ipeadata(
     conteudo: bytes, ficha: Ficha, serie: Serie, coleta_id: str, territorios: pd.DataFrame,
 ) -> pd.DataFrame:
     """Converte o JSON Ipeadata ({"value": [...]}) para o formato da base.
 
-    Niveis diferentes de Brasil, Regioes e Estados e territorios fora da tabela sao descartados.
+    Niveis diferentes de Brasil, Regioes e Estados e territorios fora da tabela sao descartados. O Ipeadata
+    devolve a serie inteira; com parametros["periodos"] ("AAAA" ou "AAAA-AAAA") ficam so os anos da janela.
     """
     try:
         dados = json.loads(conteudo)
@@ -44,6 +60,7 @@ def padronizar_ipeadata(
     if not (isinstance(dados, dict) and isinstance(dados.get("value"), list)):
         raise ErroLayout('Ipeadata: esperado um objeto JSON com a lista "value"')
 
+    janela = _janela(serie)
     registros = []
     for linha in dados["value"]:
         if not isinstance(linha, dict):
@@ -55,10 +72,13 @@ def padronizar_ipeadata(
         territorio = territorio_por_codigo(territorios, nivel, codigo)
         if territorio is None:
             continue
+        ano = _ano(linha.get("VALDATA"))
+        if janela is not None and not janela[0] <= ano <= janela[1]:
+            continue
         valor, tipo_dado, nota = _valor(linha.get("VALVALOR"))
         registros.append({
             "indicador_id": ficha.id, "subindicador": "", "etapa": "", "rede": "",
-            "territorio_id": territorio, "ano": _ano(linha.get("VALDATA")), "valor": valor,
+            "territorio_id": territorio, "ano": ano, "valor": valor,
             "tipo_dado": tipo_dado, "serie_id": serie.id, "coleta_id": coleta_id, "nota": nota,
         })
     return normalizar_base(pd.DataFrame(registros, columns=COLUNAS_BASE))

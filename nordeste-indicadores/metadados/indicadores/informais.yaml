@@ -1,0 +1,40 @@
+id: informais
+nome: Pessoas ocupadas em trabalho informal
+descricao: >-
+  Pessoas de 14 anos ou mais ocupadas em trabalho informal na semana de
+  referência, em mil pessoas, por Brasil, região e unidade da federação.
+  Insumo da taxa de informalidade, não exibido por si.
+eixo: trabalho
+categoria: mercado_de_trabalho
+unidade: mil pessoas
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Pessoas de 14 anos ou mais de idade ocupadas na semana de referência,
+  categoria Informais da situação de informalidade, na PNAD Contínua anual
+  (SIDRA 4680, variável 4090, classificação 1350, categoria 57303). Numerador da
+  taxa de informalidade de Brasil fora do Nordeste. O agregado Brasil fora do
+  Nordeste é a soma dos demais territórios.
+observacoes: >-
+  A definição de trabalho informal é a do IBGE, aplicada na própria tabela, que
+  traz a contagem pronta.
+sentido: menor_melhor
+limites: {min: 0}
+defasagem_meses: 2
+auxiliar: true
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: pnadc
+    inicio: 2016
+    fim: null
+    fonte: IBGE, PNAD Contínua anual (situação de informalidade)
+    base_origem: SIDRA, tabela 4680, variável 4090, categoria Informais
+    url: https://sidra.ibge.gov.br/tabela/4680
+    coletor: sidra
+    parametros: {tabela: "4680", variavel: "4090", classificacoes: {c1350: "57303"}}
+    compatibilidade: >-
+      Mesma série da PNAD Contínua (2016 em diante) da taxa de informalidade; a
+      informalidade só é apurada a partir de 2016.
+    verificado: true

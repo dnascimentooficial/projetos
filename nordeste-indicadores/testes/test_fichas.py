@@ -50,7 +50,9 @@ def test_fichas_do_repositorio_sao_validas_e_auxiliares(projeto_completo):
     assert verificar_fichas(projeto_completo.fichas) == []
     fichas = carregar_fichas(projeto_completo.fichas)
     assert {"pib_per_capita", "pib_nominal", "populacao"} <= set(fichas)
-    assert {i for i, f in fichas.items() if f.auxiliar} == {"pib_nominal"}
+    assert {i for i, f in fichas.items() if f.auxiliar} == {
+        "pib_nominal", "massa_renda_dom_pc", "populacao_pnadc", "desocupados", "forca_trabalho", "informais", "ocupados",
+    }
     assert not fichas["pib_per_capita"].auxiliar
     assert fichas["pib_per_capita"].defasagem_meses == 23
     assert fichas["pib_nominal"].unidade == "R$ mil"

@@ -1,0 +1,2244 @@
+{
+ "value": [
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Brasil",
+   "TERCODIGO": ""
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "2"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "3"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "4"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Regiões",
+   "TERCODIGO": "5"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "21"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "22"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "23"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "24"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "25"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "26"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "27"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "28"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Estados",
+   "TERCODIGO": "29"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1992-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1993-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1995-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1996-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1997-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1998-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "1999-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2001-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2002-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2003-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2004-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2005-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2006-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2007-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2008-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2009-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2011-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2012-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2013-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  },
+  {
+   "SERCODIGO": "SINTETICO",
+   "VALDATA": "2014-01-01T00:00:00-02:00",
+   "VALVALOR": 10.0,
+   "NIVNOME": "Área metropolitana",
+   "TERCODIGO": "1"
+  }
+ ]
+}
