@@ -587,6 +587,8 @@ GERADORES = {
     "ideb/ideb.zip": pacote_ideb,
     "abandono_em/indicadores_inep.zip": lambda: pacote_de_partes(
         "abandono_em", "indicadores_inep", lambda territorio, spec: VALOR_ABANDONO),
+    "matriculas_basica/censo_escolar_2000_2002.zip": lambda: pacote_de_partes(
+        "matriculas_basica", "censo_escolar_2000_2002", valor_contagem),
     "matriculas_basica/censo_escolar_pre2007.zip": lambda: pacote_de_partes(
         "matriculas_basica", "censo_escolar_pre2007", valor_contagem),
     "matriculas_basica/educacenso.zip": lambda: pacote_de_partes("matriculas_basica", "educacenso", valor_contagem),

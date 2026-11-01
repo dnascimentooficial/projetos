@@ -10,6 +10,7 @@ from nordeste.coletores.arquivo import url_arquivo
 from nordeste.coletores.ipeadata import url_ipeadata
 from nordeste.coletores.sidra import url_sidra
 from nordeste.fichas import carregar_fichas
+from nordeste.tabela import cobertura_efetiva
 
 TERRITORIOS_COMPLETOS = {
     "BR", "N", "NE", "SE", "S", "CO", "MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE_UF", "BA",
@@ -640,23 +641,83 @@ def test_abandono_em_coleta_offline_registra_um_pacote_por_serie(projeto_complet
     assert coletas.arquivo[0].endswith(".zip")
 
 
-def test_matriculas_basica_tem_duas_series_com_partes_por_ano(fichas):
+def test_matriculas_basica_tem_tres_series_com_partes_por_ano(fichas):
     f = fichas["matriculas_basica"]
     assert [(s.id, s.inicio, s.fim, s.coletor, s.verificado) for s in f.series] == [
-        ("censo_escolar_pre2007", 2005, 2006, "arquivo", True), ("educacenso", 2007, 2021, "arquivo", True)]
+        ("censo_escolar_2000_2002", 2000, 2002, "arquivo", True), ("censo_escolar_pre2007", 2005, 2006, "arquivo", True),
+        ("educacenso", 2007, 2025, "arquivo", True)]
     assert f.comparacao.referencia == "brasil_fora_ne" and f.comparacao.metodo == "soma"
     assert (f.unidade, f.limites, f.tratamento_monetario) == ("matrículas", {"min": 0}, None)
-    pre, educacenso = (f.serie(i).parametros["partes"] for i in ("censo_escolar_pre2007", "educacenso"))
-    assert _anos_das_partes(pre) == [2005, 2006] and _anos_das_partes(educacenso) == list(range(2007, 2022))
+    antigas, pre, educacenso = (
+        f.serie(i).parametros["partes"] for i in ("censo_escolar_2000_2002", "censo_escolar_pre2007", "educacenso"))
+    assert _anos_das_partes(antigas) == [2000, 2001, 2002] and _anos_das_partes(pre) == [2005, 2006]
+    assert _anos_das_partes(educacenso) == list(range(2007, 2026))
+    assert [p["aba"] for p in antigas[:4]] == ["1.1", "1.5", "1.13", "1.36"]
     assert [p["aba"] for p in pre[:5]] == ["1.1", "1.6", "1.12", "1.18", "1.43"]
-    assert len(pre) == 2 * 5 and len(educacenso) == 15 * 6  # tres abas, cada uma em duas partes (Brasil e regioes; UFs)
-    assert len(_urls_das_partes(pre)) == 2 and len(_urls_das_partes(educacenso)) == 15
-    assert {p["aba"] for p in educacenso} == {"Educação Básica 1.1", "Educação Infantil 1.5", "Ensino Fundamental 1.14"}
+    assert len(antigas) == 3 * 4 and len(pre) == 2 * 5 and len(educacenso) == 19 * 6  # educacenso: tres abas, cada uma em duas partes
+    assert len(_urls_das_partes(antigas)) == 3 and len(_urls_das_partes(pre)) == 2 and len(_urls_das_partes(educacenso)) == 19
+    assert _territorios_por_ano(antigas) == {ano: TERRITORIOS_COMPLETOS for ano in (2000, 2001, 2002)}
     assert _territorios_por_ano(pre) == {2005: TERRITORIOS_COMPLETOS, 2006: TERRITORIOS_COMPLETOS}
-    assert _territorios_por_ano(educacenso) == {ano: TERRITORIOS_COMPLETOS for ano in range(2007, 2022)}
+    assert _territorios_por_ano(educacenso) == {ano: TERRITORIOS_COMPLETOS for ano in range(2007, 2026)}
     for parte in educacenso:  # Brasil e regioes (UF em branco) ou UFs (municipio em branco): as linhas de municipio ficam de fora
         assert parte["filtro_linhas"] in ({"Unnamed: 1": ""}, {"Unnamed: 2": ""})
         assert all(set(c) == {"coluna", "ano", "etapa", "rede"} for c in parte["colunas"])
+
+
+def test_matriculas_basica_nao_tem_buraco_silencioso_em_2003_e_2004(fichas):
+    """2003 e 2004 so existem em PDF: nenhuma serie as cobre, e a cobertura efetiva mostra o corte."""
+    f = fichas["matriculas_basica"]
+    cobertos = {a for s in f.series if s.verificado for a in range(s.inicio, s.fim + 1)}
+    assert cobertos == {2000, 2001, 2002, *range(2005, 2026)}
+    assert cobertura_efetiva(f) == "2000–2002; 2005–2025"
+    assert all(not s.anos_sem_publicacao for s in f.series)  # os anos de PDF tiveram Censo: nao sao "sem pesquisa"
+
+
+def test_matriculas_basica_2022_a_2025_seguem_o_layout_de_cada_sinopse(fichas):
+    """2022 a 2024 repetem as tabelas 1.1, 1.5 e 1.14 (com uma linha a mais no cabecalho da 1.1); 2025 renumera para 1.1, 1.8 e 1.20."""
+    partes = _partes(fichas, "matriculas_basica", "educacenso")
+    esperado = {
+        2022: (("Educação Básica 1.1", 11), ("Educação Infantil 1.5", 10), ("Ensino Fundamental 1.14", 10)),
+        # 2023 e 2024: a linha em branco acima do Brasil tem celulas com espacos (nomes de coluna repetidos); o cabecalho
+        # vai para a linha 5, inteiramente vazia, e as linhas de rotulos abaixo dela nao casam nenhum territorio
+        2023: (("Educação Básica 1.1", 5), ("Educação Infantil 1.5", 10), ("Ensino Fundamental 1.14", 10)),
+        2024: (("Educação Básica 1.1", 5), ("Educação Infantil 1.5", 10), ("Ensino Fundamental 1.14", 10)),
+        2025: (("Educação Básica 1.1", 13), ("Educação Infantil 1.8", 12), ("Ensino Fundamental 1.20", 12)),
+    }
+    for ano, abas in esperado.items():
+        do_ano = [p for p in partes if p["colunas"][0]["ano"] == ano]
+        assert [(p["aba"], p["linha_cabecalho"]) for p in do_ano] == [x for aba in abas for x in (aba, aba)], ano
+        assert len({p["url"] for p in do_ano}) == 1 and str(ano) in do_ano[0]["url"], ano
+        assert len({p["arquivo_no_zip"] for p in do_ano}) == 1 and str(ano) in do_ano[0]["arquivo_no_zip"], ano
+        redes_por_etapa = {}
+        for p in do_ano:
+            for c in p["colunas"]:
+                redes_por_etapa.setdefault(c["etapa"], []).append(c["rede"])
+        assert {e: sorted(set(r)) for e, r in redes_por_etapa.items()} == {
+            "educacao_basica": ["total"], "educacao_infantil": ["total"], "ensino_fundamental": ["total"], "ensino_medio": ["total"],
+            "creche": sorted(["total", *REDES_DO_INEP]), "pre_escola": sorted(["total", *REDES_DO_INEP]),
+            "anos_iniciais": sorted(["total", *REDES_DO_INEP]), "anos_finais": sorted(["total", *REDES_DO_INEP])}, ano
+    # 2025: as colunas das redes ficaram mais a direita (rede publica e categorias da rede privada entraram na tabela)
+    colunas_2025 = {(p["aba"], c["etapa"], c["rede"]): c["coluna"] for p in partes for c in p["colunas"] if c["ano"] == 2025}
+    assert colunas_2025["Educação Infantil 1.8", "creche", "federal"] == "Unnamed: 16"
+    assert colunas_2025["Educação Infantil 1.8", "pre_escola", "privada"] == "Unnamed: 29"
+    assert colunas_2025["Ensino Fundamental 1.20", "anos_iniciais", "estadual"] == "Unnamed: 17"
+    assert colunas_2025["Ensino Fundamental 1.20", "anos_finais", "municipal"] == "Unnamed: 28"
+
+
+def test_matriculas_basica_2000_a_2002_leem_a_tabela_de_cada_etapa_com_a_rede_na_mesma_aba(fichas):
+    """Nas sinopses de 2000 a 2002 cada etapa tem uma aba com total e redes; 2001 e 2002 leem o ensino medio pelo rotulo."""
+    partes = _partes(fichas, "matriculas_basica", "censo_escolar_2000_2002")
+    for ano in (2000, 2001, 2002):
+        do_ano = [p for p in partes if p["colunas"][0]["ano"] == ano]
+        assert [p["aba"] for p in do_ano] == ["1.1", "1.5", "1.13", "1.36"], ano
+        assert [p["colunas"][0]["etapa"] for p in do_ano] == ["creche", "pre_escola", "ensino_fundamental", "ensino_medio"]
+        assert all([c["rede"] for c in p["colunas"]] == ["total", *REDES_DO_INEP] for p in do_ano), ano
+        assert all(p["nomes_territorio"] == {"R. G. do Norte": "RN"} for p in do_ano)
+    medio = {p["colunas"][0]["ano"]: p for p in partes if p["aba"] == "1.36"}
+    assert [c["coluna"] for c in medio[2000]["colunas"]] == [f"Unnamed: {i}" for i in range(1, 6)]
+    for ano in (2001, 2002):  # nessas abas a linha de rotulos fica logo acima do Brasil: e ela o cabecalho
+        assert [c["coluna"] for c in medio[ano]["colunas"]] == ["Total", "Federal", "Estadual", "Municipal", "Privada"], ano
 
 
 def test_matriculas_basica_offline_etapas_e_redes_de_cada_serie(base):
@@ -664,6 +725,8 @@ def test_matriculas_basica_offline_etapas_e_redes_de_cada_serie(base):
     redes = {(serie, etapa): sorted(g.rede.unique()) for (serie, etapa), g in m.groupby(["serie_id", "etapa"])}
     todas = sorted(["total", *REDES_DO_INEP])
     assert redes == {
+        ("censo_escolar_2000_2002", "creche"): todas, ("censo_escolar_2000_2002", "pre_escola"): todas,
+        ("censo_escolar_2000_2002", "ensino_fundamental"): todas, ("censo_escolar_2000_2002", "ensino_medio"): todas,
         ("censo_escolar_pre2007", "educacao_basica"): ["total"], ("censo_escolar_pre2007", "educacao_infantil"): ["total"],
         ("censo_escolar_pre2007", "creche"): todas, ("censo_escolar_pre2007", "pre_escola"): todas,
         ("censo_escolar_pre2007", "ensino_fundamental"): todas, ("censo_escolar_pre2007", "ensino_medio"): todas,
@@ -674,13 +737,14 @@ def test_matriculas_basica_offline_etapas_e_redes_de_cada_serie(base):
     }
     assert set(m.subindicador) == {""} and set(m.tipo_dado) == {"observado"}
     assert {s: sorted(set(g.ano)) for s, g in m.groupby("serie_id")} == {
-        "censo_escolar_pre2007": [2005, 2006], "educacenso": list(range(2007, 2022))}
+        "censo_escolar_2000_2002": [2000, 2001, 2002], "censo_escolar_pre2007": [2005, 2006],
+        "educacenso": list(range(2007, 2026))}
 
 
 def test_matriculas_basica_offline_so_le_a_linha_de_cada_territorio_e_deriva_o_brasil_fora_ne(base):
     from gerar_fixtures import valor_contagem
     m = base[base.indicador_id == "matriculas_basica"]
-    assert m.groupby(["serie_id", "etapa", "rede"]).ngroups == 22 + 24  # grupos de cada serie (ver o teste das etapas)
+    assert m.groupby(["serie_id", "etapa", "rede"]).ngroups == 20 + 22 + 24  # grupos de cada serie (ver o teste das etapas)
     for (serie, etapa, rede), grupo in m.groupby(["serie_id", "etapa", "rede"]):
         spec = {"etapa": etapa, "rede": rede}
         valores = grupo[grupo.ano == grupo.ano.min()].set_index("territorio_id")
@@ -694,7 +758,8 @@ def test_matriculas_basica_coleta_offline_registra_um_pacote_por_serie(projeto_c
     raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
     assert main(raiz + ["coletar", "--offline", "--indicador", "matriculas_basica"]) == 0
     coletas = pd.read_csv(projeto_completo.registro_coletas)
-    assert sorted(coletas.serie_id) == ["censo_escolar_pre2007", "educacenso"] and set(coletas.origem) == {"fixture"}
+    assert sorted(coletas.serie_id) == ["censo_escolar_2000_2002", "censo_escolar_pre2007", "educacenso"]
+    assert set(coletas.origem) == {"fixture"}
 
 
 def test_superior_tem_duas_series_com_partes_por_ano(fichas):
@@ -758,15 +823,16 @@ def test_superior_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
     assert sorted(coletas.serie_id) == ["censup", "censup_pre2009"] and set(coletas.origem) == {"fixture"}
 
 
-@pytest.mark.parametrize("indicador, serie, pacote", [
-    ("matriculas_basica", "educacenso", "~28 MB"), ("superior", "censup", "~25 MB")])
-def test_series_grandes_do_inep_declaram_o_custo_operacional_medido(fichas, indicador, serie, pacote):
-    """Custos medidos com o pacote reduzido (Tarefa C2), nao os da coleta antiga com zips inteiros."""
+@pytest.mark.parametrize("indicador, serie, tamanho, pacote, duracao", [
+    ("matriculas_basica", "educacenso", "~2,7 GB", "~37 MB", "~49 minutos"),
+    ("superior", "censup", "~2 GB", "~25 MB", "35 a 60 minutos")])
+def test_series_grandes_do_inep_declaram_o_custo_operacional_medido(fichas, indicador, serie, tamanho, pacote, duracao):
+    """Custos medidos com o pacote reduzido (Tarefas C2 e C4), nao os da coleta antiga com zips inteiros."""
     texto = " ".join(fichas[indicador].observacoes.split())
-    assert f"`{serie}`" in texto and "~2 GB" in texto and f"pacote bruto guardado tem {pacote}" in texto
-    assert "MB de RAM" in texto and "35 a 60 minutos" in texto and "0,9 a 0,5 MB/s" in texto
+    assert f"`{serie}`" in texto and tamanho in texto and f"pacote bruto guardado tem {pacote}" in texto
+    assert "MB de RAM" in texto and duracao in texto and "MB/s" in texto
     assert "exercitada de ponta a ponta" in texto and "isoladamente" in texto
-    for antigo in ("~1,9 GB", "~4 GB de RAM", "não foi exercitada"):
+    for antigo in ("~1,9 GB", "~4 GB de RAM", "não foi exercitada", "~28 MB", "15 arquivos"):
         assert antigo not in texto, antigo
 
 

@@ -15,9 +15,10 @@ está em `docs/specs/2026-10-31-base-historica-design.md`; as conferências feit
 - Dependências (instaladas pelo `pip`): `pandas`, `numpy`, `pyarrow`, `pyyaml`, `requests`, `certifi`,
   `openpyxl`, `xlrd`; para os testes, `pytest`.
 - Recursos para a coleta real completa: as séries do INEP com dezenas de arquivos (`matriculas_basica/educacenso`
-  e `superior/censup`) ainda baixam ~2 GB cada (35 a 60 minutos, a 0,9 a 0,5 MB/s), porque cada zip passa inteiro pelo
-  disco para o SHA-256 da fonte ficar registrado. Mas o pacote bruto guardado em `dados/brutos/` tem ~28 MB
-  (`educacenso`) e ~25 MB (`censup`), e nem `coletar` nem `consolidar` passam de ~450 MB de RAM. Durante a
+  e `superior/censup`) ainda baixam ~2,7 GB (`educacenso`, ~49 minutos a 0,9 MB/s) e ~2 GB (`censup`, 35 a 60
+  minutos, a 0,9 a 0,5 MB/s), porque cada zip passa inteiro pelo disco para o SHA-256 da fonte ficar registrado.
+  Mas o pacote bruto guardado em `dados/brutos/` tem ~37 MB (`educacenso`) e ~25 MB (`censup`), e nem `coletar`
+  nem `consolidar` passam de ~450 MB de RAM. Durante a
   coleta, deixe livre em disco ~400 MB (o maior zip e a planilha extraída dele, apagados assim que reduzidos).
 
 ## Instalação
@@ -42,8 +43,8 @@ python -m nordeste publicar  [--ensaio]
 - `coletar` baixa os arquivos brutos de cada série verificada para `dados/brutos/` e registra a coleta (data,
   URL, SHA-256, origem) em `dados/relatorios/coletas.csv`. Com `--indicador ID`, só as séries desse indicador.
   Nas séries grandes do INEP, prefira `coletar --indicador ID`, um indicador por vez: a coleta de rede de
-  `educacenso` e `censup` é sequencial e leva de 35 a 60 minutos cada (a de `educacenso` levou 35 minutos, a
-  ~0,9 MB/s, em 2026-11-01). Se a rede cair no meio, as partes que já
+  `educacenso` e `censup` é sequencial e leva de 35 a 60 minutos cada (a de `educacenso`, agora com 19 zips,
+  levou 49 minutos, a ~0,9 MB/s, em 2026-11-01). Se a rede cair no meio, as partes que já
   chegaram ficam em `dados/trabalho/partes/` e o próximo `coletar` baixa só as que faltam (ver
   [Séries com partes](#séries-com-partes-o-pacote-reduzido)).
 - `consolidar` padroniza as coletas, deriva o Brasil fora do Nordeste e os indicadores calculados e grava o
@@ -139,21 +140,28 @@ que traz `manifesto.json` e um arquivo por URL. Desde novembro de 2026 o pacote 
 
 | Série | Baixado | Pacote bruto antes | Pacote bruto agora |
 |---|---|---|---|
-| `matriculas_basica/educacenso` (15 zips) | 1,86 GB | ~1,9 GB | 28 MB |
+| `matriculas_basica/educacenso` (19 zips) | 2,70 GB | ~2,7 GB | 37 MB |
 | `superior/censup` (11 zips) | 1,94 GB | ~1,9 GB | 25 MB |
 
 Medido em 2026-11-01 sobre os zips reais: o `consolidar` caiu de ~4 GB de memória (3,9 GB no `educacenso`, 4,2 GB
 no `censup`) para ~440 MB com as seis séries do INEP juntas, em 5 minutos. O `coletar` fica entre ~150 MB
 (`educacenso`) e ~350 MB (`censup`, cujas planilhas têm muito texto compartilhado), porque cada zip vai em blocos
-de 1 MB para o disco em vez de ficar inteiro na memória. A padronização das 90 partes do `educacenso` e das 44 do
+de 1 MB para o disco em vez de ficar inteiro na memória. A padronização das 90 partes do `educacenso` (então 2007 a 2021) e das 44 do
 `censup` dá exatamente as mesmas linhas com o pacote reduzido e com o pacote de zips inteiros.
 
-Coleta de rede medida em 2026-11-01, numa cópia temporária do projeto: `coletar --indicador matriculas_basica`
-(`censo_escolar_pre2007` e `educacenso`) levou 2.034 s (~0,9 MB/s) com pico de 144 MB de RAM e gerou o mesmo pacote
-de 28,3 MB (sha256 `43bd033c`) montado antes sobre os arquivos locais; `superior/censup_pre2009` (8 zips, 32 MB)
-levou 71 s com pico de 123 MB, e o pacote tem os mesmos 32 MB, porque cada zip só traz o `.xls` lido (que não é
-podado). O `consolidar` dessas três séries levou 107 s, com pico de 323 MB. A coleta de rede do `censup` não foi
-repetida.
+Coleta de rede medida em 2026-11-01, numa cópia temporária do projeto:
+
+- `coletar --indicador matriculas_basica` com `censo_escolar_pre2007` e `educacenso` de 2007 a 2021 (15 zips,
+  1.857 MB): 2.034 s (~0,9 MB/s), pico de 144 MB de RAM, pacote do `educacenso` de 28,3 MB (sha256 `43bd033c`),
+  o mesmo montado antes sobre os arquivos locais; `consolidar` das três séries então coletadas: 107 s, pico de
+  323 MB;
+- o mesmo comando com as três séries de `matriculas_basica` (`censo_escolar_2000_2002`, `censo_escolar_pre2007` e
+  `educacenso` de 2007 a 2025, 19 zips, 2.696 MB): 2.946 s, pico de 145 MB, pacote do `educacenso` de 37,1 MB;
+  `consolidar` das três séries: 129 s, pico de 270 MB;
+- `superior/censup_pre2009` (8 zips, 32 MB): 71 s, pico de 123 MB; o pacote tem os mesmos 32 MB, porque cada zip só
+  traz o `.xls` lido (que não é podado).
+
+A coleta de rede do `censup` não foi repetida.
 
 Retomada: cada parte reduzida fica em `dados/trabalho/partes/<indicador>/<série>/` assim que chega. Se uma URL
 falha (depois das três novas tentativas), as outras seguem; a série não é registrada e o próximo `coletar`
@@ -207,7 +215,7 @@ curso. Indicadores `auxiliar` são insumos (denominadores e contagens) e não s�
 | `informais` | Pessoas ocupadas em trabalho informal | trabalho | auxiliar | `pnadc` | 2016– | verificada |
 | `informalidade` | Taxa de informalidade | trabalho | exibido | `pnadc` | 2016– | verificada |
 | `massa_renda_dom_pc` | Massa de rendimento domiciliar per capita | economia | auxiliar | `pnadc` | 2012– | verificada |
-| `matriculas_basica` | Matrículas na educação básica, por etapa e rede | educacao_basica | exibido | `censo_escolar_pre2007`, `educacenso` | 2005–2021 | verificada |
+| `matriculas_basica` | Matrículas na educação básica, por etapa e rede | educacao_basica | exibido | `censo_escolar_2000_2002`, `censo_escolar_pre2007`, `educacenso` | 2000–2002; 2005–2025 | verificada |
 | `ocupados` | Pessoas ocupadas | trabalho | auxiliar | `pnadc` | 2016– | verificada |
 | `pib_nominal` | PIB a preços correntes | economia | auxiliar | `scr_ref2010` | 2002–2023 | verificada |
 | `pib_participacao` | Participação no PIB nacional | economia | exibido | `scr_ref2010` | 2002–2023 | verificada |

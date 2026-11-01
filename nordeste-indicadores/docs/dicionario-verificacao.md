@@ -58,8 +58,9 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `idhm` | `pnadc` | Ipeadata `IDHM`, `IDHMRE`, `IDHMED`, `IDHMLO` (janela 2012-2024) | 2012 a 2024, 15 territórios | sim (fonte Ipeadata; não cotejada com o arquivo oficial do Radar IDHM) |
 | `ideb` | `ideb` | INEP, `divulgacao_regioes_ufs_ideb_2025.zip` e `divulgacao_brasil_ideb_2025.zip` (6 abas, linha "Total") | 2005 a 2025, anos ímpares, 15 territórios, 3 etapas | sim |
 | `abandono_em` | `indicadores_inep` | INEP, Taxas de Rendimento Escolar, 19 zips (coluna do total do ensino médio, localização e rede "Total") | 2007 a 2025, 15 territórios | sim |
-| `matriculas_basica` | `censo_escolar_pre2007` | INEP, Censo Escolar 2005 e 2006 (`.xls`, tabelas 1.1, 1.6, 1.12, 1.18 e 1.43) | 2005 e 2006, 15 territórios, 6 etapas, rede total e 4 redes | sim (só 2005 e 2006; 2000 a 2004 pendentes) |
-| `matriculas_basica` | `educacenso` | INEP, Sinopses da Educação Básica 2007 a 2021 (tabelas 1.1, 1.5 e 1.14) | 2007 a 2021, 15 territórios, 8 etapas | sim (só 2007 a 2021; 2022 a 2025 pendentes) |
+| `matriculas_basica` | `censo_escolar_2000_2002` | INEP, Sinopses do Censo Escolar 2000, 2001 e 2002 (`.xls`, abas 1.1, 1.5, 1.13 e 1.36) | 2000 a 2002, 15 territórios, 4 etapas, rede total e 4 redes | sim |
+| `matriculas_basica` | `censo_escolar_pre2007` | INEP, Censo Escolar 2005 e 2006 (`.xls`, tabelas 1.1, 1.6, 1.12, 1.18 e 1.43) | 2005 e 2006, 15 territórios, 6 etapas, rede total e 4 redes | sim (só 2005 e 2006; 2003 e 2004 só em PDF) |
+| `matriculas_basica` | `educacenso` | INEP, Sinopses da Educação Básica 2007 a 2025 (tabelas 1.1, 1.5 e 1.14; 1.1, 1.8 e 1.20 em 2025) | 2007 a 2025, 15 territórios, 8 etapas | sim |
 | `superior` | `censup_pre2009` | INEP, Sinopses da Educação Superior 2001 a 2008 (`.xls`, tabelas 1.1 e 5.1) | 2001 a 2008, 15 territórios; IES, universidades e matrículas totais | sim (só 2001 a 2008; 2000 só em PDF) |
 | `superior` | `censup` | INEP, Sinopses da Educação Superior 2009 a 2019 (sinopse por município, tabelas 1.1 e 5.1) | 2009 a 2019, 15 territórios; IES, universidades e matrículas (total, pública, privada) | sim (só 2009 a 2019; 2020 a 2024 pendentes) |
 
@@ -613,7 +614,7 @@ tabela não está confirmada.
 13. `ideb`: série `ideb` de 2005 a **2025** (spec: 2005–2023), porque o INEP divulgou a edição de 2025 em 05/08/2026; bienal, só a rede `total`
     (spec não fixa a rede), comparação com o Brasil, como na spec (Tarefa 15A).
 14. `abandono_em`: série `indicadores_inep` de 2007 a **2025** (spec: 2007 em diante), completa e verificada; só o total do ensino médio, na localização e na rede "Total" (spec não fixa o recorte); comparação com o Brasil, como na spec (Tarefa 15B).
-15. `matriculas_basica`: a spec previa `educacenso` (2007+) e `censo_escolar_pre2007` (2000-2006). Verificadas `educacenso` de 2007 a **2021** (2022 a 2025 pendentes: a sinopse de 2022 tem 309 MB e passa de cinco minutos, e o cabeçalho das de 2023 a 2025 mudou) e `censo_escolar_pre2007` só de **2005 e 2006** (2003 e 2004 existem só em PDF e 2000 a 2002 têm layout de abas próprio, não lido). A etapa e a rede variam por série: ensino fundamental e ensino médio por rede só até 2006; anos iniciais e anos finais por rede só de 2007 em diante; ensino médio de 2007 em diante só no total (as tabelas por dependência vêm por série, sem soma). Brasil fora do Nordeste por soma, como na spec (Tarefa 15B).
+15. `matriculas_basica`: a spec previa `educacenso` (2007+) e `censo_escolar_pre2007` (2000-2006). Verificadas `educacenso` de 2007 a **2025** (a Tarefa C4 acrescentou 2022 a 2025), `censo_escolar_pre2007` só de **2005 e 2006** e uma terceira série, `censo_escolar_2000_2002` (**2000 a 2002**, só creche, pré-escola, ensino fundamental e ensino médio, sem os totais da educação básica e da infantil). **2003 e 2004 ficam sem série**: o Censo Escolar existiu, mas as sinopses só saem em PDF, que o projeto não lê; não são `anos_sem_publicacao` (o campo diria "sem pesquisa", o que seria falso), e a cobertura efetiva fica "2000–2002; 2005–2025". A etapa e a rede variam por série: ensino fundamental e ensino médio por rede só até 2006; anos iniciais e anos finais por rede só de 2007 em diante; ensino médio de 2007 em diante só no total (as tabelas por dependência vêm por série, sem soma). Brasil fora do Nordeste por soma, como na spec (Tarefas 15B e C4).
 16. `superior`: a spec previa `censup_pre2009` e `censup` (2009+). Verificadas `censup_pre2009` de **2001 a 2008** (2000 só em PDF; matrículas só totais e só de cursos presenciais, porque as linhas de Pública e Privada vêm sem o nome do território) e `censup` de 2009 a **2019** (2020 a 2024 pendentes por tamanho: de 284 a 397 MB; 2025 ainda não publicada). Subindicadores `matriculas` (rede `total`, `publica`, `privada`), `ies` e `universidades`; Brasil fora do Nordeste por soma, como na spec (Tarefa 15B).
 17. Tarefa 15B: nenhuma mudança no código de coleta nem de padronização. A única mudança de código é do gerador de fixtures (`xls_abas`, `.xls` com várias abas, e o montador de pacotes a partir das partes da ficha).
 
@@ -857,6 +858,40 @@ quando o cabeçalho tem várias linhas. Os nomes dos arquivos dentro dos zips an
 | 2024 | 388.235 | `669ee147` | 3,2 | 3,5 | 5,8 | 0,7 |
 | 2025 | 376.867 | `cb6ba9fc` | 2,2 | 1,9 | 2,7 | 0,6 |
 
+### matriculas_basica / censo_escolar_2000_2002
+
+Tarefa C4 (2026-11-01). Método: `python -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar --indicador matriculas_basica` numa cópia temporária do projeto só com esta série,
+seguido de `consolidar`; os arquivos baixados ficam fora do repositório. Mais uma leitura independente: cada valor da base foi comparado com a célula da planilha lida direto com `xlrd`
+(`python -I`), fora do padronizador.
+
+- Páginas oficiais: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-basica (sinopses de 1995 a 2025).
+- URLs de coleta (um zip por ano): `https://download.inep.gov.br/download/censo/2000/basica/sinopse2000.zip https://download.inep.gov.br/download/censo/2001/sinopse/Sinopse_2001_26_05_02.zip https://download.inep.gov.br/download/censo/2002/sinopse/sinopse_2002.zip`
+- Layout: um `.xls` por ano (`sinopse2000.xls`, `Sinopse 2001(26_05_02).xls`, `sinopse 2002.xls`), uma aba por tabela e uma linha por território, com os nomes de `censo_escolar_pre2007` ("R. G. do Norte",
+  "Centro-Oeste"). A numeração das abas é própria destes anos: `1.1` (matrículas em creche), `1.5` (pré-escola), `1.13` (ensino fundamental) e `1.36` (ensino médio), cada uma com **total e as quatro
+  redes na mesma aba** (colunas 1 a 5: Total, Federal, Estadual, Municipal, Privada; as colunas 6 a 10 são a zona rural e não entram). Na sinopse de 2002 o **título** de cada tabela está
+  deslocado de uma unidade em relação ao nome da aba (a aba `1.1` traz a tabela "1.2 – creche", porque a aba `1` é a "1.1 – todas as modalidades"); a ficha usa o nome da aba, e o título de cada uma das quatro abas
+  (creche, pré-escola, ensino fundamental, ensino médio) foi conferido à mão nos três anos.
+- Cabeçalho: a linha em branco acima da linha do Brasil (linha 9 em 2000, linha 8 em 2001 e 2002) nas abas `1.1`, `1.5` e `1.13`. Na `1.36` de 2000 também (linha 8), mas nas de 2001 e 2002 não há linha em branco: a linha de
+  rótulos (`Total`, `Federal`, ...) fica logo acima do Brasil (linha 7 em 2001, linha 8 em 2002) e é o cabeçalho, com as colunas lidas por rótulo. O Brasil está na linha 10 (2000) ou 9 (2001 e 2002) das três primeiras
+  abas, e na 9, 8 e 9 da `1.36`.
+- Etapas: só creche, pré-escola, ensino fundamental e ensino médio, cada uma com `total` e as 4 redes. **Não há `educacao_basica` nem `educacao_infantil`**: as sinopses de 2000 e 2001 não trazem esses totais (a de 2002 traz a
+  tabela "todas as modalidades", que não é a mesma definição e não existe nos outros dois anos), e o padronizador não soma colunas. Também não há anos iniciais e finais (ensino fundamental por série, de 1ª a 4ª e de 5ª a 8ª).
+- Obtido: 960 linhas = 3 anos x 16 territórios (15 mais o Brasil fora do Nordeste) x 20 grupos de etapa e rede (900 observadas e 60 do Brasil fora do Nordeste por soma).
+- Conferência independente: 900 valores (3 anos x 4 abas x 15 territórios x 5 colunas) lidos com `xlrd` e comparados com a base: 0 diferenças. Em toda a série, federal + estadual + municipal + privada = total
+  (180 grupos), as nove UFs somam o Nordeste e as cinco regiões somam o Brasil (60 grupos cada), sem nenhuma diferença.
+
+**Por que uma série própria, e não `censo_escolar_pre2007` de 2000 a 2006.** Uma série só pode ter `verificado: true` nos anos verificados em sequência, e 2003 e 2004 só existem em PDF (`Parte-1.pdf` a `Parte-3.pdf` de 2004 e
+`censo-miolo1-2003.pdf` a `censo-miolo3-2003.pdf`), que o projeto não lê. Estender `censo_escolar_pre2007` até 2000 deixaria um buraco de dois anos dentro de uma série. A alternativa, declarar 2003 e 2004 em
+`anos_sem_publicacao` com a nota "só em PDF", foi descartada porque o campo gera linhas `indisponivel` com a nota de "ano sem pesquisa", e o Censo Escolar de 2003 e de 2004 existiu e foi publicado: dizer que não houve
+pesquisa seria falso. Além disso, as etapas de 2000 a 2002 (sem os totais da educação básica e da infantil) não são as de 2005 e 2006. Por isso `censo_escolar_2000_2002` cobre 2000 a 2002, `censo_escolar_pre2007`
+2005 e 2006, e **2003 e 2004 não têm série**: a cobertura efetiva de `matriculas_basica` é "2000–2002; 2005–2025" e o buraco aparece nela, sem preenchimento.
+
+| Ano | Zip (bytes) | sha256 | Creche Brasil | Ensino médio Brasil | Ensino médio Nordeste |
+|---|---|---|---|---|---|
+| 2000 | 270.744 | `1cd452f9` | 916.864 | 8.192.948 | 1.923.582 |
+| 2001 | 1.124.458 | `07b61952` | 1.093.347 | 8.398.008 | 2.114.290 |
+| 2002 | 1.238.373 | `e7606012` | 1.152.511 | 8.710.584 | 2.312.566 |
+
 ### matriculas_basica / censo_escolar_pre2007
 
 - Páginas oficiais: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-basica (sinopses de 1995 a 2025).
@@ -867,7 +902,7 @@ quando o cabeçalho tem várias linhas. Os nomes dos arquivos dentro dos zips an
   em `nomes_territorio`). Abas lidas: `1.1` (educação básica, infantil, fundamental e médio), `1.6` (creche, total e por rede), `1.12` (pré-escola), `1.18` (ensino fundamental por rede) e
   `1.43` (ensino médio por rede); o cabeçalho é a linha em branco acima da linha do Brasil (linha 8 ou 9, conforme a aba e o ano). Redes: federal, estadual, municipal e privada.
 - Obtido: 704 linhas = 2 anos x 15 territórios x 22 grupos de etapa e rede (660 observadas e 44 do Brasil fora do Nordeste por soma). Brasil, educação básica, 55.942.047 (2006).
-- Pendência: 2000 a 2002 (arquivos `.xls` com abas de numeração própria, não lidos), 2003 e 2004 (só PDF). Uma série só é verificada se todos os anos declarados passaram, por isso a série declara 2005 e 2006.
+- 2000 a 2002 ganharam série própria (`censo_escolar_2000_2002`, Tarefa C4); 2003 e 2004 só existem em PDF e não têm série. Uma série só é verificada se todos os anos declarados passaram, por isso esta série declara 2005 e 2006.
 
 | Ano | Zip (bytes) | sha256 | Educação básica Brasil | Ensino médio Brasil | Ensino médio Nordeste |
 |---|---|---|---|---|---|
@@ -876,8 +911,8 @@ quando o cabeçalho tem várias linhas. Os nomes dos arquivos dentro dos zips an
 
 ### matriculas_basica / educacenso
 
-- URLs de coleta (um zip por ano, na ordem do pacote; 2007 a 2019 em `informacoes_estatisticas/.../sinopses_educacao_basica/`, 2020 e 2021 em `dados_abertos/sinopses_estatisticas/`): `https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip`
-- `validar` saiu com código 0, sem regra bloqueante e com A01 em 110 casos (redes federal e estadual com poucas matrículas, como os anos finais federais do Piauí, de 2008 para 2009).
+- URLs de coleta (um zip por ano, na ordem do pacote; 2007 a 2019 em `informacoes_estatisticas/.../sinopses_educacao_basica/`, 2020 a 2025 em `dados_abertos/sinopses_estatisticas/`): `https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2022.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopse_estatistica_censo_escolar_2023.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopse_estatistica_censo_escolar_2024.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopse_estatistica_censo_escolar_2025.zip`
+- Resultado da Tarefa 15B, com 2007 a 2021: `validar` saiu com código 0, sem regra bloqueante e com A01 em 110 casos (redes federal e estadual com poucas matrículas, como os anos finais federais do Piauí, de 2008 para 2009).
 - Layout: um `.xlsx` por ano, de cerca de 83 a 105 MB, com as três tabelas lidas em abas de nome estável de 2007 a 2021 (`Educação Básica 1.1`, `Educação Infantil 1.5`, `Ensino Fundamental 1.14`; as 15 sinopses têm o cabeçalho
   idêntico nas três). Cada aba traz uma linha por município, com as linhas de Brasil, de região (UF e município em branco) e de UF (município em branco) entre elas; por isso cada aba entra em duas partes:
   Brasil e regiões (filtro: coluna da UF vazia) e UFs (filtro: coluna do município vazia). Células em branco vêm com espaços; o filtro compara sem espaços. Cabeçalho: linha 10, em branco (colunas por posição).
@@ -885,8 +920,7 @@ quando o cabeçalho tem várias linhas. Os nomes dos arquivos dentro dos zips an
   privada); `1.14`: anos iniciais e anos finais por rede. O total de cada etapa vem só da 1.1 (as tabelas por rede repetem o total, que não entra duas vezes). O ensino médio por rede e o ensino fundamental por rede
   não existem nessas tabelas (as de ensino médio por dependência vêm por série, sem total).
 - Obtido: 5.760 linhas = 15 anos x 15 territórios x 24 grupos de etapa e rede (5.400 observadas e 360 do Brasil fora do Nordeste por soma).
-- Pendência: 2022 a 2025. A sinopse de 2022 (309 MB) não terminou de baixar em 290 s; as de 2023 (152 MB), 2024 (145 MB) e 2025 (232 MB) baixaram, mas mudam o cabeçalho das abas 1.1, 1.5 e 1.14 (2023 e 2024) ou renumeram as tabelas
-  (2025, arquivo `..._2025_V2`), e a série precisa ser contínua. Ficam para uma nova tarefa.
+- 2022 a 2025 (Tarefa C4): ver a seção "Tarefa C4: matrículas de 2022 a 2025 e de 2000 a 2002" abaixo. A série vai agora de 2007 a **2025**, sem pendência de ano.
 
 | Ano | Zip (bytes) | sha256 | Educação básica Brasil | Ensino médio Brasil | Ensino médio Nordeste |
 |---|---|---|---|---|---|
@@ -905,6 +939,50 @@ quando o cabeçalho tem várias linhas. Os nomes dos arquivos dentro dos zips an
 | 2019 | 120.447.577 | `fbdff686` | 47.874.246 | 7.465.891 | 2.112.466 |
 | 2020 | 120.550.648 | `a252b0e5` | 47.295.294 | 7.550.753 | 2.130.375 |
 | 2021 | 123.101.397 | `66861b1e` | 46.668.401 | 7.770.557 | 2.246.336 |
+| 2022 | 309.843.475 | `811d291a` | 47.382.074 | 7.866.695 | 2.169.684 |
+| 2023 | 151.568.286 | `6a29e549` | 47.304.632 | 7.676.743 | 2.098.413 |
+| 2024 | 145.089.739 | `b1555ecc` | 47.088.922 | 7.790.396 | 2.121.473 |
+| 2025 | 232.142.480 | `a8a41fcd` | 46.018.380 | 7.370.879 | 2.062.643 |
+
+### Tarefa C4: matrículas de 2022 a 2025 e de 2000 a 2002
+
+Data: 2026-11-01. Nenhuma mudança de código de coleta nem de padronização: tudo com os mecanismos que `planilha` já tinha (`partes`, `filtro_linhas`, `nomes_territorio`, colunas por posição ou por rótulo,
+`linha_cabecalho`). Só o gerador de fixtures ganhou a entrada da série nova.
+
+**2022 a 2025 (`educacenso`).** Método: coleta de rede pelo coletor do projeto (`python -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar --indicador matriculas_basica`, numa cópia temporária cuja ficha só tinha as partes de 2022
+a 2025, com as mesmas partes da ficha do repositório) e `consolidar`; arquivos fora do repositório. A coleta dos quatro zips (309,8 + 151,6 + 145,1 + 232,1 MB) levou 902 s (~0,9 MB/s), em sequência, com pico de 138 MB de RAM; o
+pacote guardado tem 8.769.960 bytes. Os `sha256_original` do manifesto são os da tabela do `educacenso` e os mesmos de um download independente com `curl`. A sinopse de 2022, que não terminava em cinco minutos quando a série foi
+escrita, baixou inteira em ~6 minutos pelo coletor, com o limite de 10 minutos.
+
+- URLs: 2022 em `.../dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2022.zip` (a página do INEP lista esse nome); 2023, 2024 e 2025 em `.../sinopse_estatistica_censo_escolar_<ano>.zip`.
+- Os membros agora têm nomes UTF-8 (`Sinopse_Estatistica_da_Educação_Basica_<ano>.xlsx`), não o CP437 dos zips de 2007 a 2021. O de **2022** está dentro de duas pastas
+  (`Sinopse_Estatistica_da_Educação_Basica_2022/Sinopse_Estatistica_da_Educação_Basica_2022/...xlsx`) e o zip traz, antes dele, um zip de 146 MB e um `.ods`; o de **2025** é o arquivo `Sinopse_Estatistica_da_Educação_Basica_2025_V2`
+  (versão atualizada). O coletor guardou só o `.xlsx` declarado, podado nas três abas lidas.
+- Layout de 2022, 2023 e 2024: as mesmas abas (`Educação Básica 1.1`, `Educação Infantil 1.5`, `Ensino Fundamental 1.14`) e as mesmas posições de coluna de 2007 a 2021 (`Unnamed: 4` a `11` na 1.1; redes em `6` a `9` e `11` a `14` nas
+  outras duas). O que mudou é o cabeçalho: a 1.1 ganhou uma linha, e o Brasil passou da linha 11 para a 12 (2022 a 2024), mas só em 2023 e 2024 a linha em branco que serviria de cabeçalho (linha 11) tem células com espaços
+  (` `, `  `), e o pandas as lê como colunas de nomes repetidos (`''`, `'.1'`, `''`), sem `Unnamed: 1`. Em 2022 a linha 11 é vazia de verdade e vale `linha_cabecalho: 11`. Em 2023 e 2024 a ficha usa a linha 5 (inteiramente vazia,
+  acima do bloco de título): as linhas de 6 a 11 viram dados, mas são rótulos que não casam nenhum território e são descartadas, e a leitura dos valores fica igual (as colunas continuam por posição). Nas abas 1.5 e 1.14, a linha 10 serve nos quatro anos.
+- Layout de 2025: as tabelas foram renumeradas e ganharam colunas. A educação básica continua em `Educação Básica 1.1` (Brasil na linha 14, cabeçalho em branco na 13, as mesmas colunas `Unnamed: 4` a `11`); a educação infantil por
+  rede está em `Educação Infantil 1.8` e o ensino fundamental por rede em `Ensino Fundamental 1.20` (Brasil na linha 13, cabeçalho na 12). Nessas duas, cada etapa ocupa dez colunas: total, rede pública (total, federal, estadual,
+  municipal), rede privada (total e quatro categorias). A ficha lê federal, estadual e municipal da rede pública e o **total** da rede privada: creche `Unnamed: 16`, `17`, `18` e `19`, pré-escola `26`, `27`, `28` e `29`; anos iniciais
+  `16` a `19` e anos finais `26` a `29`. O total de cada etapa continua só da 1.1. Conferência: federal + estadual + municipal + privada = total em todas as
+  240 combinações de ano, etapa e território (4 anos x 4 etapas x 15 territórios), com o total da 1.1 comparado com a soma das redes da 1.5, 1.8, 1.14 ou 1.20.
+- Obtido: 1.536 linhas = 4 anos x 16 territórios (15 mais o Brasil fora do Nordeste) x 24 grupos de etapa e rede (1.440 observadas e 96 derivadas).
+- Conferência independente: 1.440 valores (4 anos x 24 grupos x 15 territórios) lidos direto dos `.xlsx` com `openpyxl` (`python -I`), com as linhas de Brasil, região e UF localizadas pelo nome, e comparados com a base: 0 diferenças. As nove UFs
+  somam o Nordeste e as cinco regiões somam o Brasil em todos os grupos (96 casos cada), sem diferença.
+- Ampliação do `fim`: 2022, 2023, 2024 e 2025 passaram em sequência; `educacenso` declara 2007 a 2025 (a ficha só pode ir até o último ano verificado em sequência, e esse é o último ano publicado).
+
+**Coleta completa de `matriculas_basica` (as três séries, ficha do repositório).** Numa cópia temporária do projeto,
+`python -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar --indicador matriculas_basica` baixou os 19 zips do `educacenso` (2.695.883.286 bytes, de 2007 a 2025) e os 5 das duas séries antigas em 2.946 s (~49 minutos, ~0,9 MB/s),
+com pico de 145 MB de RAM; o pacote do `educacenso` tem 37.050.326 bytes (sha256 `b08dea69`), o de `censo_escolar_2000_2002` 2.635.054 (`ec648573`) e o de `censo_escolar_pre2007` 1.028.553 (`191e388d`, o mesmo de antes). Os
+`sha256_original` dos quatro zips novos e dos três de 2000 a 2002 batem com os de um download com `curl`. `consolidar`: 129 s, pico de 270 MB; `educacenso` com 7.296 linhas (19 anos x 16 territórios x 24 grupos: 6.840 observadas e 456
+derivadas), `censo_escolar_2000_2002` com 960 e `censo_escolar_pre2007` com 704. `validar`: código 0, sem regra bloqueante e só três avisos A01, um por série (26 casos em `censo_escolar_2000_2002`, 6 em `censo_escolar_pre2007` e
+137 em `educacenso`, contra 110 antes de 2022). Os casos novos são, em quase todos, redes federal ou estadual com poucas matrículas ou zero (a variação de zero é infinita). Os de rede grande, que são os que importam, são reais e
+vêm das próprias tabelas: creche privada de 2021 para 2022 (Nordeste de 138.025 para 221.405, +60%; Bahia de 22.360 para 50.783), recuperação depois do tombo de 2021 (Bahia de 45.465 em 2020 para 22.360 em 2021), e ensino médio do
+Maranhão de 2000 para 2001 (estadual de 121.971 para 193.730 e municipal de 52.348 para 24.831, com o total do estado subindo de 206.623 para 248.409). Nenhum deles é de coluna trocada: a soma das redes é igual ao total em todas
+as combinações de ano, etapa e território de cada série.
+
+**2000 a 2002.** Ver a seção `matriculas_basica / censo_escolar_2000_2002`. Escolha da série própria, e não de `anos_sem_publicacao`, justificada ali.
 
 ### superior / censup_pre2009
 
