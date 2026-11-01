@@ -77,7 +77,10 @@ def test_readme_documenta_comandos_regra_r01_e_roteiro():
 def test_readme_explica_ca_extra_recursos_e_que_a_base_publicada_ainda_nao_existe():
     texto = _texto()
     assert "ca_extra" in texto and "cadeia" in texto and "nunca" in texto and "verify=False" in texto
-    assert "~2 GB" in texto and "~4 GB de RAM" in texto and "Python 3.12" in texto
+    assert "~2 GB" in texto and "Python 3.12" in texto
+    secao = texto.split("### Séries com partes: o pacote reduzido", 1)[1].split("\n## ", 1)[0]
+    for termo in ("sha256_original", "arquivo_no_zip", "dados/trabalho/partes/", "7 dias", "~4 GB"):
+        assert termo in secao, termo  # o que o pacote guarda, a retomada e o custo antigo, para comparar
     for dependencia in ("pandas", "pyarrow", "pyyaml", "requests", "openpyxl", "xlrd", "certifi", "numpy"):
         assert dependencia in texto, dependencia
     assert "primeira publicação real" in texto

@@ -15,8 +15,10 @@ está em `docs/specs/2026-10-31-base-historica-design.md`; as conferências feit
 - Dependências (instaladas pelo `pip`): `pandas`, `numpy`, `pyarrow`, `pyyaml`, `requests`, `certifi`,
   `openpyxl`, `xlrd`; para os testes, `pytest`.
 - Recursos para a coleta real completa: as séries do INEP com dezenas de arquivos (`matriculas_basica/educacenso`
-  e `superior/censup`) baixam ~2 GB cada e usam ~4 GB de RAM no `coletar` e no `consolidar`. Deixe disco livre
-  para o cache em `dados/brutos/` (o pacote bruto de cada uma tem ~1,9 GB).
+  e `superior/censup`) ainda baixam ~2 GB cada (50 a 60 minutos a ~0,5 MB/s), porque cada zip passa inteiro pelo
+  disco para o SHA-256 da fonte ficar registrado. Mas o pacote bruto guardado em `dados/brutos/` tem ~28 MB
+  (`educacenso`) e ~25 MB (`censup`), e nem `coletar` nem `consolidar` passam de ~450 MB de RAM. Durante a
+  coleta, deixe livre em disco ~400 MB (o maior zip e a planilha extraída dele, apagados assim que reduzidos).
 
 ## Instalação
 
@@ -39,9 +41,10 @@ python -m nordeste publicar  [--ensaio]
 
 - `coletar` baixa os arquivos brutos de cada série verificada para `dados/brutos/` e registra a coleta (data,
   URL, SHA-256, origem) em `dados/relatorios/coletas.csv`. Com `--indicador ID`, só as séries desse indicador.
-  **Rode `coletar --indicador ID`, um indicador por vez**, nas séries grandes do INEP: a coleta de rede
-  sequencial de `educacenso` e `censup` (50 a 60 minutos cada, a ~0,5 MB/s) não foi exercitada de ponta a ponta;
-  os layouts foram conferidos sobre os arquivos reais baixados à parte.
+  Nas séries grandes do INEP, prefira `coletar --indicador ID`, um indicador por vez: a coleta de rede de
+  `educacenso` e `censup` é sequencial e leva de 50 a 60 minutos cada. Se a rede cair no meio, as partes que já
+  chegaram ficam em `dados/trabalho/partes/` e o próximo `coletar` baixa só as que faltam (ver
+  [Séries com partes](#séries-com-partes-o-pacote-reduzido)).
 - `consolidar` padroniza as coletas, deriva o Brasil fora do Nordeste e os indicadores calculados e grava o
   resultado em `dados/trabalho/` (fora do Git) e os relatórios de cobertura em `dados/relatorios/`.
 - `validar` roda as regras sobre a base de trabalho sem publicar nada e grava `dados/relatorios/validacao.csv`.
@@ -112,6 +115,39 @@ verificação TLS falha em quem não o tem. Para as séries do INEP, o parâmetr
 certificado versionado em `metadados/certificados/`; o download monta um bundle com as autoridades em uso
 (`REQUESTS_CA_BUNDLE` ou o `certifi`) mais esse certificado. A verificação segue ligada: o projeto nunca
 desliga a verificação TLS (nada de `verify=False`).
+
+### Séries com partes: o pacote reduzido
+
+As séries com `partes` (as do INEP: um zip por ano, às vezes vários por série) gravam um único arquivo bruto por
+série: um zip sem compressão, com data e atributos fixos (o mesmo conteúdo da fonte dá sempre o mesmo SHA-256),
+que traz `manifesto.json` e um arquivo por URL. Desde novembro de 2026 o pacote não guarda o zip baixado:
+
+- de cada URL cujas partes declaram `arquivo_no_zip`, fica um zip reduzido só com os membros declarados, com os
+  bytes comprimidos copiados do original (nada é recomprimido; o reduzido nunca é maior que o original);
+- um membro `.xlsx` lido só por partes com `aba` também é podado: ficam as abas declaradas e o que elas usam
+  (estilos, textos compartilhados, tema), com as folhas copiadas byte a byte. O nome do membro não muda, e o
+  padronizador `planilha` lê o pacote como antes;
+- o manifesto registra, por URL, o `sha256_original` e o `bytes_original` do zip baixado (a fonte segue
+  rastreável) e, em `membros`, o que foi guardado de cada um (`abas`, quando houve poda);
+- se a redução não é segura (zip ilegível, membro ausente, aba que não existe, estrutura de planilha
+  desconhecida), o arquivo segue como veio e o erro de layout aparece no `consolidar`, como antes.
+
+| Série | Baixado | Pacote bruto antes | Pacote bruto agora |
+|---|---|---|---|
+| `matriculas_basica/educacenso` (15 zips) | 1,86 GB | ~1,9 GB | 28 MB |
+| `superior/censup` (11 zips) | 1,94 GB | ~1,9 GB | 25 MB |
+
+Medido em 2026-11-01 sobre os zips reais: o `consolidar` caiu de ~4 GB de memória (3,9 GB no `educacenso`, 4,2 GB
+no `censup`) para ~440 MB com as seis séries do INEP juntas, em 5 minutos. O `coletar` fica entre ~150 MB
+(`educacenso`) e ~350 MB (`censup`, cujas planilhas têm muito texto compartilhado), porque cada zip vai em blocos
+de 1 MB para o disco em vez de ficar inteiro na memória. A padronização das 90 partes do `educacenso` e das 44 do
+`censup` dá exatamente as mesmas linhas com o pacote reduzido e com o pacote de zips inteiros.
+
+Retomada: cada parte reduzida fica em `dados/trabalho/partes/<indicador>/<série>/` assim que chega. Se uma URL
+falha (depois das três novas tentativas), as outras seguem; a série não é registrada e o próximo `coletar`
+reaproveita as partes guardadas há até 7 dias, com a mesma receita (mesmos membros e abas na ficha) e o
+arquivo íntegro, e baixa só o resto. Com todas as partes, o pacote é gravado, registrado e as partes guardadas
+saem. Pacotes coletados antes da redução continuam legíveis.
 
 ## Roteiro da primeira coleta real
 

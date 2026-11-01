@@ -770,6 +770,14 @@ cada vez, cada um em menos de cinco minutos (124 a 259 s), e a coleta do projeto
 `empacotar_partes` e o registro de coletas reais). Não se repetiu a coleta sequencial de rede dessas duas séries: 11 e 15 zips de 112 a 240 MB a 0,5 MB/s
 levam de 50 a 60 minutos cada. `consolidar` de `censup` levou 4 min 54 s (CPU) e 4,2 GB de memória; o de `educacenso`, 2 min 53 s e 3,9 GB.
 
+Atualização de 2026-11-01, pacote reduzido. O coletor passou a guardar de cada zip só o membro declarado em `arquivo_no_zip`
+(bytes comprimidos copiados do original) e, nos `.xlsx` lidos por aba, só as abas da ficha; o manifesto registra o
+`sha256_original` de cada zip baixado. Sobre os mesmos zips reais (os 15 do `educacenso` e os 11 do `censup`, baixados de novo
+com `curl`, oito conexões em paralelo), o pacote bruto caiu de 1.857 MB para 28,3 MB (`educacenso`) e de 1.937 MB para 25,1 MB
+(`censup`), e a padronização das 90 e das 44 partes deu as mesmas linhas com o pacote reduzido e com o de zips inteiros
+(`pandas.testing.assert_frame_equal`). `coletar` dessas séries sobre os arquivos locais: pico de 148 MB e 351 MB; `consolidar`
+das seis séries do INEP juntas (`ideb` e `abandono_em` coletados pela rede): 299 s e 439 MB.
+
 Mecanismos de leitura usados, todos já existentes (nenhuma mudança de código): `partes` com `filtro_linhas` (incluindo o valor vazio, para escolher a linha de total
 quando o município ou a UF está em branco, e o ano do arquivo, conferido na própria planilha), `nomes_territorio` (`Total Bahia` como BA, `R. G. do Norte` como RN, siglas de UF como
 `MA`), `territorios_esperados` em toda parte, colunas por rótulo ou por posição (`Unnamed: n`, quando a célula de cabeçalho está vazia) e `linha_cabecalho` numa linha em branco
