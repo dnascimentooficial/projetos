@@ -15,11 +15,11 @@ está em `docs/specs/2026-10-31-base-historica-design.md`; as conferências feit
 - Dependências (instaladas pelo `pip`): `pandas`, `numpy`, `pyarrow`, `pyyaml`, `requests`, `certifi`,
   `openpyxl`, `xlrd`; para os testes, `pytest`.
 - Recursos para a coleta real completa: as séries do INEP com dezenas de arquivos (`matriculas_basica/educacenso`
-  e `superior/censup`) ainda baixam ~2,7 GB (`educacenso`, ~49 minutos a 0,9 MB/s) e ~2 GB (`censup`, 35 a 60
-  minutos, a 0,9 a 0,5 MB/s), porque cada zip passa inteiro pelo disco para o SHA-256 da fonte ficar registrado.
-  Mas o pacote bruto guardado em `dados/brutos/` tem ~37 MB (`educacenso`) e ~25 MB (`censup`), e nem `coletar`
+  e `superior/censup`) ainda baixam ~2,7 GB (`educacenso`, ~49 minutos a 0,9 MB/s) e ~3,7 GB (`censup`, ~72
+  minutos a 0,85 MB/s), porque cada zip passa inteiro pelo disco para o SHA-256 da fonte ficar registrado.
+  Mas o pacote bruto guardado em `dados/brutos/` tem ~37 MB (`educacenso`) e ~38 MB (`censup`), e nem `coletar`
   nem `consolidar` passam de ~450 MB de RAM. Durante a
-  coleta, deixe livre em disco ~400 MB (o maior zip e a planilha extraída dele, apagados assim que reduzidos).
+  coleta, deixe livre em disco ~500 MB (o maior zip, de 397 MB, e a planilha extraída dele, apagados assim que reduzidos).
 
 ## Instalação
 
@@ -43,8 +43,8 @@ python -m nordeste publicar  [--ensaio]
 - `coletar` baixa os arquivos brutos de cada série verificada para `dados/brutos/` e registra a coleta (data,
   URL, SHA-256, origem) em `dados/relatorios/coletas.csv`. Com `--indicador ID`, só as séries desse indicador.
   Nas séries grandes do INEP, prefira `coletar --indicador ID`, um indicador por vez: a coleta de rede de
-  `educacenso` e `censup` é sequencial e leva de 35 a 60 minutos cada (a de `educacenso`, agora com 19 zips,
-  levou 49 minutos, a ~0,9 MB/s, em 2026-11-01). Se a rede cair no meio, as partes que já
+  `educacenso` e `censup` é sequencial e leva de 49 a 72 minutos cada (a de `educacenso`, com 19 zips, levou
+  49 minutos, a ~0,9 MB/s, e a de `censup`, com 16 zips, 72 minutos, a ~0,85 MB/s, ambas em 2026-11-01). Se a rede cair no meio, as partes que já
   chegaram ficam em `dados/trabalho/partes/` e o próximo `coletar` baixa só as que faltam (ver
   [Séries com partes](#séries-com-partes-o-pacote-reduzido)).
 - `consolidar` padroniza as coletas, deriva o Brasil fora do Nordeste e os indicadores calculados e grava o
@@ -141,7 +141,7 @@ que traz `manifesto.json` e um arquivo por URL. Desde novembro de 2026 o pacote 
 | Série | Baixado | Pacote bruto antes | Pacote bruto agora |
 |---|---|---|---|
 | `matriculas_basica/educacenso` (19 zips) | 2,70 GB | ~2,7 GB | 37 MB |
-| `superior/censup` (11 zips) | 1,94 GB | ~1,9 GB | 25 MB |
+| `superior/censup` (16 zips) | 3,66 GB | ~3,7 GB | 38 MB |
 
 Medido em 2026-11-01 sobre os zips reais: o `consolidar` caiu de ~4 GB de memória (3,9 GB no `educacenso`, 4,2 GB
 no `censup`) para ~440 MB com as seis séries do INEP juntas, em 5 minutos. O `coletar` fica entre ~150 MB
@@ -159,9 +159,11 @@ Coleta de rede medida em 2026-11-01, numa cópia temporária do projeto:
   `educacenso` de 2007 a 2025, 19 zips, 2.696 MB): 2.946 s, pico de 145 MB, pacote do `educacenso` de 37,1 MB;
   `consolidar` das três séries: 129 s, pico de 270 MB;
 - `superior/censup_pre2009` (8 zips, 32 MB): 71 s, pico de 123 MB; o pacote tem os mesmos 32 MB, porque cada zip só
-  traz o `.xls` lido (que não é podado).
-
-A coleta de rede do `censup` não foi repetida.
+  traz o `.xls` lido (que não é podado);
+- `coletar --indicador superior` com as duas séries (`censup_pre2009` e `censup` de 2009 a 2024, 16 zips do
+  `censup`, 3.664 MB): 4.296 s (~72 minutos, ~0,85 MB/s; durante os primeiros ~35 minutos rodava, em outra
+  conexão, um segundo download dos cinco zips de 2020 a 2024), pico de 344 MB de RAM, pacote do `censup` de 37,7 MB
+  (sha256 `ceefe706`); `consolidar` das duas séries: 375 s, pico de 426 MB.
 
 Retomada: cada parte reduzida fica em `dados/trabalho/partes/<indicador>/<série>/` assim que chega. Se uma URL
 falha (depois das três novas tentativas), as outras seguem; a série não é registrada e o próximo `coletar`
@@ -226,7 +228,7 @@ curso. Indicadores `auxiliar` são insumos (denominadores e contagens) e não s�
 | `populacao_pnadc` | População residente da PNAD Contínua | contexto | auxiliar | `pnadc` | 2012– | verificada |
 | `renda_dom_pc` | Renda domiciliar per capita | social | exibido | `pnadc` | 2012– | verificada |
 | `rendimento_trabalho` | Rendimento médio real do trabalho | trabalho | exibido | `pnadc` | 2012– | verificada |
-| `superior` | Ensino superior, matrículas de graduação e instituições | educacao_superior | exibido | `censup_pre2009`, `censup` | 2001–2019 | verificada |
+| `superior` | Ensino superior, matrículas de graduação e instituições | educacao_superior | exibido | `censup_pre2009`, `censup` | 2001–2024 | verificada |
 <!-- tabela-indicadores:fim -->
 
 ## Testes

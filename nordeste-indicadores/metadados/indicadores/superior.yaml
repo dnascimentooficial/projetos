@@ -21,7 +21,7 @@ metodologia: >-
   único pacote. As duas séries têm métodos de contagem diferentes e não se
   somam nem se comparam: `censup_pre2009` (2001 a 2008) lê as tabelas 1.1 e
   5.1 dos `.xls` de cada ano (matrículas em cursos de graduação presenciais);
-  `censup` (2009 em diante) lê as mesmas tabelas da sinopse por município
+  `censup` (2009 a 2024) lê as mesmas tabelas da sinopse por município
   (matrículas em cursos de graduação presenciais e a distância).
 observacoes: >-
   (1) Brasil fora do Nordeste por soma (Brasil menos Nordeste), subindicador a
@@ -29,19 +29,34 @@ observacoes: >-
   matrículas, porque as linhas de Pública e Privada vêm abaixo da linha do
   território, sem o nome dele, e o padronizador lê um território por linha; as
   matrículas são só as de cursos presenciais. O ano de 2000 só existe em PDF.
-  (3) `censup`: cobre 2009 a 2019, anos cujo arquivo se baixa em menos de
-  cinco minutos; os arquivos de 2020 a 2024 têm de 284 a 397 MB e ficam como
-  pendência (e o de 2025 ainda não foi publicado). (4) `defasagem_meses`: o
-  Censo da Educação Superior de cada ano sai cerca de dez meses depois do fim
-  do ano. (5) Custo operacional de `censup`: o download tem ~2 GB (11
-  arquivos, 1.937 MB) e leva de 35 a 60 minutos em sequência (0,9 a 0,5
-  MB/s); o pacote bruto guardado tem ~25 MB (de cada sinopse, só as abas 1.1 e
-  5.1), e o `coletar` sobre os arquivos reais baixados à parte usou 351 MB de
-  RAM. A coleta de rede do `censup` não foi repetida; a do `educacenso`, com o
-  mesmo coletor e arquivos do mesmo porte, foi exercitada de ponta a ponta
-  (ficha `matriculas_basica`). `censup_pre2009` (8 arquivos, 32 MB): coleta de
-  rede de 71 s, pico de 123 MB de RAM, pacote de 32 MB (cada zip só traz o
-  .xls lido). Rode `coletar --indicador superior` isoladamente.
+  (3) `censup`: cobre 2009 a 2024. O Censo da Educação Superior de 2025 ainda
+  não foi publicado (em 2026-11-01 o arquivo `sinopse_educacao_superior_2025.zip`
+  não existe no servidor do INEP e a página das sinopses lista até 2024); a
+  série tem `fim: 2024` e ganha o ano quando ele sair, o que a validação não
+  avisa, porque série com `fim` declarado não entra no aviso de publicação
+  vencida. (4) `defasagem_meses`: o Censo da Educação Superior de cada ano sai
+  cerca de dez meses depois do fim do ano. (5) Nas matrículas do `censup`, o
+  Brasil é maior que a soma das cinco regiões: a tabela 5.1 traz uma linha
+  "Exterior" (matrículas a distância de instituições brasileiras no exterior,
+  fora de qualquer região e UF) que só entra no total do Brasil; a diferença
+  foi de 284 a 2.826 matrículas nos anos em que ela existe (2009, 2010 e 2017
+  a 2024; nos outros é zero), sempre igual à linha "Exterior". Por isso o Brasil fora do Nordeste
+  das matrículas, por soma, inclui essas matrículas do exterior. (6) Layout de
+  2020 a 2024: as abas, as linhas e as colunas lidas por posição são as de 2009
+  a 2019, com três diferenças só de leitura: a linha de total da UF vem com dois
+  espaços ("Total  Maranhão") em 2021 (aba 1.1) e em 2022 (abas 1.1 e 5.1), e a
+  ficha escreve esses nomes assim; em 2024 a tabela 5.1 troca de lugar o
+  município e o nível acadêmico (o nível passa para a coluna 4 e o município para
+  a 2); e na aba 1.1 de 2024 a linha de total do Acre está rotulada "Total
+  Rondônia" (erro da fonte, fora do Nordeste, que a ficha não lê). (7) Custo
+  operacional de `censup`: o download tem ~3,7 GB (16 arquivos, 3.664 MB) e leva
+  ~72 minutos em sequência (0,85 MB/s medido; até 2 horas a 0,5 MB/s); o pacote bruto guardado tem ~38 MB (de cada sinopse, só as
+  abas 1.1 e 5.1). A coleta de rede foi exercitada de ponta a ponta e medida em
+  2026-11-01: `coletar --indicador superior` levou 4.296 s com pico de 344 MB de
+  RAM, e o `consolidar` das duas séries, 375 s e 426 MB. `censup_pre2009` (8
+  arquivos, 32 MB): coleta de rede de 71 s, pico de 123 MB de RAM, pacote de 32
+  MB (cada zip só traz o .xls lido). Rode `coletar --indicador superior`
+  isoladamente.
 sentido: maior_melhor
 limites: {min: 0}
 defasagem_meses: 10
@@ -221,10 +236,10 @@ series:
     verificado: true
   - id: censup
     inicio: 2009
-    fim: 2019
-    fonte: INEP, Censo da Educação Superior, sinopse estatística (por município) de 2009 a 2019
+    fim: 2024
+    fonte: INEP, Censo da Educação Superior, sinopse estatística (por município) de 2009 a 2024
     base_origem: >-
-      Sinopses estatísticas da educação superior de 2009 a 2019 (um zip por ano,
+      Sinopses estatísticas da educação superior de 2009 a 2024 (um zip por ano,
       com a planilha da sinopse por município; tabelas 1.1 e 5.1)
     url: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-superior
     coletor: arquivo
@@ -804,9 +819,272 @@ series:
         - {coluna: 'Unnamed: 5', ano: 2019, subindicador: matriculas, rede: total}
         - {coluna: 'Unnamed: 6', ano: 2019, subindicador: matriculas, rede: publica}
         - {coluna: 'Unnamed: 10', ano: 2019, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2020/Sinopse_Educação_Superior_Municipio_2020.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2020, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2020, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2020/Sinopse_Educação_Superior_Municipio_2020.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB,
+          Total Pernambuco: PE, Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2020, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2020, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2020/Sinopse_Educação_Superior_Municipio_2020.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2020, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2020, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2020, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2020/Sinopse_Educação_Superior_Municipio_2020.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB,
+          Total Pernambuco: PE, Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2020, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2020, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2020, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2021/Sinopse_Educação_Superior_Municipio_2021.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2021, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2021, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2021/Sinopse_Educação_Superior_Municipio_2021.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {'Total  Maranhão': MA, 'Total  Piauí': PI, 'Total  Ceará': CE, 'Total  Rio Grande do Norte': RN, 'Total  Paraíba': PB,
+          'Total  Pernambuco': PE, 'Total  Alagoas': AL, 'Total  Sergipe': SE_UF, 'Total  Bahia': BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2021, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2021, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2021/Sinopse_Educação_Superior_Municipio_2021.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2021, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2021, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2021, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2021/Sinopse_Educação_Superior_Municipio_2021.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB,
+          Total Pernambuco: PE, Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2021, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2021, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2021, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2022.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2022/Sinopse_Educação_Superior_Municipio_2022.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2022, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2022, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2022.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2022/Sinopse_Educação_Superior_Municipio_2022.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {'Total  Maranhão': MA, 'Total  Piauí': PI, 'Total  Ceará': CE, 'Total  Rio Grande do Norte': RN, 'Total  Paraíba': PB,
+          'Total  Pernambuco': PE, 'Total  Alagoas': AL, 'Total  Sergipe': SE_UF, 'Total  Bahia': BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2022, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2022, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2022.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2022/Sinopse_Educação_Superior_Municipio_2022.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2022, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2022, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2022, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2022.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2022/Sinopse_Educação_Superior_Municipio_2022.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {'Total  Maranhão': MA, 'Total  Piauí': PI, 'Total  Ceará': CE, 'Total  Rio Grande do Norte': RN, 'Total  Paraíba': PB,
+          'Total  Pernambuco': PE, 'Total  Alagoas': AL, 'Total  Sergipe': SE_UF, 'Total  Bahia': BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2022, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2022, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2022, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2023.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2023/Sinopse_Educação_Superior_Municipio_2023.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2023, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2023, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2023.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2023/Sinopse_Educação_Superior_Municipio_2023.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB,
+          Total Pernambuco: PE, Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2023, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2023, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2023.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2023/Sinopse_Educação_Superior_Municipio_2023.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2023, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2023, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2023, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2023.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2023/Sinopse_Educação_Superior_Municipio_2023.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB,
+          Total Pernambuco: PE, Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2023, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2023, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2023, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2024.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2024/Sinopse_Educação_Superior_Municipio_2024.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2024, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2024, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2024.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2024/Sinopse_Educação_Superior_Municipio_2024.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB,
+          Total Pernambuco: PE, Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2024, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2024, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2024.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2024/Sinopse_Educação_Superior_Municipio_2024.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 4': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2024, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2024, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2024, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2024.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2024/Sinopse_Educação_Superior_Municipio_2024.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': '', 'Unnamed: 4': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB,
+          Total Pernambuco: PE, Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2024, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2024, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2024, subindicador: matriculas, rede: privada}
     compatibilidade: >-
-      Série de 2009 a 2019, com matrículas de cursos de graduação presenciais e
-      a distância (rede `total`, `publica` e `privada`); layout idêntico em
-      todos os anos. A continuação (2020 a 2024) está pendente por tamanho dos
-      arquivos.
+      Série de 2009 a 2024, com matrículas de cursos de graduação presenciais e
+      a distância (rede `total`, `publica` e `privada`); as colunas lidas são as
+      mesmas em todos os anos. A continuação de 2020 a 2024 só difere na leitura
+      (nome da UF com dois espaços em 2021 e 2022, município e nível acadêmico
+      trocados na tabela 5.1 de 2024), não na definição das contagens. As
+      matrículas do Brasil incluem as do exterior, que não estão em nenhuma
+      região.
     verificado: true

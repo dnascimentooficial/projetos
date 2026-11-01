@@ -62,7 +62,7 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `matriculas_basica` | `censo_escolar_pre2007` | INEP, Censo Escolar 2005 e 2006 (`.xls`, tabelas 1.1, 1.6, 1.12, 1.18 e 1.43) | 2005 e 2006, 15 territórios, 6 etapas, rede total e 4 redes | sim (só 2005 e 2006; 2003 e 2004 só em PDF) |
 | `matriculas_basica` | `educacenso` | INEP, Sinopses da Educação Básica 2007 a 2025 (tabelas 1.1, 1.5 e 1.14; 1.1, 1.8 e 1.20 em 2025) | 2007 a 2025, 15 territórios, 8 etapas | sim |
 | `superior` | `censup_pre2009` | INEP, Sinopses da Educação Superior 2001 a 2008 (`.xls`, tabelas 1.1 e 5.1) | 2001 a 2008, 15 territórios; IES, universidades e matrículas totais | sim (só 2001 a 2008; 2000 só em PDF) |
-| `superior` | `censup` | INEP, Sinopses da Educação Superior 2009 a 2019 (sinopse por município, tabelas 1.1 e 5.1) | 2009 a 2019, 15 territórios; IES, universidades e matrículas (total, pública, privada) | sim (só 2009 a 2019; 2020 a 2024 pendentes) |
+| `superior` | `censup` | INEP, Sinopses da Educação Superior 2009 a 2024 (sinopse por município, tabelas 1.1 e 5.1) | 2009 a 2024, 15 territórios; IES, universidades e matrículas (total, pública, privada) | sim (2009 a 2024; 2025 ainda não publicado) |
 
 ## pib_nominal / scr_ref2010
 
@@ -615,7 +615,7 @@ tabela não está confirmada.
     (spec não fixa a rede), comparação com o Brasil, como na spec (Tarefa 15A).
 14. `abandono_em`: série `indicadores_inep` de 2007 a **2025** (spec: 2007 em diante), completa e verificada; só o total do ensino médio, na localização e na rede "Total" (spec não fixa o recorte); comparação com o Brasil, como na spec (Tarefa 15B).
 15. `matriculas_basica`: a spec previa `educacenso` (2007+) e `censo_escolar_pre2007` (2000-2006). Verificadas `educacenso` de 2007 a **2025** (a Tarefa C4 acrescentou 2022 a 2025), `censo_escolar_pre2007` só de **2005 e 2006** e uma terceira série, `censo_escolar_2000_2002` (**2000 a 2002**, só creche, pré-escola, ensino fundamental e ensino médio, sem os totais da educação básica e da infantil). **2003 e 2004 ficam sem série**: o Censo Escolar existiu, mas as sinopses só saem em PDF, que o projeto não lê; não são `anos_sem_publicacao` (o campo diria "sem pesquisa", o que seria falso), e a cobertura efetiva fica "2000–2002; 2005–2025". A etapa e a rede variam por série: ensino fundamental e ensino médio por rede só até 2006; anos iniciais e anos finais por rede só de 2007 em diante; ensino médio de 2007 em diante só no total (as tabelas por dependência vêm por série, sem soma). Brasil fora do Nordeste por soma, como na spec (Tarefas 15B e C4).
-16. `superior`: a spec previa `censup_pre2009` e `censup` (2009+). Verificadas `censup_pre2009` de **2001 a 2008** (2000 só em PDF; matrículas só totais e só de cursos presenciais, porque as linhas de Pública e Privada vêm sem o nome do território) e `censup` de 2009 a **2019** (2020 a 2024 pendentes por tamanho: de 284 a 397 MB; 2025 ainda não publicada). Subindicadores `matriculas` (rede `total`, `publica`, `privada`), `ies` e `universidades`; Brasil fora do Nordeste por soma, como na spec (Tarefa 15B).
+16. `superior`: a spec previa `censup_pre2009` e `censup` (2009+). Verificadas `censup_pre2009` de **2001 a 2008** (2000 só em PDF; matrículas só totais e só de cursos presenciais, porque as linhas de Pública e Privada vêm sem o nome do território) e `censup` de 2009 a **2024** (a Tarefa C5 acrescentou 2020 a 2024; 2025 ainda não publicada, e a série tem `fim: 2024`). Subindicadores `matriculas` (rede `total`, `publica`, `privada`), `ies` e `universidades`; Brasil fora do Nordeste por soma, como na spec (Tarefas 15B e C5). **Divergência da Tarefa C5**: nas matrículas do `censup` o Brasil é maior que a soma das cinco regiões, porque a tabela 5.1 tem uma linha "Exterior" (matrículas a distância de instituições brasileiras no exterior) que só entra no total do Brasil; a diferença é de 284 a 2.826 matrículas em 2009, 2010 e 2017 a 2024 (zero nos outros anos) e é igual à linha "Exterior" em cada um desses anos. Por isso o Brasil fora do Nordeste das matrículas, que é Brasil menos Nordeste, inclui as matrículas do exterior; a spec não previa o resíduo.
 17. Tarefa 15B: nenhuma mudança no código de coleta nem de padronização. A única mudança de código é do gerador de fixtures (`xls_abas`, `.xls` com várias abas, e o montador de pacotes a partir das partes da ficha).
 
 ## Bloco PNUD: IDHM
@@ -808,7 +808,7 @@ Coleta de rede numa cópia temporária do projeto, com o pico de memória lido d
 e os 15 `sha256_original` do manifesto são os da tabela do `educacenso`. `coletar --indicador superior` com só o `censup_pre2009` (o `censup` marcado
 como não verificado na cópia) levou 71 s com pico de 123 MB; o pacote tem 31.929.693 bytes (sha256 `1cb64f0e`), quase o tamanho dos 8 zips
 (31.925.742 bytes), porque cada zip só traz o `.xls` lido e `.xls` não é podado; os 8 `sha256_original` são os da tabela do `censup_pre2009`.
-`consolidar` dessas três séries: 107 s e pico de 323 MB; `validar`, código 0. A do `censup` pela rede continua não repetida.
+`consolidar` dessas três séries: 107 s e pico de 323 MB; `validar`, código 0. A do `censup` pela rede foi feita na Tarefa C5 (seção "Tarefa C5: ensino superior de 2020 a 2024").
 
 Mecanismos de leitura usados, todos já existentes (nenhuma mudança de código): `partes` com `filtro_linhas` (incluindo o valor vazio, para escolher a linha de total
 quando o município ou a UF está em branco, e o ano do arquivo, conferido na própria planilha), `nomes_territorio` (`Total Bahia` como BA, `R. G. do Norte` como RN, siglas de UF como
@@ -1008,15 +1008,15 @@ as combinações de ano, etapa e território de cada série.
 
 ### superior / censup
 
-- URLs de coleta (um zip por ano, na ordem do pacote): `https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2009.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2010.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2011.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2012.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2013.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2014.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2015.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2016.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2017.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2018.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2019.zip`
-- `validar` saiu com código 0, sem regra bloqueante e com A01 em um caso (universidades do Maranhão, de 2 para 4 entre 2011 e 2012).
+- URLs de coleta (um zip por ano, na ordem do pacote): `https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2009.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2010.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2011.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2012.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2013.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2014.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2015.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2016.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2017.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2018.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2019.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2020.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2021.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2022.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2023.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2024.zip`
+- Resultado da Tarefa 15B, com 2009 a 2019: `validar` saiu com código 0, sem regra bloqueante e com A01 em um caso (universidades do Maranhão, de 2 para 4 entre 2011 e 2012). Com 2009 a 2024 (Tarefa C5), o resultado é o mesmo: ver a seção "Tarefa C5" abaixo.
 - Layout: cada zip de 112 a 240 MB traz a sinopse por município (`Sinopse_Educação_Superior_Municipio_<ano>.xlsx`, 39 a 53 MB) e três anexos de dados por curso, que não entram. A sinopse tem as abas `1.1` (instituições por
   organização acadêmica e dependência administrativa) e `5.1` (matrículas de graduação e sequenciais, presenciais e a distância), com cabeçalho idêntico em 2009 a 2019. Uma linha por município, com as linhas
   "Total Brasil", "Total <região>" e "Total <UF>" entre elas; cada aba entra em duas partes (Brasil e regiões, filtro: UF vazia; UFs, filtro: município vazio) e `nomes_territorio` mapeia `Total Maranhão` e as demais.
   Na `5.1`, só as linhas de nível acadêmico "Graduação" (a tabela traz também "Sequencial de Formação Específica"). Cabeçalho: linha 10, em branco (colunas por posição). Colunas: `1.1`, total de instituições (coluna 4) e total das universidades
   (coluna 12); `5.1`, matrículas totais (coluna 5), de instituições públicas (coluna 6) e privadas (coluna 10).
-- Obtido: 880 linhas = 11 anos x 15 territórios x 5 grupos (825 observadas e 55 do Brasil fora do Nordeste por soma).
-- Pendência: 2020 a 2024 (284 a 397 MB; os cinco não terminaram em 280 s com 16 conexões e levam de 9 a 13 min a 0,5 MB/s) e 2025 (ainda não publicada: a página do INEP, atualizada em 14/07/2026, lista até 2024).
+- Obtido: 1.280 linhas = 16 anos x 16 territórios (15 mais o Brasil fora do Nordeste) x 5 grupos (1.200 observadas e 80 do Brasil fora do Nordeste por soma); com só 2009 a 2019 eram 880 linhas (825 e 55).
+- 2020 a 2024 (Tarefa C5): ver a seção "Tarefa C5: ensino superior de 2020 a 2024" abaixo. A série vai agora de 2009 a **2024**. O Censo da Educação Superior de 2025 **ainda não foi publicado** (ver a mesma seção).
 
 | Ano | Zip (bytes) | sha256 | IES Brasil | Universidades Brasil | Matrículas totais Brasil | Matrículas públicas Brasil | Matrículas privadas Brasil |
 |---|---|---|---|---|---|---|---|
@@ -1031,6 +1031,62 @@ as combinações de ano, etapa e território de cada série.
 | 2017 | 222.515.082 | `e20edd41` | 2.448 | 199 | 8.286.663 | 2.045.356 | 6.241.307 |
 | 2018 | 205.366.920 | `6bce5a85` | 2.537 | 199 | 8.450.755 | 2.077.481 | 6.373.274 |
 | 2019 | 239.663.783 | `18f8d16e` | 2.608 | 198 | 8.603.824 | 2.080.146 | 6.523.678 |
+| 2020 | 284.364.534 | `6172df8e` | 2.457 | 203 | 8.680.354 | 1.956.352 | 6.724.002 |
+| 2021 | 302.144.294 | `0483c567` | 2.574 | 204 | 8.986.554 | 2.078.661 | 6.907.893 |
+| 2022 | 360.893.549 | `6ce329f2` | 2.595 | 205 | 9.443.597 | 2.076.517 | 7.367.080 |
+| 2023 | 381.866.951 | `68d74ec1` | 2.580 | 205 | 9.976.782 | 2.069.130 | 7.907.652 |
+| 2024 | 397.378.396 | `52533dbb` | 2.561 | 206 | 10.226.873 | 2.064.834 | 8.162.039 |
+
+### Tarefa C5: ensino superior de 2020 a 2024
+
+Data: 2026-11-01. Nenhuma mudança de código de coleta nem de padronização: tudo com os mecanismos que `planilha` já tinha (`partes`, `filtro_linhas`, `nomes_territorio`, colunas por posição, `linha_cabecalho`). Só a
+fixture `testes/fixtures/superior/censup.zip` foi regenerada (`python testes/fixtures/gerar_fixtures.py`) com as partes novas.
+
+**Método.** Coleta de rede pelo coletor do projeto numa cópia temporária da raiz, sem cache de partes antigas (`python -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar --indicador superior`, com as duas séries da ficha),
+seguida de `consolidar` e `validar` (`python -W error`); os arquivos baixados ficam fora do repositório. Mais três conferências fora do padronizador: (1) leitura independente de cada valor com `openpyxl` (`python -I`), (2) o
+`sha256` de cada um dos cinco zips baixados à parte com `curl` e comparado com o `sha256_original` do manifesto, e (3) as identidades da base (abaixo).
+
+- Páginas oficiais: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-superior (a página lista as sinopses de 2009 a 2024, nos mesmos nomes `sinopse_educacao_superior_<ano>.zip`).
+- Zips: 284.364.534, 302.144.294, 360.893.549, 381.866.951 e 397.378.396 bytes (2020 a 2024); cada um traz a sinopse por município (`Sinopse_Educação_Superior_Municipio_<ano>.xlsx`, 62 a 79 MB, e a versão `.ods`), um
+  arquivo `MD5_...txt` e três anexos por curso, que não entram. O de 2023 traz também a "Nota Informativa 02" (PDF). Os `sha256_original` do manifesto são os dos downloads com `curl` (um deles, o de 2020, teve a conexão
+  derrubada no meio e foi retomado com `curl -C -`; o `sha256` que vale é o do arquivo completo). O MD5 de cada `.xlsx` de 2020 a 2024 confere com o do arquivo `MD5_...txt` do próprio zip.
+- Layout: o de 2009 a 2019. Abas `1.1` e `5.1`, cabeçalho na linha 10 (em branco), uma linha por município com as linhas "Total Brasil", "Total <região>" e "Total <UF>" entre elas, e as mesmas colunas por posição (`1.1`:
+  total de instituições na coluna 4 e total das universidades na 12; `5.1`: matrículas totais na 5, públicas na 6 e privadas na 10). Três diferenças, todas só de leitura e todas tratadas com os recursos existentes:
+  1. **Nome da UF com dois espaços.** A linha de total da UF vem como "Total  Maranhão" (dois espaços) em 2021 (aba `1.1`) e em 2022 (abas `1.1` e `5.1`); o padronizador só tira espaços das pontas, e por isso `nomes_territorio`
+     dessas três partes escreve os nove nomes com dois espaços. Em 2020 e 2022 as células vêm também com espaços no fim, que o padronizador tira.
+  2. **2024, aba `5.1`: município e nível acadêmico trocados.** Em 2009 a 2023 o nível acadêmico ("Graduação") está na coluna 2 e o município na 3; em 2024 o município vai para a 2 e o nível para a 4. O filtro das duas partes
+     da `5.1` de 2024 é `{'Unnamed: 1': '', 'Unnamed: 4': Graduação}` (Brasil e regiões) e `{'Unnamed: 2': '', 'Unnamed: 4': Graduação}` (UFs). A `5.1` traz também o nível "Sequencial em Formação Específica", que fica de fora.
+  3. **2024, aba `1.1`: a linha de total do Acre está rotulada "Total Rondônia"** (a linha 24, logo depois dos municípios de Rondônia, abre os municípios do Acre: Cruzeiro do Sul e Rio Branco). É erro da fonte, fora do
+     Nordeste: a ficha só lê as UFs do Nordeste e nenhum território dela tem esse nome, de modo que nada muda; o Norte entra como região ("Total Norte") e não pela soma das UFs.
+- Obtido: 1.280 linhas na série inteira (ver acima); as de 2020 a 2024 são 400 (5 anos x 16 territórios x 5 grupos: 375 observadas e 25 do Brasil fora do Nordeste por soma).
+- Conferência independente: 375 valores (5 anos x 15 territórios x 5 colunas) lidos direto dos `.xlsx` com `openpyxl`, localizando as linhas pelo nome (região, UF) e as colunas de município e de nível acadêmico pelo rótulo
+  do cabeçalho (e não pelos índices da ficha), comparados com a base: 0 diferenças. Os valores das colunas lidas são os de mesma posição da ficha; o que protege contra coluna trocada é a identidade pública + privada = total
+  (abaixo) e a conferência dos totais do Brasil contra as linhas impressas da planilha.
+- Identidades da base inteira (`censup`, 2009 a 2024): as nove UFs somam o Nordeste em todos os 80 grupos de ano, subindicador e rede (0 diferenças); matrículas públicas + privadas = totais nos 240 casos de ano e território (0);
+  as cinco regiões somam o Brasil em IES e universidades, e nas matrículas com a ressalva a seguir.
+- **Matrículas: o Brasil inclui a linha "Exterior".** A tabela 5.1 tem uma linha "Exterior" (nota 3 da própria tabela: "inclui também as matrículas na modalidade a distância (EaD) ofertadas por instituições brasileiras no exterior"),
+  que não pertence a nenhuma região nem UF. Em 21 grupos de ano e rede (2009, 2010 e 2017 a 2024) o Brasil é maior que a soma das cinco regiões, e a diferença é exatamente a linha "Exterior" lida da planilha, nos
+  10 anos (total, pública e privada: 2009, 1.531, 302 e 1.229; 2010, 284, 284 e 0; 2017, 325, 0 e 325; 2018, 1.234, 0 e 1.234; 2019, 1.859, 0 e 1.859; 2020, 2.354, 0 e 2.354; 2021, 2.724, 0 e 2.724; 2022, 2.826, 0 e 2.826;
+  2023, 2.782, 0 e 2.782; 2024, 2.580, 0 e 2.580). Nos outros anos (2011 a 2016) a diferença é zero. O Brasil fora do Nordeste das matrículas (Brasil menos Nordeste) inclui, portanto, as matrículas do exterior: é divergência da spec, registrada na lista de divergências (item 16) e
+  nas observações da ficha. Não muda nenhum valor de região nem de UF.
+- Aviso da fonte sobre 2023: a "Nota Informativa 02" do INEP (13/10/2025, dentro do zip de 2023) informa que o INEP corrigiu os dados de vagas e de inscritos do Instituto Federal de Mato Grosso no Censo de 2023 e
+  atualizou a sinopse. As tabelas afetadas são as de vagas e candidatos (4.1, 7.2, 7.3 e 8.1 a 8.3); a `1.1` (instituições) e a `5.1` (matrículas), lidas aqui, **não** estão entre elas. O zip lido é o disponível em
+  2026-11-01, que já traz essa nota (o INEP informa que as correções já estavam nos produtos).
+- Custos medidos: `coletar --indicador superior` (16 zips do `censup`, 3.663.568.068 bytes, mais as 8 sinopses de `censup_pre2009`): 4.296 s (~72 minutos, ~0,85 MB/s), pico de 344 MB de RAM; nos primeiros ~35 minutos
+  rodava, em outra conexão, o segundo download (`curl`) dos cinco zips de 2020 a 2024, de modo que a coleta sozinha pode ser um pouco mais rápida. Pacote guardado do `censup`: 37.686.783 bytes (sha256 `ceefe706`); o de
+  `censup_pre2009` tem 31.929.693. `consolidar` das duas séries: 375 s, pico de 426 MB. `validar` (3 s): código 0, sem regra bloqueante e só **dois avisos A01**, os mesmos de antes (universidades do Maranhão, de 2 para 4 entre
+  2011 e 2012, em `censup`; universidades de Alagoas, de 1 para 2 entre 2004 e 2005, em `censup_pre2009`): 2020 a 2024 não acrescentaram nenhum caso. As matrículas totais do Brasil sobem todos os anos de 2019 a 2024, e as IES do Brasil caem de 2.608 (2019) para 2.457 (2020), −5,8%.
+- **Matrículas públicas de 2020 e 2021 (variação da fonte, abaixo do limiar do A01).** A rede pública cai em 2020 e volta em 2021, com força na região Norte e na Bahia: Brasil 2.080.146 (2019), 1.956.352 (2020) e 2.078.661 (2021);
+  Norte 193.698, 133.610 e 197.173 (−31,0% e +47,6%); Bahia 110.984, 77.112 e 103.207 (−30,5% e +33,8%), com 112.419 em 2022. A leitura independente dá os mesmos valores, e no Brasil
+  a pública é a soma de federal, estadual e municipal da própria planilha, nos três anos. A queda de 2020 está sobretudo na rede federal (Brasil, 1.335.254 para 1.254.080, e a recuperação em 2021 para 1.371.128). A explicação do contexto (calendários
+  acadêmicos das universidades federais na pandemia) não vem de nota do INEP lida aqui, e sim da coincidência com o período; fica registrada como **variação da fonte, de causa não documentada**, que a série trata como
+  observação oficial. Quem for comparar 2020 e 2021 nas matrículas públicas do Norte e da Bahia deve ler a série com essa ressalva.
+- Ensaio offline (`coletar --offline`, `consolidar`, `publicar --ensaio`, cópia temporária, fixtures): os dois primeiros com código 0 e `publicar --ensaio` com código 1, barrado só pela R01 (51 coletas de origem `fixture`,
+  nenhuma outra regra), como antes da tarefa.
+- **2025.** O Censo da Educação Superior de 2025 ainda não foi publicado. Em 2026-11-01 `sinopse_educacao_superior_2025.zip`, no mesmo diretório dos de 2009 a 2024, responde 404, e a página de sinopses do INEP lista até 2024.
+  Com a defasagem de dez meses da ficha, o esperado seria outubro de 2026. A série tem `fim: 2024` (último ano verificado em sequência) e, por ter `fim` declarado, é tratada como encerrada: a regra A03 (publicação prevista
+  vencida) só olha séries em curso (`fim` em branco), então **nenhum aviso do pipeline lembra o 2025**. Quando o INEP publicar, é preciso acrescentar as quatro partes de 2025, conferir o layout e subir o `fim`. Nada
+  de 2025 foi estimado, projetado ou preenchido.
 
 ## Ensaio real de 2026-11
 

@@ -574,6 +574,11 @@ def _partes(fichas, indicador, serie):
     return fichas[indicador].serie(serie).parametros["partes"]
 
 
+def url_sinopse_superior(ano):
+    return ("https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/"
+            f"sinopse_educacao_superior_{ano}.zip")
+
+
 def _anos_das_partes(partes):
     return sorted({c["ano"] for parte in partes for c in parte["colunas"]})
 
@@ -765,26 +770,68 @@ def test_matriculas_basica_coleta_offline_registra_um_pacote_por_serie(projeto_c
 def test_superior_tem_duas_series_com_partes_por_ano(fichas):
     f = fichas["superior"]
     assert [(s.id, s.inicio, s.fim, s.coletor, s.verificado) for s in f.series] == [
-        ("censup_pre2009", 2001, 2008, "arquivo", True), ("censup", 2009, 2019, "arquivo", True)]
+        ("censup_pre2009", 2001, 2008, "arquivo", True), ("censup", 2009, 2024, "arquivo", True)]
     assert f.comparacao.referencia == "brasil_fora_ne" and f.comparacao.metodo == "soma"
     assert (f.unidade, f.limites, f.tratamento_monetario) == ("número (matrículas ou instituições)", {"min": 0}, None)
     pre, censup = (f.serie(i).parametros["partes"] for i in ("censup_pre2009", "censup"))
-    assert _anos_das_partes(pre) == list(range(2001, 2009)) and _anos_das_partes(censup) == list(range(2009, 2020))
-    assert len(pre) == 8 * 2 and len(censup) == 11 * 4  # tabelas 1.1 e 5.1; no censup, cada uma em Brasil e regioes e em UFs
-    assert len(_urls_das_partes(pre)) == 8 and len(_urls_das_partes(censup)) == 11
+    assert _anos_das_partes(pre) == list(range(2001, 2009)) and _anos_das_partes(censup) == list(range(2009, 2025))
+    assert len(pre) == 8 * 2 and len(censup) == 16 * 4  # tabelas 1.1 e 5.1; no censup, cada uma em Brasil e regioes e em UFs
+    assert len(_urls_das_partes(pre)) == 8 and len(_urls_das_partes(censup)) == 16
     assert {p["formato"] for p in pre} == {"xls"} and {p["formato"] for p in censup} == {"xlsx"}
     assert _territorios_por_ano(pre) == {ano: TERRITORIOS_COMPLETOS for ano in range(2001, 2009)}
-    assert _territorios_por_ano(censup) == {ano: TERRITORIOS_COMPLETOS for ano in range(2009, 2020)}
+    assert _territorios_por_ano(censup) == {ano: TERRITORIOS_COMPLETOS for ano in range(2009, 2025)}
     for parte in censup:  # nas linhas "Total <territorio>"; a 5.1 so le a graduacao (a tabela traz tambem os sequenciais)
         assert ("Graduação" in parte["filtro_linhas"].values()) == (parte["aba"] == "5.1")
-        assert all(nome.startswith("Total ") for nome in parte["nomes_territorio"])
+        assert all(nome.strip().startswith("Total ") for nome in parte["nomes_territorio"])
     assert {p["aba"] for p in pre + censup} == {"1.1", "5.1"}
     assert [p["linha_cabecalho"] for p in censup[:1]] == [10]
 
 
+def test_superior_2020_a_2024_seguem_o_layout_de_cada_sinopse(fichas):
+    """2020 a 2024 repetem as abas 1.1 e 5.1 (cabecalho na linha 10, colunas por posicao); mudam so 3 detalhes."""
+    partes = _partes(fichas, "superior", "censup")
+    for ano in range(2020, 2025):
+        do_ano = [p for p in partes if p["colunas"][0]["ano"] == ano]
+        assert [p["aba"] for p in do_ano] == ["1.1", "1.1", "5.1", "5.1"], ano
+        assert {p["linha_cabecalho"] for p in do_ano} == {10}, ano
+        assert len({p["url"] for p in do_ano}) == 1 and url_sinopse_superior(ano) == do_ano[0]["url"], ano
+        assert {p["arquivo_no_zip"] for p in do_ano} == {
+            f"Sinopse_Educação_Superior_{ano}/Sinopse_Educação_Superior_Municipio_{ano}.xlsx"}, ano
+        colunas = {(p["aba"], c["subindicador"], c["rede"]): c["coluna"] for p in do_ano for c in p["colunas"]}
+        assert colunas == {
+            ("1.1", "ies", "total"): "Unnamed: 4", ("1.1", "universidades", "total"): "Unnamed: 12",
+            ("5.1", "matriculas", "total"): "Unnamed: 5", ("5.1", "matriculas", "publica"): "Unnamed: 6",
+            ("5.1", "matriculas", "privada"): "Unnamed: 10"}, ano
+    # 1) 2024 troca de lugar o municipio e o nivel academico da 5.1: o nivel passa para a coluna 4 e o municipio para a 2
+    for ano in range(2020, 2025):
+        br, ufs = [p for p in partes if p["colunas"][0]["ano"] == ano and p["aba"] == "5.1"]
+        nivel, municipio = ("Unnamed: 4", "Unnamed: 2") if ano == 2024 else ("Unnamed: 2", "Unnamed: 3")
+        assert br["filtro_linhas"] == {"Unnamed: 1": "", nivel: "Graduação"}, ano
+        assert ufs["filtro_linhas"] == {municipio: "", nivel: "Graduação"} and ufs["coluna_territorio"] == "Unnamed: 1", ano
+    # 2) a linha de total da UF vem com dois espacos ("Total  Maranhao") em 2021 (aba 1.1) e em 2022 (abas 1.1 e 5.1)
+    com_dois_espacos = {(2021, "1.1"), (2022, "1.1"), (2022, "5.1")}
+    for p in partes:
+        ano = p["colunas"][0]["ano"]
+        if ano >= 2020 and p["territorios_esperados"][0] == "MA":  # as partes de UFs
+            assert all("  " in nome for nome in p["nomes_territorio"]) == ((ano, p["aba"]) in com_dois_espacos), (ano, p["aba"])
+    # 3) 2024, aba 1.1: a linha de total do Acre esta rotulada "Total Rondonia" (erro da fonte); a ficha le so o Nordeste
+    assert "AC" not in {t for p in partes for t in p["territorios_esperados"]}
+
+
+def test_superior_cobertura_efetiva_vai_ate_2024_e_2025_nao_foi_publicado(fichas):
+    f = fichas["superior"]
+    assert cobertura_efetiva(f) == "2001–2024"
+    observacoes = " ".join(f.observacoes.split())
+    assert "Educação Superior de 2025 ainda não foi publicado" in observacoes and "fim: 2024" in observacoes
+    assert "pendência" not in observacoes and "2020 a 2024 ficam" not in observacoes
+    assert "2020 a 2024" in " ".join(f.serie("censup").compatibilidade.split())
+    # o Brasil das matrículas inclui a linha "Exterior" da tabela 5.1, que nenhuma regiao tem: o Brasil fora do NE herda
+    assert '"Exterior"' in observacoes and "inclui essas matrículas do exterior" in observacoes
+
+
 def test_superior_declara_que_a_serie_antiga_so_tem_matriculas_totais_e_presenciais(fichas):
     f = fichas["superior"]
-    assert "presenciais" in f.observacoes and "PDF" in f.observacoes and "pendência" in f.observacoes
+    assert "presenciais" in f.observacoes and "PDF" in f.observacoes
     assert "não é comparável" in f.serie("censup_pre2009").compatibilidade
 
 
@@ -799,7 +846,7 @@ def test_superior_offline_subindicadores_e_redes_de_cada_serie(base):
     }
     assert set(s.etapa) == {""} and set(s.tipo_dado) == {"observado"}
     assert {x: sorted(set(g.ano)) for x, g in s.groupby("serie_id")} == {
-        "censup_pre2009": list(range(2001, 2009)), "censup": list(range(2009, 2020))}
+        "censup_pre2009": list(range(2001, 2009)), "censup": list(range(2009, 2025))}
 
 
 def test_superior_offline_so_le_a_linha_de_cada_territorio_e_deriva_o_brasil_fora_ne(base):
@@ -825,14 +872,15 @@ def test_superior_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
 
 @pytest.mark.parametrize("indicador, serie, tamanho, pacote, duracao", [
     ("matriculas_basica", "educacenso", "~2,7 GB", "~37 MB", "~49 minutos"),
-    ("superior", "censup", "~2 GB", "~25 MB", "35 a 60 minutos")])
+    ("superior", "censup", "~3,7 GB", "~38 MB", "~72 minutos")])
 def test_series_grandes_do_inep_declaram_o_custo_operacional_medido(fichas, indicador, serie, tamanho, pacote, duracao):
-    """Custos medidos com o pacote reduzido (Tarefas C2 e C4), nao os da coleta antiga com zips inteiros."""
+    """Custos medidos com o pacote reduzido (Tarefas C2, C4 e C5), nao os da coleta antiga com zips inteiros."""
     texto = " ".join(fichas[indicador].observacoes.split())
     assert f"`{serie}`" in texto and tamanho in texto and f"pacote bruto guardado tem {pacote}" in texto
     assert "MB de RAM" in texto and duracao in texto and "MB/s" in texto
     assert "exercitada de ponta a ponta" in texto and "isoladamente" in texto
-    for antigo in ("~1,9 GB", "~4 GB de RAM", "não foi exercitada", "~28 MB", "15 arquivos"):
+    for antigo in ("~1,9 GB", "~2 GB", "~25 MB", "35 a 60 minutos", "~4 GB de RAM", "não foi exercitada", "~28 MB",
+                   "15 arquivos", "11 arquivos", "não foi repetida"):
         assert antigo not in texto, antigo
 
 
