@@ -266,65 +266,105 @@ def _exigir_uma_serie(*partes: pd.DataFrame) -> None:
         )
 
 
-def _variacoes_pct(valores: pd.Series) -> pd.Series:
-    """Variacao percentual entre observacoes consecutivas; valor anterior nulo ou zero nao gera ponto."""
-    anterior = valores.shift(1)
-    return ((valores / anterior - 1) * 100).where(anterior != 0).dropna()
+def variacao_acumulada(df: pd.DataFrame, ano_base: int | None = None) -> pd.Series:
+    """(v / v_ano_base - 1) * 100, indexada por ano, de uma unica serie de um unico territorio.
 
-
-def variacao_acumulada(df: pd.DataFrame) -> pd.Series:
-    """(v / v_primeiro - 1) * 100, indexada por ano, de uma unica serie de um unico territorio."""
+    `ano_base` padrao: o primeiro ano com valor. Sem valor (ou com zero) no ano-base, a serie sai vazia; anos
+    anteriores ao ano-base nao entram.
+    """
     _exigir_uma_serie(df)
     valores = df[df.valor.notna()].sort_values("ano").set_index("ano").valor
-    if valores.empty or valores.iloc[0] == 0:
+    if ano_base is None and not valores.empty:
+        ano_base = valores.index[0]
+    if ano_base not in valores.index or valores[ano_base] == 0:
         return pd.Series(dtype=float, name="valor")
-    return ((valores / valores.iloc[0] - 1) * 100).rename("valor")
+    valores = valores[valores.index >= ano_base]
+    return ((valores / valores[ano_base] - 1) * 100).rename("valor")
 
 
-def crescimento_relativo(df_territorio: pd.DataFrame, df_referencia: pd.DataFrame) -> pd.Series:
-    """Variacao (%) do territorio menos a da referencia entre observacoes consecutivas, em pontos percentuais.
+def crescimento_relativo(
+    df_territorio: pd.DataFrame, df_referencia: pd.DataFrame, calendario=None,
+) -> pd.Series:
+    """Variacao (%) do territorio menos a da referencia entre anos publicados consecutivos, em pontos percentuais.
 
-    So conta os anos observados nas duas series; o indice e o ano da observacao mais recente do par.
+    `calendario`: os anos publicados da serie (anos em que algum territorio tem valor); padrao, os anos com valor
+    no territorio ou na referencia. O par (anterior -> ano) so sai quando `anterior` e o ano publicado
+    imediatamente anterior a `ano` e os dois tem valor no territorio e na referencia (valor anterior zero tambem
+    nao gera ponto): uma lacuna nunca vira variacao de varios anos. Em serie bienal, o par e entre edicoes.
+    O indice e o ano mais recente do par.
     """
     _exigir_uma_serie(df_territorio, df_referencia)
-    validos = [d[d.valor.notna()].drop_duplicates("ano").set_index("ano").valor for d in (df_territorio, df_referencia)]
-    comuns = validos[0].index.intersection(validos[1].index).sort_values()
-    territorio, referencia = (_variacoes_pct(v.loc[comuns]) for v in validos)
-    return (territorio - referencia).dropna().rename("valor")
+    territorio, referencia = (
+        d[d.valor.notna()].drop_duplicates("ano").set_index("ano").valor for d in (df_territorio, df_referencia))
+    anos = sorted(set(calendario) if calendario is not None else set(territorio.index) | set(referencia.index))
+    pontos: dict[int, float] = {}
+    for anterior, ano in zip(anos, anos[1:]):
+        if not all(a in v.index for a in (anterior, ano) for v in (territorio, referencia)):
+            continue
+        if territorio[anterior] == 0 or referencia[anterior] == 0:
+            continue
+        pontos[ano] = (territorio[ano] / territorio[anterior] - 1) * 100 - (referencia[ano] / referencia[anterior] - 1) * 100
+    return pd.Series(pontos, dtype=float, name="valor").rename_axis("ano")
 
 
 def _serie_por_ano(df: pd.DataFrame) -> pd.Series:
     return df.drop_duplicates("ano").set_index("ano").valor
 
 
+def _referencia_do_ano(preferida: str | None, valores: dict[str, pd.Series]):
+    """Funcao ano -> territorio de referencia daquele ano (ou None).
+
+    A referencia declarada, quando tem valor no ano; se a declarada e o Brasil fora do Nordeste e ele nao existe
+    no ano, o Brasil (decisao da spec: "Brasil total nos demais").
+    """
+    candidatas = [] if preferida is None else [preferida]
+    if preferida == TERRITORIO_DERIVADO:
+        candidatas.append("BR")
+
+    def referencia(ano: int) -> str | None:
+        return next((c for c in candidatas if c in valores and ano in valores[c].index), None)
+    return referencia
+
+
 def _metricas_da_serie(ficha: Ficha, serie: pd.DataFrame, ident: dict) -> list[dict]:
-    """Metricas de um grupo (subindicador, etapa, rede) numa unica serie_id."""
-    referencia = _REFERENCIAS.get(ficha.comparacao.referencia)
+    """Metricas de um grupo (subindicador, etapa, rede) numa unica serie_id.
+
+    Ficha em R$ correntes (`tratamento_monetario.modo: razao`) so recebe as metricas do mesmo ano (razao,
+    posicao_regioes e dispersao_ufs): variacao entre anos de valor nominal mediria inflacao.
+    """
+    nominal = (ficha.tratamento_monetario or {}).get("modo") == "razao"
     por_territorio = {t: g for t, g in serie.groupby("territorio_id")}
+    valores = {t: _serie_por_ano(g) for t, g in por_territorio.items()}
+    calendario = sorted(set(serie["ano"]))
+    referencia_do_ano = _referencia_do_ano(_REFERENCIAS.get(ficha.comparacao.referencia), valores)
     linhas: list[dict] = []
 
-    def emite(metrica: str, territorio_id: str, valores: pd.Series, ref: str = "") -> None:
+    def emite(metrica: str, territorio_id: str, pontos: pd.Series, ref: str = "") -> None:
         linhas.extend(
             {**ident, "metrica": metrica, "referencia": ref, "territorio_id": territorio_id,
              "ano": int(ano), "valor": float(valor)}
-            for ano, valor in valores.dropna().items()
+            for ano, valor in pontos.dropna().items()
         )
 
-    for territorio_id, dados in por_territorio.items():
-        emite("variacao_acumulada", territorio_id, variacao_acumulada(dados))
+    if not nominal:
+        # ano-base comum: o primeiro ano do Brasil na serie (sem Brasil, o primeiro ano da serie)
+        ano_base = valores["BR"].index.min() if "BR" in valores else calendario[0]
+        for territorio_id, dados in por_territorio.items():
+            emite("variacao_acumulada", territorio_id, variacao_acumulada(dados, ano_base))
 
     for alvo in _ALVOS:
         if alvo not in por_territorio:
             continue
-        if referencia is None or referencia not in por_territorio:
-            continue
-        t, r = por_territorio[alvo], por_territorio[referencia]
-        valor_t = _serie_por_ano(t)
-        valor_r = _serie_por_ano(r)
-        valor_r_sem_zero = valor_r.where(valor_r != 0)
-        emite("razao", alvo, valor_t / valor_r_sem_zero * 100, referencia)
-        emite("diferenca", alvo, valor_t - valor_r, referencia)
-        emite("crescimento_relativo", alvo, crescimento_relativo(t, r), referencia)
+        for ref in sorted({referencia_do_ano(a) for a in calendario} - {None}):
+            anos_da_ref = [a for a in calendario if referencia_do_ano(a) == ref]
+            valor_t = valores[alvo][valores[alvo].index.isin(anos_da_ref)]
+            valor_r = valores[ref]
+            emite("razao", alvo, valor_t / valor_r.where(valor_r != 0) * 100, ref)
+            if nominal:
+                continue
+            emite("diferenca", alvo, valor_t - valor_r, ref)
+            cresc = crescimento_relativo(por_territorio[alvo], por_territorio[ref], calendario)
+            emite("crescimento_relativo", alvo, cresc[cresc.index.isin(anos_da_ref)], ref)
 
     regioes = _anos_completos(serie, REGIOES)
     if not regioes.empty:
