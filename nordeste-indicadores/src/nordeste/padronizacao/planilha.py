@@ -8,10 +8,11 @@ import zipfile
 
 import pandas as pd
 
-from nordeste.esquema import COLUNAS_BASE, normalizar_base
+from nordeste.coletores.arquivo import ler_pacote
+from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, normalizar_base
 from nordeste.fichas import Ficha, Serie
 from nordeste.padronizacao.erros import ErroLayout
-from nordeste.territorios import territorio_por_nome
+from nordeste.territorios import normalizar_nome, territorio_por_nome
 
 _AUSENTES = frozenset({"", "-", "--", "...", "…", "x", "n/d"})
 _MILHAR_BR = re.compile(r"-?\d{1,3}(\.\d{3})+(,\d+)?")
@@ -46,8 +47,8 @@ def numero_br(texto) -> float | None:
     return numero
 
 
-def _nome_do_territorio(celula) -> str | None:
-    """Tira espacos e sufixos de nota de rodape, como '(1)' ou '*', do nome do territorio."""
+def _sem_nota(celula) -> str | None:
+    """Tira espacos e sufixos de nota de rodape, como '(1)', '(3)(4)' ou '*', de um texto (territorio, rede)."""
     if not isinstance(celula, str):
         return None
     nome = celula.strip()
@@ -97,11 +98,79 @@ def padronizar_planilha(
     """Converte uma planilha com um territorio por linha e um ano (ou subindicador) por coluna.
 
     Linhas cujo nome nao case nenhum territorio (totais, notas) sao descartadas; celulas
-    com marcador de ausencia viram indisponivel.
+    com marcador de ausencia viram indisponivel. Com `parametros.partes`, o conteudo e o pacote do
+    coletor `arquivo` (uma entrada por URL) e cada parte e lida como uma planilha independente, com os
+    seus proprios parametros de leitura; o resultado e a concatenacao, na ordem das partes.
     """
     parametros = serie.parametros
+    if "partes" not in parametros:
+        membro = parametros.get("arquivo_no_zip")
+        return _padronizar_tabela(
+            conteudo, parametros, membro or f"{ficha.id}/{serie.id}", ficha, serie, coleta_id, territorios)
+    partes = parametros["partes"]
+    if not isinstance(partes, list) or not partes or not all(isinstance(p, dict) for p in partes):
+        raise ErroLayout(f"Planilha {ficha.id}/{serie.id}: partes deve ser uma lista de mapas de parâmetros")
+    try:
+        arquivos = ler_pacote(conteudo)
+    except ValueError as erro:
+        raise ErroLayout(f"Planilha {ficha.id}/{serie.id}: {erro}") from erro
+    quadros = []
+    for posicao, parte in enumerate(partes, start=1):
+        url = parte.get("url")
+        onde = f"{ficha.id}/{serie.id}, parte {posicao} ({parte.get('arquivo_no_zip') or url})"
+        if url not in arquivos:
+            raise ErroLayout(f"Planilha {ficha.id}/{serie.id}, parte {posicao}: {url} ausente do pacote coletado")
+        quadros.append(_padronizar_tabela(arquivos[url], parte, onde, ficha, serie, coleta_id, territorios))
+    quadros = [q for q in quadros if not q.empty]
+    if not quadros:
+        return normalizar_base(pd.DataFrame(columns=COLUNAS_BASE))
+    df = normalizar_base(pd.concat(quadros, ignore_index=True))
+    _sem_linhas_repetidas(df, f"{ficha.id}/{serie.id}")
+    return df
+
+
+def _sem_linhas_repetidas(df: pd.DataFrame, onde: str) -> None:
+    repetidas = df[df.duplicated(CHAVE_BASE, keep=False)]
+    if not repetidas.empty:
+        exemplo = repetidas.iloc[0]
+        raise ErroLayout(
+            f"Planilha {onde}: {len(repetidas)} linhas repetidas para a mesma chave (ex.: "
+            f"{exemplo.territorio_id} {exemplo.ano} {exemplo.subindicador or '-'}/{exemplo.etapa or '-'}/"
+            f"{exemplo.rede or '-'}); falta filtro_linhas ou as partes se sobrepoem")
+
+
+def _filtro(parametros: dict, onde: str) -> dict[str, str]:
+    filtro = parametros.get("filtro_linhas") or {}
+    if not isinstance(filtro, dict):
+        raise ErroLayout(f"Planilha {onde}: filtro_linhas deve mapear coluna para valor aceito")
+    return {str(coluna): normalizar_nome(_texto(valor)) for coluna, valor in filtro.items()}
+
+
+def _apelidos(parametros: dict, territorios: pd.DataFrame, onde: str) -> dict[str, str]:
+    """`nomes_territorio`: nome como a planilha escreve -> territorio_id, para abreviacoes ("R. G. do Norte")."""
+    nomes = parametros.get("nomes_territorio") or {}
+    conhecidos = set(territorios["territorio_id"])
+    if not isinstance(nomes, dict) or not all(isinstance(v, str) and v in conhecidos for v in nomes.values()):
+        raise ErroLayout(f"Planilha {onde}: nomes_territorio deve mapear nome para territorio_id conhecido ({nomes})")
+    return {normalizar_nome(_sem_nota(str(nome))): territorio for nome, territorio in nomes.items()}
+
+
+def _texto(celula) -> str:
+    """Celula como texto para o filtro: inteiros sem ".0"; vazio para nulos."""
+    if isinstance(celula, str):
+        return _sem_nota(celula)
+    if isinstance(celula, numbers.Real) and not isinstance(celula, bool):
+        if math.isnan(celula):
+            return ""
+        return str(int(celula)) if float(celula).is_integer() else str(celula)
+    return ""
+
+
+def _padronizar_tabela(
+    conteudo: bytes, parametros: dict, onde: str, ficha: Ficha, serie: Serie, coleta_id: str,
+    territorios: pd.DataFrame,
+) -> pd.DataFrame:
     membro = parametros.get("arquivo_no_zip")
-    onde = membro or f"{ficha.id}/{serie.id}"
     if membro:
         conteudo = _abrir_zip(conteudo, membro, onde)
     tabela = _ler_tabela(conteudo, parametros, onde)
@@ -109,14 +178,18 @@ def padronizar_planilha(
     aba = parametros.get("aba", "-")
     coluna_territorio = str(parametros.get("coluna_territorio", ""))
     colunas = parametros.get("colunas") or []
-    for nome in [coluna_territorio, *(str(c["coluna"]) for c in colunas)]:
+    filtro = _filtro(parametros, onde)
+    apelidos = _apelidos(parametros, territorios, onde)
+    for nome in [coluna_territorio, *filtro, *(str(c["coluna"]) for c in colunas)]:
         if nome not in tabela.columns:
             raise ErroLayout(f"Planilha {onde}, aba {aba}: coluna {nome!r} não encontrada")
 
     registros = []
     for _, linha in tabela.iterrows():
-        nome = _nome_do_territorio(linha[coluna_territorio])
-        territorio = territorio_por_nome(territorios, nome) if nome else None
+        if any(normalizar_nome(_texto(linha[coluna])) != aceito for coluna, aceito in filtro.items()):
+            continue
+        nome = _sem_nota(linha[coluna_territorio])
+        territorio = (apelidos.get(normalizar_nome(nome)) or territorio_por_nome(territorios, nome)) if nome else None
         if territorio is None:
             continue
         for spec in colunas:
@@ -138,4 +211,6 @@ def padronizar_planilha(
                 "territorio_id": territorio, "ano": spec["ano"], "valor": valor,
                 "tipo_dado": tipo_dado, "serie_id": serie.id, "coleta_id": coleta_id, "nota": nota,
             })
-    return normalizar_base(pd.DataFrame(registros, columns=COLUNAS_BASE))
+    df = normalizar_base(pd.DataFrame(registros, columns=COLUNAS_BASE))
+    _sem_linhas_repetidas(df, f"{onde}, aba {aba}")
+    return df

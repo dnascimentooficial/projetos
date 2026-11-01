@@ -56,6 +56,7 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `rendimento_trabalho` | `pnadc` | SIDRA 4566, v5935 | 2012 a 2025 | sim |
 | `idhm` | `censo` | Ipeadata `IDHM`, `IDHMRE`, `IDHMED`, `IDHMLO` (janela 2000-2010) | 2000 e 2010, só Brasil e 9 UFs (sem regiões e sem NE) | sim (para o subconjunto declarado) |
 | `idhm` | `pnadc` | Ipeadata `IDHM`, `IDHMRE`, `IDHMED`, `IDHMLO` (janela 2012-2024) | 2012 a 2024, 15 territórios | sim (fonte Ipeadata; não cotejada com o arquivo oficial do Radar IDHM) |
+| `ideb` | `ideb` | INEP, `divulgacao_regioes_ufs_ideb_2025.zip` e `divulgacao_brasil_ideb_2025.zip` (6 abas, linha "Total") | 2005 a 2025, anos ímpares, 15 territórios, 3 etapas | sim |
 
 ## pib_nominal / scr_ref2010
 
@@ -576,6 +577,8 @@ tabela não está confirmada.
 11. `rendimento_trabalho`: só `pnadc` (2012 a 2025), comparação com o Brasil, como na spec.
 12. Mudanças de código desta tarefa: o parâmetro `periodos` do padronizador do Ipeadata (corta os anos anteriores a 2001); o campo `anos_sem_publicacao` da série
     (linhas `indisponivel` no ano sem pesquisa, 2010 na `pnad`); o campo `comparacao.precisao_oficial` e a tolerância correspondente na R08.
+13. `ideb`: série `ideb` de 2005 a **2025** (spec: 2005–2023), porque o INEP divulgou a edição de 2025 em 05/08/2026; bienal, só a rede `total`
+    (spec não fixa a rede), comparação com o Brasil, como na spec (Tarefa 15A).
 
 ## Bloco PNUD: IDHM
 
@@ -642,10 +645,11 @@ componente (`IDHM`/`ADH_IDHM`, `IDHMRE`/`ADH_IDHM_R`, `IDHMED`/`ADH_IDHM_E`, `ID
 - Não comparável com `censo` (pesquisa e método diferentes); sem variação calculada entre as duas.
 - Comparação `brasil`; não há Brasil fora do Nordeste.
 
-## Bloco INEP: acesso confirmado, fichas pendentes (Tarefa 15)
+## Bloco INEP: acesso confirmado (Tarefa 15), IDEB verificado (Tarefa 15A), demais fichas pendentes
 
-Data: 2026-11-01. Nenhuma ficha do INEP foi escrita: os arquivos reais do INEP não cabem no mecanismo atual de coleta e
-padronização (uma série = uma URL, uma aba, sem filtro de linhas). Detalhes do que foi baixado e lido:
+Data: 2026-11-01. Na Tarefa 15 nenhuma ficha do INEP foi escrita: os arquivos reais do INEP não cabiam no mecanismo de coleta e
+padronização (uma série = uma URL, uma aba, sem filtro de linhas). A Tarefa 15A acrescentou as séries com partes (abaixo) e a ficha
+`ideb`; `abandono_em`, `matriculas_basica` e `superior` seguem sem ficha. Detalhes do que foi baixado e lido na Tarefa 15:
 
 **Acesso.** `download.inep.gov.br` responde com a cadeia TLS incompleta (só a folha `*.inep.gov.br`); falta a intermediária
 "RNP ICPEdu GR46 OV TLS CA 2025" (emitida por GlobalSign Root R46, sha256
@@ -681,3 +685,45 @@ nacionais, por UF e por organização acadêmica).
 
 Conclusão: nenhuma série do INEP tem uma só URL com os anos em colunas. Faltam, para escrever as fichas, a série com várias URLs (uma por ano),
 o mapa de aba e coluna por ano, o filtro de linhas (`Rede = Total`) e, no IDEB, mais de uma aba e mais de um arquivo por série.
+
+### Mecanismo de séries com partes (Tarefa 15A)
+
+- Coleta (`coletor: arquivo`): `parametros.partes` é uma lista; cada parte tem `url` e os parâmetros de leitura da planilha. O coletor
+  baixa cada URL distinta uma vez (abas diferentes do mesmo arquivo não repetem o download), com o `ca_extra` da série, e grava **um**
+  arquivo bruto por série: um zip determinístico (data fixa, ordem fixa) com `manifesto.json` (`{"arquivos": [{"url", "nome"}]}`, na
+  ordem da primeira aparição da URL nas partes) e um arquivo por URL (`01_<nome do arquivo na URL>`, `02_...`). Uma coleta e um sha256
+  por série; a `url` registrada em `coletas.csv` são as URLs distintas separadas por um espaço. Falha em qualquer URL: `ErroColeta` da
+  série, sem arquivo parcial e sem linha no registro.
+- Padronização (`padronizador: planilha`): cada parte é lida como uma planilha independente (`formato`, `arquivo_no_zip`, `aba`,
+  `linha_cabecalho`, `coluna_territorio`, `colunas` com `subindicador`/`etapa`/`rede`) e o resultado é a concatenação. Novos parâmetros
+  de leitura (valem também no modo de uma URL): `filtro_linhas` (mapa coluna → valor aceito; compara sem acento, sem maiúsculas e sem
+  marcas de nota, `Total (3)(4)` = `Total`) e `nomes_territorio` (mapa nome como a planilha escreve → `territorio_id`, para abreviações
+  como `R. G. do Norte`). Marcas de nota (`(1)`, `(3)(4)`, `*`) saem do nome do território e do texto do filtro. Duas linhas com a mesma
+  chave (filtro ausente ou partes sobrepostas) são erro de layout. Rótulos com chamada de nota (`IDEB\n20215\n(N x P)`) são declarados
+  na ficha exatamente como estão, coluna a coluna.
+
+### ideb / ideb
+
+- Página oficial: https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb/resultados/2005-2025
+  (resultados de 2005 a 2025; a página lista os dois arquivos abaixo, além dos de municípios, escolas e ensino médio integrado, que não entram).
+- URLs de coleta (uma por arquivo, na ordem do pacote): `https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_2025.zip https://download.inep.gov.br/ideb/resultados/divulgacao_brasil_ideb_2025.zip`
+- Método: `python -I -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar --indicador ideb` (coletor do projeto, com os `parametros` da
+  ficha e o `ca_extra` da RNP), `consolidar` e `validar`, numa raiz temporária fora do repositório. `validar` saiu com código 0 e sem
+  nenhuma linha em `validacao.csv` (nem regra bloqueante nem aviso). Data: 2026-11-01.
+- Arquivos baixados: `divulgacao_regioes_ufs_ideb_2025.zip` (sha256 `a8ecdb2c...0a87`, 757.970 bytes) e
+  `divulgacao_brasil_ideb_2025.zip` (sha256 `c841dcbe...b348`, 85.519 bytes); o md5 de cada `.xlsx` confere com o arquivo `md5_*.txt`
+  que o INEP põe no zip. Pacote gravado pela coleta: `88ff10bf....zip` (sha256 `88ff10bfb4ef9c08...07e8`).
+- Partes (6): abas `UF e Regiões (AI)`, `UF e Regiões (AF)`, `UF e Regiões (EM)` do `.xlsx` de regiões e UFs e `Brasil (Anos Iniciais)`,
+  `Brasil (Anos Finais)`, `Brasil (EM)` do `.xlsx` do Brasil. Cabeçalho na linha 7 (rótulos `IDEB\n<ano>\n(N x P)`; a linha 10 traz os
+  códigos `VL_OBSERVADO_<ano>`, mas na aba `Brasil (Anos Finais)` a coluna de 2023 não tem código, por isso a ficha usa os rótulos).
+  Rótulos de 2021 como estão nos arquivos: `IDEB\n20215\n(N x P)` (regiões e UFs, as três abas), `IDEB\n20212\n(N x P)` (Brasil, anos
+  iniciais) e `IDEB\n20211\n(N x P)` (Brasil, anos finais e ensino médio). Filtro `Rede = Total` (o texto real é `Total`, `Total (4)` ou
+  `Total (3)(4)`); `R. G. do Norte` declarado como RN em `nomes_territorio`.
+- Obtido: 495 linhas = 3 etapas x 11 edições (2005, 2007, ..., 2025) x 15 territórios (BR, 5 regiões e as 9 UFs), todas `observado`,
+  nenhuma indisponível. Anos pares não têm edição nem linha. Exemplos: Brasil, anos iniciais, 3,8 (2005) e 6,3 (2025); Nordeste,
+  anos iniciais, 2,9 (2005) e 6,0 (2025); Nordeste, anos finais, 2,9 e 5,0; Nordeste, ensino médio, 3,0 e 4,3.
+- Rede: só `total`. A aba de regiões e UFs do ensino médio não traz a linha da rede pública (só `Total`, `Privada` e `Estadual`), por isso
+  pública e privada ficaram de fora (opcionais no brief). As metas do primeiro ciclo (`VL_PROJECAO_*`) não entram.
+- 2021: edição afetada pela pandemia; a ficha registra a cautela em `observacoes` (nota informativa do Ideb 2021).
+- Comparação `brasil`; não há Brasil fora do Nordeste (o IDEB não se recalcula a partir das UFs).
+- Série fechada em 2025 (`fim: 2025`): uma edição nova exige rever `fim`, as URLs e as colunas das partes.

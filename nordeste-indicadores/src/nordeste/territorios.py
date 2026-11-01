@@ -27,15 +27,16 @@ def territorio_por_codigo(territorios: pd.DataFrame, nivel: str, codigo: str) ->
     return achados["territorio_id"].iloc[0] if len(achados) else None
 
 
-def _normalizar(texto: str) -> str:
+def normalizar_nome(texto: str) -> str:
+    """Texto sem acento, sem espacos nas pontas e em minusculas, para comparar nomes."""
     sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
     return sem_acento.strip().casefold()
 
 
 def territorio_por_nome(territorios: pd.DataFrame, nome: str) -> str | None:
     """Devolve o territorio_id pelo nome, sem diferenca de acento ou de maiusculas."""
-    alvo = _normalizar(nome)
+    alvo = normalizar_nome(nome)
     for territorio_id, nome_tabela in zip(territorios["territorio_id"], territorios["nome"]):
-        if _normalizar(nome_tabela) == alvo:
+        if normalizar_nome(nome_tabela) == alvo:
             return territorio_id
     return None

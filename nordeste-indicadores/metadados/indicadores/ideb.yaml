@@ -1,0 +1,176 @@
+id: ideb
+nome: Índice de Desenvolvimento da Educação Básica (IDEB)
+descricao: >-
+  IDEB dos anos iniciais e dos anos finais do ensino fundamental e do ensino
+  médio, por Brasil, região e unidade da federação, no total das redes de
+  ensino. Vai de 0 a 10; quanto maior, melhor.
+eixo: educacao_basica
+categoria: qualidade_do_ensino
+unidade: índice (0 a 10)
+orgao: INEP
+periodicidade: bienal (anos ímpares)
+metodologia: >-
+  O INEP calcula o IDEB como o produto da nota média padronizada do Saeb (N)
+  pelo indicador de rendimento escolar (P, a partir das taxas de aprovação do
+  Censo Escolar). Três subindicadores, `anos_iniciais`, `anos_finais` e
+  `ensino_medio` (ensino médio regular, sem o integrado), todos na rede
+  `total` (linha "Total" das planilhas, o conjunto das redes pública e
+  privada). Os valores são os das colunas "IDEB
+  <ano> (N x P)" das planilhas de divulgação do IDEB 2025, que trazem todas as
+  edições de 2005 a 2025: regiões e UFs num arquivo, o Brasil em outro, cada um
+  com uma aba por etapa. As seis abas são partes da mesma série (`partes`), e
+  a coleta guarda os dois arquivos num único pacote. Uma edição nova exige rever
+  `fim`, as URLs e as colunas das partes.
+observacoes: >-
+  (1) Edição de 2021: aplicada durante a pandemia de covid-19, com mudanças na
+  participação e no fluxo escolar (aprovação atípica); o INEP recomenda cautela
+  na comparação com as demais edições (nota informativa do Ideb 2021). (2) Só há
+  edição nos anos ímpares; os anos pares não têm linha. (3) O IDEB não se
+  recalcula a partir das UFs nem de totais: não há Brasil fora do Nordeste, e a
+  comparação é com o Brasil. (4) Só a rede `total`: a planilha de regiões e UFs
+  do ensino médio não traz a linha da rede pública, e as metas do primeiro ciclo
+  (2007 a 2021) não entram. (5) `defasagem_meses` só alimenta a próxima
+  publicação esperada, contada a partir de dezembro do ano seguinte ao último
+  disponível: a edição de 2025 saiu em agosto de 2026 (cerca de 8 meses), e a
+  próxima, de 2027, deve sair em agosto de 2028, por isso 20 meses.
+sentido: maior_melhor
+limites: {min: 0, max: 10}
+defasagem_meses: 20
+comparacao:
+  referencia: brasil
+series:
+  - id: ideb
+    inicio: 2005
+    fim: 2025
+    fonte: INEP, Índice de Desenvolvimento da Educação Básica (resultados de 2005 a 2025)
+    base_origem: >-
+      Planilhas de divulgação do IDEB 2025: divulgacao_regioes_ufs_ideb_2025.zip
+      (regiões e UFs) e divulgacao_brasil_ideb_2025.zip (Brasil), três abas cada
+      (anos iniciais, anos finais e ensino médio)
+    url: https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb/resultados/2005-2025
+    coletor: arquivo
+    parametros:
+      padronizador: planilha
+      ca_extra: metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem
+      partes:
+        - url: https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_2025.zip
+          formato: xlsx
+          arquivo_no_zip: divulgacao_regioes_ufs_ideb_2025/divulgacao_regioes_ufs_ideb_2025.xlsx
+          aba: UF e Regiões (AI)
+          linha_cabecalho: 7
+          coluna_territorio: "Região/\nUnidade da Federação"
+          filtro_linhas: {Rede: Total}
+          nomes_territorio: {"R. G. do Norte": RN}
+          colunas:
+            - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2009\n(N x P)", ano: 2009, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2011\n(N x P)", ano: 2011, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2013\n(N x P)", ano: 2013, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2015\n(N x P)", ano: 2015, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2017\n(N x P)", ano: 2017, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2019\n(N x P)", ano: 2019, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n20215\n(N x P)", ano: 2021, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2023\n(N x P)", ano: 2023, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2025\n(N x P)", ano: 2025, subindicador: anos_iniciais, rede: total}
+        - url: https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_2025.zip
+          formato: xlsx
+          arquivo_no_zip: divulgacao_regioes_ufs_ideb_2025/divulgacao_regioes_ufs_ideb_2025.xlsx
+          aba: UF e Regiões (AF)
+          linha_cabecalho: 7
+          coluna_territorio: "Região/\nUnidade da Federação"
+          filtro_linhas: {Rede: Total}
+          nomes_territorio: {"R. G. do Norte": RN}
+          colunas:
+            - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2009\n(N x P)", ano: 2009, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2011\n(N x P)", ano: 2011, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2013\n(N x P)", ano: 2013, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2015\n(N x P)", ano: 2015, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2017\n(N x P)", ano: 2017, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2019\n(N x P)", ano: 2019, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n20215\n(N x P)", ano: 2021, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2023\n(N x P)", ano: 2023, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2025\n(N x P)", ano: 2025, subindicador: anos_finais, rede: total}
+        - url: https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_2025.zip
+          formato: xlsx
+          arquivo_no_zip: divulgacao_regioes_ufs_ideb_2025/divulgacao_regioes_ufs_ideb_2025.xlsx
+          aba: UF e Regiões (EM)
+          linha_cabecalho: 7
+          coluna_territorio: "Região/\nUnidade da Federação"
+          filtro_linhas: {Rede: Total}
+          nomes_territorio: {"R. G. do Norte": RN}
+          colunas:
+            - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2009\n(N x P)", ano: 2009, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2011\n(N x P)", ano: 2011, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2013\n(N x P)", ano: 2013, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2015\n(N x P)", ano: 2015, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2017\n(N x P)", ano: 2017, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2019\n(N x P)", ano: 2019, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n20215\n(N x P)", ano: 2021, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2023\n(N x P)", ano: 2023, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2025\n(N x P)", ano: 2025, subindicador: ensino_medio, rede: total}
+        - url: https://download.inep.gov.br/ideb/resultados/divulgacao_brasil_ideb_2025.zip
+          formato: xlsx
+          arquivo_no_zip: divulgacao_brasil_ideb_2025/divulgacao_brasil_ideb_2025.xlsx
+          aba: Brasil (Anos Iniciais)
+          linha_cabecalho: 7
+          coluna_territorio: Brasil
+          filtro_linhas: {Rede: Total}
+          colunas:
+            - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2009\n(N x P)", ano: 2009, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2011\n(N x P)", ano: 2011, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2013\n(N x P)", ano: 2013, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2015\n(N x P)", ano: 2015, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2017\n(N x P)", ano: 2017, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2019\n(N x P)", ano: 2019, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n20212\n(N x P)", ano: 2021, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2023\n(N x P)", ano: 2023, subindicador: anos_iniciais, rede: total}
+            - {coluna: "IDEB\n2025\n(N x P)", ano: 2025, subindicador: anos_iniciais, rede: total}
+        - url: https://download.inep.gov.br/ideb/resultados/divulgacao_brasil_ideb_2025.zip
+          formato: xlsx
+          arquivo_no_zip: divulgacao_brasil_ideb_2025/divulgacao_brasil_ideb_2025.xlsx
+          aba: Brasil (Anos Finais)
+          linha_cabecalho: 7
+          coluna_territorio: Brasil
+          filtro_linhas: {Rede: Total}
+          colunas:
+            - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2009\n(N x P)", ano: 2009, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2011\n(N x P)", ano: 2011, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2013\n(N x P)", ano: 2013, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2015\n(N x P)", ano: 2015, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2017\n(N x P)", ano: 2017, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2019\n(N x P)", ano: 2019, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n20211\n(N x P)", ano: 2021, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2023\n(N x P)", ano: 2023, subindicador: anos_finais, rede: total}
+            - {coluna: "IDEB\n2025\n(N x P)", ano: 2025, subindicador: anos_finais, rede: total}
+        - url: https://download.inep.gov.br/ideb/resultados/divulgacao_brasil_ideb_2025.zip
+          formato: xlsx
+          arquivo_no_zip: divulgacao_brasil_ideb_2025/divulgacao_brasil_ideb_2025.xlsx
+          aba: Brasil (EM)
+          linha_cabecalho: 7
+          coluna_territorio: Brasil
+          filtro_linhas: {Rede: Total}
+          colunas:
+            - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2009\n(N x P)", ano: 2009, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2011\n(N x P)", ano: 2011, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2013\n(N x P)", ano: 2013, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2015\n(N x P)", ano: 2015, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2017\n(N x P)", ano: 2017, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2019\n(N x P)", ano: 2019, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n20211\n(N x P)", ano: 2021, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2023\n(N x P)", ano: 2023, subindicador: ensino_medio, rede: total}
+            - {coluna: "IDEB\n2025\n(N x P)", ano: 2025, subindicador: ensino_medio, rede: total}
+    compatibilidade: >-
+      Série única de 2005 a 2025, bienal, com o mesmo método em todas as
+      edições; a de 2021 foi afetada pela pandemia (ver observações).
+    verificado: true

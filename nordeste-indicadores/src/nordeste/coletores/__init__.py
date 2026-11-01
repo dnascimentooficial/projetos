@@ -3,13 +3,13 @@
 import hashlib
 import json
 from datetime import date
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 import requests
 
 from nordeste.caminhos import Caminhos
-from nordeste.coletores.arquivo import url_arquivo
+from nordeste.coletores.arquivo import empacotar_partes, url_arquivo, urls_arquivo
 from nordeste.coletores.erros import ErroColeta
 from nordeste.coletores.http import baixar
 from nordeste.coletores.ipeadata import url_ipeadata, urls_ipeadata
@@ -86,6 +86,21 @@ def _baixar_ipeadata(parametros: dict, sessao: requests.Session | None) -> bytes
     return json.dumps({"subindicadores": respostas}, ensure_ascii=False).encode("utf-8")
 
 
+def _ca_extra(parametros: dict, caminhos: Caminhos) -> Path | None:
+    ca_extra = parametros.get("ca_extra")
+    return caminhos.raiz / ca_extra if ca_extra else None
+
+
+def _baixar_partes(parametros: dict, caminhos: Caminhos, sessao: requests.Session | None) -> bytes:
+    """Baixa cada URL distinta das partes (com o `ca_extra` da serie) e devolve o pacote combinado.
+
+    Qualquer falha levanta ErroColeta antes de gravar: nem arquivo parcial nem linha de registro.
+    """
+    ca_extra = _ca_extra(parametros, caminhos)
+    return empacotar_partes({
+        url: baixar(url, sessao=sessao, ca_extra=ca_extra) for url in urls_arquivo(parametros)})
+
+
 def _coletar_da_rede(
     ficha: Ficha, serie: Serie, caminhos: Caminhos, hoje: date, sessao: requests.Session | None,
 ) -> Coleta:
@@ -99,11 +114,13 @@ def _coletar_da_rede(
         return _guardar(ficha, serie, caminhos, conteudo, url, extensao, "rede", hoje)
     elif serie.coletor == "arquivo":
         url = url_arquivo(serie.parametros)
+        if "partes" in serie.parametros:
+            conteudo = _baixar_partes(serie.parametros, caminhos, sessao)
+            return _guardar(ficha, serie, caminhos, conteudo, url, "zip", "rede", hoje)
         extensao = PurePosixPath(urlparse(url).path).suffix.lstrip(".").lower() or "bin"
     else:
         raise ErroColeta(f"coletor desconhecido em {ficha.id}/{serie.id}: {serie.coletor}")
-    ca_extra = serie.parametros.get("ca_extra")
-    conteudo = baixar(url, sessao=sessao, ca_extra=caminhos.raiz / ca_extra if ca_extra else None)
+    conteudo = baixar(url, sessao=sessao, ca_extra=_ca_extra(serie.parametros, caminhos))
     return _guardar(ficha, serie, caminhos, conteudo, url, extensao, "rede", hoje)
 
 

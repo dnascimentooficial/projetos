@@ -1,6 +1,7 @@
 import hashlib
 import shutil
 import ssl
+from functools import partial
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
@@ -292,3 +293,106 @@ def test_coletor_arquivo_com_ca_extra_ausente_na_raiz_falha_alto(projeto, fichas
         "url": "https://download.inep.gov.br/x/planilha.zip", "ca_extra": "metadados/certificados/nao_existe.pem"})
     with pytest.raises(ErroColeta, match="nao_existe.pem"):
         coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=SessaoFalsa(conteudo=b"zip"))
+
+
+# ---------------------------------------------------------------------------
+# Series com partes: varias URLs (ou abas do mesmo arquivo) num unico arquivo bruto por serie
+# ---------------------------------------------------------------------------
+
+URL_UFS = "https://download.inep.gov.br/ideb/resultados/ufs.zip"
+URL_BRASIL = "https://download.inep.gov.br/ideb/resultados/brasil.zip"
+
+
+class SessaoPorUrl(SessaoFalsa):
+    """Responde o conteudo de cada URL; as URLs de `falham` levantam ConnectionError sempre."""
+
+    def __init__(self, conteudos: dict, falham=()):
+        super().__init__()
+        self.conteudos, self.falham = conteudos, set(falham)
+
+    def get(self, url, **kwargs):
+        self.chamadas += 1
+        self.urls.append(url)
+        if url in self.falham:
+            raise requests.ConnectionError("sem rede")
+        return RespostaFalsa(self.conteudos[url])
+
+
+def _serie_com_partes(fichas, **extra):
+    f = fichas["amostra_per_capita"]
+    partes = [
+        {"url": URL_UFS, "aba": "AI"},
+        {"url": URL_UFS, "aba": "AF"},  # mesma URL, outra aba: baixa uma vez so
+        {"url": URL_BRASIL, "aba": "Brasil"},
+    ]
+    return f, replace(f.serie("scr_ref2010"), verificado=True, coletor="arquivo",
+                      parametros={"padronizador": "planilha", "partes": partes, **extra})
+
+
+def test_url_arquivo_com_partes_lista_as_urls_distintas_na_ordem():
+    from nordeste.coletores.arquivo import url_arquivo, urls_arquivo
+    partes = [{"url": "https://a/1.zip"}, {"url": "https://a/2.zip"}, {"url": "https://a/1.zip"}]
+    assert urls_arquivo({"partes": partes}) == ["https://a/1.zip", "https://a/2.zip"]
+    assert url_arquivo({"partes": partes}) == "https://a/1.zip https://a/2.zip"
+    assert urls_arquivo({"url": "https://a/x.xlsx"}) == ["https://a/x.xlsx"]
+
+
+@pytest.mark.parametrize("parametros", [
+    {"partes": []}, {"partes": "x"}, {"partes": [{"aba": "AI"}]}, {"partes": [{"url": ""}]},
+    {"url": "https://a/x.zip", "partes": [{"url": "https://a/x.zip"}]}, {},
+])
+def test_url_arquivo_rejeita_partes_invalidas(parametros):
+    from nordeste.coletores.arquivo import url_arquivo
+    with pytest.raises(ErroColeta):
+        url_arquivo(parametros)
+
+
+def test_coletor_com_partes_baixa_cada_url_uma_vez_e_grava_um_pacote_por_serie(projeto, fichas):
+    from nordeste.coletores.arquivo import ler_pacote
+    f, s = _serie_com_partes(fichas)
+    sessao = SessaoPorUrl({URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"})
+    c = coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=sessao)
+    assert sessao.urls == [URL_UFS, URL_BRASIL]
+    assert c.url == f"{URL_UFS} {URL_BRASIL}" and c.origem == "rede"
+    assert c.arquivo == f"dados/brutos/amostra_per_capita/scr_ref2010/{c.sha256[:8]}.zip"
+    bruto = (projeto.raiz / c.arquivo).read_bytes()
+    assert hashlib.sha256(bruto).hexdigest() == c.sha256
+    assert ler_pacote(bruto) == {URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"}
+    assert len(ler_registro(projeto.registro_coletas)) == 1
+    # o pacote e deterministico: o mesmo conteudo da fonte gera o mesmo arquivo e nao duplica o registro
+    de_novo = coletar_serie(f, s, projeto, offline=False, hoje=date(2026, 11, 2),
+                            sessao=SessaoPorUrl({URL_UFS: b"zip das ufs", URL_BRASIL: b"zip do brasil"}))
+    assert de_novo == c and len(ler_registro(projeto.registro_coletas)) == 1
+
+
+def test_coletor_com_partes_falha_na_segunda_url_sem_arquivo_nem_registro(projeto, fichas, monkeypatch):
+    monkeypatch.setattr("nordeste.coletores.baixar", partial(baixar, esperar=lambda s: None))
+    f, s = _serie_com_partes(fichas)
+    sessao = SessaoPorUrl({URL_UFS: b"zip das ufs"}, falham=[URL_BRASIL])
+    with pytest.raises(ErroColeta, match="brasil.zip"):
+        coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=sessao)
+    assert sessao.urls[0] == URL_UFS and set(sessao.urls[1:]) == {URL_BRASIL}
+    pasta = projeto.brutos / "amostra_per_capita" / "scr_ref2010"
+    assert not pasta.exists() or not any(pasta.iterdir())
+    assert ler_registro(projeto.registro_coletas).empty
+
+
+def test_coletor_com_partes_herda_o_ca_extra_da_serie(projeto, fichas):
+    f, s = _serie_com_partes(fichas, ca_extra=f"metadados/certificados/{CERTIFICADO_RNP.name}")
+
+    class Sessao(SessaoQueLeOBundle, SessaoPorUrl):
+        pass
+
+    sessao = Sessao(conteudos={URL_UFS: b"a", URL_BRASIL: b"b"})
+    coletar_serie(f, s, projeto, offline=False, hoje=HOJE, sessao=sessao)
+    assert len(sessao.bundles) == 2
+    assert all(CERTIFICADO_RNP.read_text(encoding="ascii").strip() in b for b in sessao.bundles)
+
+
+def test_pacote_de_partes_e_deterministico_e_rejeita_conteudo_estranho():
+    from nordeste.coletores.arquivo import empacotar_partes, ler_pacote
+    a = empacotar_partes({"https://a/1.zip": b"um", "https://a/2.zip?x=1": b"dois"})
+    assert a == empacotar_partes({"https://a/1.zip": b"um", "https://a/2.zip?x=1": b"dois"})
+    assert ler_pacote(a) == {"https://a/1.zip": b"um", "https://a/2.zip?x=1": b"dois"}
+    with pytest.raises(ValueError):
+        ler_pacote(b"nao e zip")

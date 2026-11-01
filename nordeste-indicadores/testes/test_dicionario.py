@@ -20,7 +20,7 @@ FICHAS_PARTE_B = {
     "desocupacao", "desocupados", "forca_trabalho", "informalidade", "informais", "ocupados",
     "rendimento_trabalho",
 }
-FICHAS_COMPLETAS = FICHAS_PARTE_A | FICHAS_PARTE_B | {"pib_volume"}  # as que trazem os 15 territorios em todo ano
+FICHAS_COMPLETAS = FICHAS_PARTE_A | FICHAS_PARTE_B | {"pib_volume", "ideb"}  # as que trazem os 15 territorios em todo ano
 HOJE = ["--hoje", "2026-11-01"]
 DICIONARIO = Path(__file__).resolve().parent.parent / "docs" / "dicionario-verificacao.md"
 URL_DO_COLETOR = {"sidra": url_sidra, "ipeadata": url_ipeadata, "arquivo": url_arquivo}
@@ -493,3 +493,66 @@ def test_idhm_coleta_offline_registra_um_arquivo_por_serie(projeto_completo):
     assert main(raiz + ["coletar", "--offline", "--indicador", "idhm"]) == 0
     coletas = pd.read_csv(projeto_completo.registro_coletas)
     assert sorted(coletas.serie_id) == ["censo", "pnadc"] and set(coletas.origem) == {"fixture"}
+
+
+# ---------------------------------------------------------------------------
+# INEP: IDEB (planilhas de divulgacao de 2025; Brasil e regioes/UFs em arquivos distintos, partes da mesma serie)
+# ---------------------------------------------------------------------------
+
+SUBINDICADORES_IDEB = ["anos_finais", "anos_iniciais", "ensino_medio"]
+ANOS_IDEB = list(range(2005, 2026, 2))
+
+
+def test_ideb_tem_uma_serie_com_seis_partes_de_dois_arquivos(fichas):
+    f = fichas["ideb"]
+    (s,) = f.series
+    assert (s.id, s.inicio, s.fim, s.coletor, s.verificado) == ("ideb", 2005, 2025, "arquivo", True)
+    p = s.parametros
+    assert p["padronizador"] == "planilha"
+    assert p["ca_extra"] == "metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem"
+    assert url_arquivo(p) == (
+        "https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_2025.zip "
+        "https://download.inep.gov.br/ideb/resultados/divulgacao_brasil_ideb_2025.zip")
+    partes = p["partes"]
+    assert len(partes) == 6
+    for parte in partes:
+        assert parte["filtro_linhas"] == {"Rede": "Total"} and parte["linha_cabecalho"] == 7
+        assert [c["ano"] for c in parte["colunas"]] == ANOS_IDEB
+        (subindicador,) = {c["subindicador"] for c in parte["colunas"]}
+        assert {c["rede"] for c in parte["colunas"]} == {"total"} and not any("etapa" in c for c in parte["colunas"])
+        assert all(c["coluna"].startswith("IDEB\n") for c in parte["colunas"])
+    assert sorted(c["subindicador"] for parte in partes for c in parte["colunas"][:1]) == sorted(SUBINDICADORES_IDEB * 2)
+    assert (f.sentido, f.limites, f.unidade) == ("maior_melhor", {"min": 0, "max": 10}, "índice (0 a 10)")
+    assert f.comparacao.referencia == "brasil" and f.comparacao.metodo is None and f.tratamento_monetario is None
+
+
+def test_ideb_declara_os_rotulos_de_2021_com_chamada_de_nota_e_a_nota_da_pandemia(fichas):
+    f = fichas["ideb"]
+    rotulos = {(parte["aba"], parte["colunas"][8]["coluna"]) for parte in f.serie("ideb").parametros["partes"]}
+    assert rotulos == {
+        ("UF e Regiões (AI)", "IDEB\n20215\n(N x P)"), ("UF e Regiões (AF)", "IDEB\n20215\n(N x P)"),
+        ("UF e Regiões (EM)", "IDEB\n20215\n(N x P)"), ("Brasil (Anos Iniciais)", "IDEB\n20212\n(N x P)"),
+        ("Brasil (Anos Finais)", "IDEB\n20211\n(N x P)"), ("Brasil (EM)", "IDEB\n20211\n(N x P)")}
+    assert "2021" in f.observacoes and "pandemia" in f.observacoes
+
+
+def test_ideb_offline_tem_tres_etapas_15_territorios_e_so_anos_de_edicao(base):
+    from gerar_fixtures import VALORES_IDEB
+    ideb = base[base.indicador_id == "ideb"]
+    assert sorted(set(ideb.ano)) == ANOS_IDEB  # anos pares sem edicao nao tem linha
+    for (subindicador, ano), grupo in ideb.groupby(["subindicador", "ano"]):
+        assert set(grupo.territorio_id) == TERRITORIOS_COMPLETOS and len(grupo) == 15, (subindicador, ano)
+    assert sorted(set(ideb.subindicador)) == SUBINDICADORES_IDEB
+    # so a linha "Total" de cada etapa (as demais redes valem 1 na fixture)
+    assert ideb.groupby("subindicador").valor.agg(lambda v: set(v)).to_dict() == {
+        s: {v} for s, v in VALORES_IDEB.items()}
+    assert set(ideb.tipo_dado) == {"observado"} and set(ideb.rede) == {"total"} and set(ideb.etapa) == {""}
+    assert "BR_FORA_NE" not in set(ideb.territorio_id)
+
+
+def test_ideb_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline", "--indicador", "ideb"]) == 0
+    coletas = pd.read_csv(projeto_completo.registro_coletas)
+    assert coletas.serie_id.tolist() == ["ideb"] and coletas.origem.tolist() == ["fixture"]
+    assert coletas.arquivo[0].endswith(".zip")

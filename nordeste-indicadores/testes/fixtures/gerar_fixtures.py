@@ -17,6 +17,8 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
+from nordeste.coletores.arquivo import empacotar_partes
+
 PASTA = Path(__file__).resolve().parent
 PASTA_AMOSTRA = PASTA.parent / "amostra" / "fixtures"
 ANOS = range(2002, 2024)
@@ -72,15 +74,21 @@ def json_sidra(
 
 
 def xlsx_sintetico(aba: str, linhas: list[list]) -> bytes:
-    """Monta um .xlsx com uma aba; `linhas` inclui titulos, cabecalho e dados, na ordem da planilha.
+    """Monta um .xlsx com uma aba; `linhas` inclui titulos, cabecalho e dados, na ordem da planilha."""
+    return xlsx_abas({aba: linhas})
+
+
+def xlsx_abas(abas: dict[str, list[list]]) -> bytes:
+    """Monta um .xlsx com uma aba por chave, na ordem do mapa; cada valor como `linhas` de `xlsx_sintetico`.
 
     Datas fixas nas propriedades e no zip: a mesma entrada gera sempre os mesmos bytes.
     """
     pasta = Workbook()
-    planilha = pasta.active
-    planilha.title = aba
-    for linha in linhas:
-        planilha.append(linha)
+    for posicao, (aba, linhas) in enumerate(abas.items()):
+        planilha = pasta.active if posicao == 0 else pasta.create_sheet()
+        planilha.title = aba
+        for linha in linhas:
+            planilha.append(linha)
     pasta.properties.created = pasta.properties.modified = datetime(2026, 1, 1)
     gravado = io.BytesIO()
     pasta.save(gravado)
@@ -261,6 +269,76 @@ def json_idhm_combinado() -> dict:
     return {"subindicadores": {nome: resposta(valor) for nome, valor in VALORES_IDHM.items()}}
 
 
+# IDEB (INEP): pacote do coletor `arquivo` com partes, como o da coleta real: manifesto e os dois zips de divulgacao
+# (regioes e UFs; Brasil), cada um com um .xlsx de tres abas no layout do INEP (rotulos na linha 7, codigos na 10,
+# uma linha por rede com marcas de nota, abreviacoes como "R. G. do Norte" e rotulo de 2021 com chamada de nota).
+# A linha "Total" de cada etapa tem um valor constante derivado de 99999 (o IDEB vai de 0 a 10 e nao se compoe a
+# partir das UFs); as demais redes valem 1, para que um filtro errado apareca nos testes.
+URL_IDEB_UFS = "https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_2025.zip"
+URL_IDEB_BRASIL = "https://download.inep.gov.br/ideb/resultados/divulgacao_brasil_ideb_2025.zip"
+ANOS_IDEB = range(2005, 2026, 2)
+VALORES_IDEB = {"anos_iniciais": BASE / 10000, "anos_finais": BASE / 20000, "ensino_medio": BASE / 30000}
+_ETAPAS_IDEB = (  # (subindicador, titulo, aba de regioes e UFs, aba do Brasil, rotulo de 2021 no arquivo do Brasil)
+    ("anos_iniciais", "Ensino Fundamental Regular - Anos Iniciais", "UF e Regiões (AI)", "Brasil (Anos Iniciais)", "20212"),
+    ("anos_finais", "Ensino Fundamental Regular - Anos Finais", "UF e Regiões (AF)", "Brasil (Anos Finais)", "20211"),
+    ("ensino_medio", "Ensino Médio Regular", "UF e Regiões (EM)", "Brasil (EM)", "20211"),
+)
+_REGIOES_IDEB = {
+    "Norte": ["Rondônia", "Acre", "Amazonas", "Roraima", "Pará", "Amapá", "Tocantins"],
+    "Nordeste": ["Maranhão", "Piauí", "Ceará", "R. G. do Norte", "Paraíba", "Pernambuco", "Alagoas", "Sergipe", "Bahia"],
+    "Sudeste": ["Minas Gerais", "Espírito Santo", "Rio de Janeiro", "São Paulo"],
+    "Sul": ["Paraná", "Santa Catarina", "R. G. do Sul"],
+    "Centro-Oeste": ["M. G. do Sul", "Mato Grosso", "Goiás", "Distrito Federal"],
+}
+
+
+def _aba_ideb(titulo: str, rotulo_territorio: str, rotulo_2021: str, linhas_rede: list[tuple], brasil: bool) -> list[list]:
+    """Uma aba de divulgacao do IDEB; `linhas_rede` e uma lista de (territorio, rede, valor da linha)."""
+    rotulos = [f"IDEB\n{rotulo_2021 if ano == 2021 else ano}\n(N x P)" for ano in ANOS_IDEB]
+    codigos = [f"VL_OBSERVADO_{ano}" for ano in ANOS_IDEB]
+    cabecalho = [rotulo_territorio, "Rede", "Taxa de Aprovação - 2005", None, "Nota SAEB - 2005", None, *rotulos,
+                 "Metas do 1º ciclo do Ideb (2007-2021)", None]
+    subtitulos = [None, None, "Total", "1º", "Matemática", "Média", *[None] * len(rotulos), 2007, 2009]
+    linha_codigos = ["BRASIL" if brasil else None, "rede" if brasil else None, "VL_APROVACAO_2005_SI_4",
+                     "VL_APROVACAO_2005_1", "VL_NOTA_MATEMATICA_2005", "VL_NOTA_MEDIA_2005", *codigos,
+                     "VL_PROJECAO_2007", "VL_PROJECAO_2009"]
+    return [
+        [None, "Ministério da Educação"], [None, "Instituto Nacional de Estudos e Pesquisas Educacionais (sintético)"], [],
+        [titulo], ["Indicadores educacionais sintéticos, derivados de 99999; não são dado oficial."], [],
+        cabecalho, [], subtitulos, linha_codigos,
+        *([territorio, rede, 99.9, 99.9, 199.99, 9.9999, *[valor] * len(rotulos), 1, "-"]
+          for territorio, rede, valor in linhas_rede),
+        ["(1) Nota de rodapé sintética."], ["(5) Edição de 2021: ver a nota informativa do Ideb (sintético)."],
+    ]
+
+
+def _redes_ideb(territorio: str, valor: float, regiao: bool, norte: bool, publica: bool) -> list[tuple]:
+    marca = "" if regiao else (" (3)(4)" if norte else " (4)")
+    redes = [(territorio, f"Total{marca}", valor)]
+    if publica:
+        redes.append((territorio, "Pública" if regiao else "Pública (4)", 1))
+    return redes + [(territorio, "Privada (1)" if regiao else "Privada", 1), (territorio, "Estadual", 1)]
+
+
+def pacote_ideb() -> bytes:
+    abas_ufs, abas_brasil = {}, {}
+    for subindicador, titulo, aba_ufs, aba_brasil, rotulo_brasil in _ETAPAS_IDEB:
+        valor, publica = VALORES_IDEB[subindicador], subindicador != "ensino_medio"  # como no INEP: EM sem a publica
+        linhas = []
+        for regiao, ufs in _REGIOES_IDEB.items():
+            linhas += _redes_ideb(regiao, valor, True, False, publica)
+            for uf in ufs:
+                linhas += _redes_ideb(uf, valor, False, regiao == "Norte", publica)
+        abas_ufs[aba_ufs] = _aba_ideb(titulo, "Região/\nUnidade da Federação", "20215", linhas, False)
+        brasil = [("Brasil", "Total", valor), ("Brasil", "Estadual", 1), ("Brasil", "Pública", 1), ("Brasil", "Privada (1)", 1)]
+        abas_brasil[aba_brasil] = _aba_ideb(titulo, "Brasil", rotulo_brasil, brasil, True)
+    pasta_ufs, pasta_brasil = "divulgacao_regioes_ufs_ideb_2025", "divulgacao_brasil_ideb_2025"
+    return empacotar_partes({
+        URL_IDEB_UFS: zip_com_um_arquivo(f"{pasta_ufs}/{pasta_ufs}.xlsx", xlsx_abas(abas_ufs)),
+        URL_IDEB_BRASIL: zip_com_um_arquivo(f"{pasta_brasil}/{pasta_brasil}.xlsx", xlsx_abas(abas_brasil)),
+    })
+
+
 def _soma(nc, codigo, ano, multiplicador) -> str:
     return str(BASE * multiplicador)
 
@@ -370,6 +448,7 @@ GERADORES = {
     "rendimento_trabalho/pnadc.json": lambda: json_sidra(
         "Rendimento médio mensal real do trabalho (sintético)", "38", "Reais", _constante("99999"),
         anos=ANOS_PNADC),
+    "ideb/ideb.zip": pacote_ideb,
 }
 
 

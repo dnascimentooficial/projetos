@@ -252,3 +252,164 @@ def test_planilha_xls_ilegivel_e_erro_de_layout(ficha_planilha, territorios):
     ficha, serie = com_parametros(ficha_planilha, formato="xls", aba="Outra")
     with pytest.raises(ErroLayout, match="aba Outra"):
         padronizar_planilha(xls_sintetico(), ficha, serie, "c1", territorios)
+
+
+# ---------------------------------------------------------------------------
+# Series com partes: varias planilhas (arquivos ou abas) lidas uma a uma e concatenadas
+# ---------------------------------------------------------------------------
+
+URL_UFS = "https://download.inep.gov.br/ideb/ufs.zip"
+URL_BRASIL = "https://download.inep.gov.br/ideb/brasil.xlsx"
+TERRITORIO_UF = "Região/\nUnidade da Federação"
+CABECALHO_IDEB = [TERRITORIO_UF, "Rede", "IDEB\n2019", "IDEB\n20215"]  # rotulo de 2021 com chamada de nota
+
+
+def _linhas_ufs(base: float) -> list[list]:
+    return [
+        ["Ensino Fundamental (sintético)"], [], CABECALHO_IDEB,
+        ["Nordeste", "Total", base, base + 1],
+        ["Nordeste", "Pública", 1, 1],
+        ["Bahia", "Total (3)(4)", base + 2, "-"],
+        ["Bahia", "Privada (1)", 9, 9],
+        ["R. G. do Norte", "Total (4)", base + 3, base + 4],
+        ["Ceará (2)", "Total (4)", base + 5, base + 6],
+        ["(1) Nota de rodapé sem território."],
+    ]
+
+
+def _pacote_ideb() -> bytes:
+    from gerar_fixtures import xlsx_abas
+
+    from nordeste.coletores.arquivo import empacotar_partes
+    ufs = xlsx_abas({"AI": _linhas_ufs(4.0), "AF": _linhas_ufs(3.0)})
+    brasil = xlsx_abas({"Brasil": [
+        ["Brasil (sintético)"], [], ["Brasil", "Rede", "IDEB\n2019", "IDEB\n20212"],
+        ["BRASIL", "rede", "VL_OBSERVADO_2019", "VL_OBSERVADO_2021"],  # linha de codigos: o filtro descarta
+        ["Brasil", "Total", 5.5, 5.6], ["Brasil", "Privada (1)", 7, 7],
+    ]})
+    return empacotar_partes({URL_UFS: pacote_zip("ideb/ufs.xlsx", ufs), URL_BRASIL: brasil})
+
+
+def pacote_zip(nome: str, conteudo: bytes) -> bytes:
+    saida = io.BytesIO()
+    with zipfile.ZipFile(saida, "w") as z:
+        z.writestr(nome, conteudo)
+    return saida.getvalue()
+
+
+def _parte_uf(aba: str, subindicador: str, **extra) -> dict:
+    return {
+        "url": URL_UFS, "formato": "xlsx", "arquivo_no_zip": "ideb/ufs.xlsx", "aba": aba, "linha_cabecalho": 3,
+        "coluna_territorio": TERRITORIO_UF, "filtro_linhas": {"Rede": "Total"},
+        "nomes_territorio": {"R. G. do Norte": "RN"},
+        "colunas": [
+            {"coluna": "IDEB\n2019", "ano": 2019, "subindicador": subindicador, "rede": "total"},
+            {"coluna": "IDEB\n20215", "ano": 2021, "subindicador": subindicador, "rede": "total"},
+        ], **extra,
+    }
+
+
+PARTE_BRASIL = {
+    "url": URL_BRASIL, "formato": "xlsx", "aba": "Brasil", "linha_cabecalho": 3, "coluna_territorio": "Brasil",
+    "filtro_linhas": {"Rede": "total"},
+    "colunas": [
+        {"coluna": "IDEB\n2019", "ano": 2019, "subindicador": "anos_iniciais", "rede": "total"},
+        {"coluna": "IDEB\n20212", "ano": 2021, "subindicador": "anos_iniciais", "rede": "total"},
+    ],
+}
+
+
+def _com_partes(ficha, partes):
+    serie = replace(ficha.series[0], parametros={"padronizador": "planilha", "partes": partes})
+    return replace(ficha, series=(serie,)), serie
+
+
+def test_planilha_com_partes_concatena_as_partes_filtradas(ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [
+        _parte_uf("AI", "anos_iniciais"), _parte_uf("AF", "anos_finais"), PARTE_BRASIL])
+    df = padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+    assert list(df.columns) == COLUNAS_BASE
+    valores = df.set_index(["subindicador", "territorio_id", "ano"]).valor
+    assert valores.dropna().to_dict() == {
+        ("anos_iniciais", "NE", 2019): 4.0, ("anos_iniciais", "NE", 2021): 5.0,
+        ("anos_iniciais", "BA", 2019): 6.0,
+        ("anos_iniciais", "RN", 2019): 7.0, ("anos_iniciais", "RN", 2021): 8.0,
+        ("anos_iniciais", "CE", 2019): 9.0, ("anos_iniciais", "CE", 2021): 10.0,
+        ("anos_finais", "NE", 2019): 3.0, ("anos_finais", "NE", 2021): 4.0,
+        ("anos_finais", "BA", 2019): 5.0,
+        ("anos_finais", "RN", 2019): 6.0, ("anos_finais", "RN", 2021): 7.0,
+        ("anos_finais", "CE", 2019): 8.0, ("anos_finais", "CE", 2021): 9.0,
+        ("anos_iniciais", "BR", 2019): 5.5, ("anos_iniciais", "BR", 2021): 5.6,
+    }
+    bahia_2021 = df[(df.territorio_id == "BA") & (df.ano == 2021)]
+    assert set(bahia_2021.tipo_dado) == {"indisponivel"} and set(bahia_2021.nota) == {"Planilha: -"}
+    assert set(df.rede) == {"total"} and set(df.etapa) == {""} and set(df.coleta_id) == {"c1"}
+    assert len(df) == 2 * 4 * 2 + 2  # 2 abas x 4 territorios x 2 anos, mais o Brasil
+
+
+def test_filtro_de_linhas_compara_sem_acento_maiusculas_nem_marcas_de_nota(ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais", filtro_linhas={"Rede": "PUBLICA"})])
+    df = padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+    assert df.set_index(["territorio_id", "ano"]).valor.to_dict() == {("NE", 2019): 1.0, ("NE", 2021): 1.0}
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais", filtro_linhas={"Rede": "privada"})])
+    df = padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+    assert set(df.territorio_id) == {"BA"} and set(df.valor) == {9.0}  # "Privada (1)" casa com "privada"
+
+
+def test_filtro_de_linhas_com_coluna_inexistente_e_erro_de_layout(ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [
+        _parte_uf("AI", "anos_iniciais"), _parte_uf("AF", "anos_finais", filtro_linhas={"Dependência": "Total"})])
+    with pytest.raises(ErroLayout, match=r"parte 2.*aba AF.*'Dependência'"):
+        padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+
+
+def test_nomes_territorio_aponta_para_territorio_conhecido(ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [
+        _parte_uf("AI", "anos_iniciais", nomes_territorio={"R. G. do Norte": "XX"})])
+    with pytest.raises(ErroLayout, match="XX"):
+        padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+
+
+def test_sem_filtro_linhas_repetidas_do_mesmo_territorio_sao_erro_de_layout(ficha_planilha, territorios):
+    parte = {k: v for k, v in _parte_uf("AI", "anos_iniciais").items() if k != "filtro_linhas"}
+    ficha, serie = _com_partes(ficha_planilha, [parte])
+    with pytest.raises(ErroLayout, match="repetid"):
+        padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+
+
+def test_partes_que_repetem_a_mesma_linha_sao_erro_de_layout(ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais"), _parte_uf("AF", "anos_iniciais")])
+    with pytest.raises(ErroLayout, match="repetid"):
+        padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+
+
+def test_parte_cuja_url_nao_esta_no_pacote_e_pacote_ilegivel(ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais", url="https://outra/x.zip")])
+    with pytest.raises(ErroLayout, match=r"parte 1.*https://outra/x\.zip"):
+        padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais")])
+    with pytest.raises(ErroLayout, match="pacote"):
+        padronizar_planilha(b"nao e zip", ficha, serie, "c1", territorios)
+
+
+def test_partes_sem_linhas_aceitas_devolvem_base_vazia_e_partes_invalidas_sao_erro(ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais", filtro_linhas={"Rede": "Federal"})])
+    df = padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+    assert df.empty and list(df.columns) == COLUNAS_BASE
+    for partes in ([], ["https://x/1.zip"], {"url": URL_UFS}):
+        ficha, serie = _com_partes(ficha_planilha, partes)
+        with pytest.raises(ErroLayout, match="partes deve ser"):
+            padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+
+
+def test_padronizar_despacha_series_com_partes(projeto, ficha_planilha, territorios):
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais"), PARTE_BRASIL])
+    relativo = "dados/brutos/x/y/abc.zip"
+    (projeto.raiz / relativo).parent.mkdir(parents=True)
+    (projeto.raiz / relativo).write_bytes(_pacote_ideb())
+    coleta = Coleta(
+        coleta_id="c9", indicador_id="pib_nominal", serie_id=serie.id, url="x", data_coleta="2026-11-01",
+        sha256="0" * 64, origem="fixture", arquivo=relativo,
+    )
+    df = padronizar(ficha, serie, coleta, projeto, territorios)
+    assert set(df.territorio_id) == {"BR", "NE", "BA", "RN", "CE"} and set(df.coleta_id) == {"c9"}
