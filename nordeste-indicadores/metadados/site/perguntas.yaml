@@ -1,0 +1,198 @@
+# As 6 perguntas da pagina inicial: frase feita, lide, graficos, fecho com a condicao que o sustenta, fonte.
+# Marcadores: {destaque.campo[:formato]} (ver destaques.yaml e src/nordeste/site/conteudo.py).
+# Fecho cuja condicao falha nao e publicado. A condicao e uma unica comparacao; o que ela nao cobre
+# fica registrado no comentario de cada fecho.
+
+- id: renda-per-capita
+  rotulo: Riqueza
+  frase_feita: "“O Nordeste não sai do lugar.” Será?"
+  explicacao: "Quanto o Nordeste tem para cada 100 reais por pessoa do resto do país. A linha tracejada em 100% seria a igualdade."
+  lide: "O PIB per capita é a riqueza produzida dividida pela população. Em {pib_pc_razao.ano_ultimo}, o do Nordeste equivalia a {pib_pc_razao.ultimo:1%} do registrado no Brasil fora do Nordeste. Em {pib_pc_razao.ano_primeiro}, eram {pib_pc_razao.primeiro:1%}. Diferença no período: {pib_pc_razao.dif:+1} pontos percentuais."
+  graficos:
+    - id: g_pibpc
+      descricao: "PIB per capita do Nordeste como % do Brasil fora do Nordeste"
+      casas: 1
+      sufixo: "%"
+      min0: true
+      ref100: true
+      linhas:
+        - {rotulo: "Nordeste ÷ Brasil fora do NE", rotulo_curto: NE, destaque: true, tipo: razao, indicador: pib_per_capita, territorio: NE, referencia: BR_FORA_NE}
+  fecho:
+    texto: "saiu do lugar, mas devagar. A distância diminuiu e continua grande."
+    # Cobre "a distância diminuiu"; nao cobre "continua grande" nem "devagar".
+    condicao: "pib_pc_razao.ultimo > pib_pc_razao.primeiro"
+  fonte:
+    - "Fonte: IBGE, Contas Regionais (referência 2010) e estimativas de população. Per capita e razão calculados pelo projeto."
+    - "2007 fica sem valor: não há população publicada para o ano que permita conferir o cálculo. Valores correntes; a razão dispensa deflator."
+
+- id: economia
+  rotulo: Economia
+  frase_feita: "“A economia daqui não cresce.”"
+  lide: "O índice de volume mede quanto a economia cresceu sem o efeito da inflação. De {vol_ne.ano_primeiro} a {vol_ne.ano_ultimo}, o índice de volume do PIB do Nordeste foi de {vol_ne.primeiro:0} para {vol_ne.ultimo:1}; o do Brasil, para {vol_br.ultimo:1}. A participação do Nordeste no PIB nacional passou de {part_ne.primeiro:1%} para {part_ne.ultimo:1%}."
+  graficos:
+    - id: g_vol
+      titulo: "Volume do PIB"
+      subtitulo: "Índice, primeiro ano = 100, sem efeito de preços."
+      descricao: "índice de volume do PIB, Nordeste e Brasil"
+      casas: 1
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: pib_volume, territorio: NE}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: pib_volume, territorio: BR}
+    - id: g_part
+      titulo: "Participação no PIB do Brasil"
+      subtitulo: "PIB do Nordeste como % do PIB do Brasil, a preços correntes."
+      descricao: "participação do Nordeste no PIB do Brasil"
+      casas: 2
+      sufixo: "%"
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: pib_participacao, territorio: NE}
+  fecho:
+    texto: "cresce, e cresceu um pouco mais que a média do país. O pedaço do Nordeste no bolo nacional mudou pouco."
+    # Cobre "cresceu um pouco mais que a média do país" (os dois indices partem de 100); nao cobre "mudou pouco".
+    condicao: "vol_ne.ultimo > vol_br.ultimo"
+  fonte:
+    - "Fonte: IBGE, Contas Regionais (referência 2010)."
+
+- id: escola
+  rotulo: Educação
+  frase_feita: "“A educação no Nordeste não melhorou.”"
+  lide: "O IDEB é a nota das escolas, de 0 a 10, e junta o que os alunos aprendem com quantos passam de ano. Nos anos iniciais do fundamental (1º ao 5º ano), o Nordeste foi de {ideb_ai_ne.primeiro:1} em {ideb_ai_ne.ano_primeiro} para {ideb_ai_ne.ultimo:1} em {ideb_ai_ne.ano_ultimo}. O Brasil marcou {ideb_ai_br.ultimo:1}."
+  graficos:
+    - id: g_ideb_ai
+      titulo: "IDEB, anos iniciais"
+      descricao: "IDEB dos anos iniciais, Nordeste e Brasil"
+      casas: 1
+      min0: true
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: ideb, territorio: NE, sub: anos_iniciais, rede: total}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: ideb, territorio: BR, sub: anos_iniciais, rede: total}
+    - id: g_ideb_af
+      titulo: "IDEB, anos finais"
+      descricao: "IDEB dos anos finais, Nordeste e Brasil"
+      casas: 1
+      min0: true
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: ideb, territorio: NE, sub: anos_finais, rede: total}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: ideb, territorio: BR, sub: anos_finais, rede: total}
+    - id: g_ideb_em
+      titulo: "IDEB, ensino médio"
+      descricao: "IDEB do ensino médio, Nordeste e Brasil"
+      casas: 1
+      min0: true
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: ideb, territorio: NE, sub: ensino_medio, rede: total}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: ideb, territorio: BR, sub: ensino_medio, rede: total}
+    - id: g_aband
+      titulo: "Abandono no ensino médio"
+      subtitulo: "% dos matriculados, todas as redes."
+      descricao: "abandono no ensino médio, Nordeste e Brasil"
+      casas: 1
+      sufixo: "%"
+      min0: true
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: abandono_em, territorio: NE, rede: total}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: abandono_em, territorio: BR, rede: total}
+  fecho:
+    texto: "melhorou. A nota dos anos iniciais mais que dobrou e ficou perto da média do Brasil. Nos anos finais e no ensino médio a melhora foi menor."
+    # "Mais que dobrou" (ultimo > 2 x primeiro) e dif > primeiro: cobre so essa parte; nao cobre
+    # "perto da media do Brasil" nem "a melhora foi menor" nos anos finais e no ensino medio.
+    condicao: "ideb_ai_ne.dif > ideb_ai_ne.primeiro"
+  alerta: "Um asterisco honesto: o abandono no ensino médio despencou entre 2022 e 2023 e entre 2024 e 2025. O número está no INEP, mas o motivo não está explicado. Pode ser mudança na forma de registrar ou na regra de aprovação. A queda de 2020 coincide com a aprovação automática na pandemia. Por isso eu não uso esse dado como prova de nada."
+  fonte:
+    - "Fonte: INEP, IDEB (bienal, de 0 a 10) e Indicadores de Fluxo Escolar."
+
+- id: trabalho
+  rotulo: Trabalho e renda
+  frase_feita: "“Aqui não tem emprego e ninguém ganha nada.”"
+  lide: "Em {desoc_ne.ano_ultimo}, a taxa de desocupação (desemprego) no Nordeste foi de {desoc_ne.ultimo:1%}, contra {desoc_br.ultimo:1%} no Brasil. A renda domiciliar por pessoa da região equivalia a {renda_razao.ultimo:1%} da do Brasil fora do Nordeste em {renda_razao.ano_ultimo} ({renda_razao.primeiro:1%} em {renda_razao.ano_primeiro})."
+  graficos:
+    - id: g_desoc
+      titulo: "Taxa de desocupação"
+      subtitulo: "% da força de trabalho. PNAD até 2014 e PNAD Contínua desde 2012 são pesquisas diferentes: as linhas não se emendam."
+      descricao: "taxa de desocupação, Nordeste e Brasil"
+      casas: 1
+      sufixo: "%"
+      min0: true
+      quebras:
+        - {ano: 2012, rotulo: "PNAD → PNAD Contínua"}
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: desocupacao, territorio: NE}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: desocupacao, territorio: BR}
+    - id: g_renda
+      titulo: "Renda domiciliar por pessoa"
+      subtitulo: "Nordeste como % do Brasil fora do Nordeste. 100% seria a igualdade."
+      descricao: "renda domiciliar por pessoa do Nordeste como % do Brasil fora do Nordeste"
+      casas: 1
+      sufixo: "%"
+      min0: true
+      ref100: true
+      linhas:
+        - {rotulo: "Nordeste ÷ Brasil fora do NE", rotulo_curto: NE, destaque: true, tipo: razao, indicador: renda_dom_pc, territorio: NE, referencia: BR_FORA_NE}
+  fecho:
+    texto: "esse aqui tem um fundo de verdade. O desemprego caiu, mas segue mais alto que no resto do país. A renda por pessoa subiu e ainda está longe da do resto do país."
+    # Cobre "segue mais alto" (o fundo de verdade); nao cobre "o desemprego caiu" nem a renda
+    # ("subiu" e "longe"). O texto diz "resto do país" e o destaque compara com o Brasil inteiro.
+    condicao: "desoc_ne.ultimo > desoc_br.ultimo"
+  fonte:
+    - "Fonte: IBGE, PNAD (anual, até 2014) e PNAD Contínua (desde 2012). A PNAD não foi a campo em 2010, ano do Censo."
+
+- id: idhm
+  rotulo: Desenvolvimento humano
+  frase_feita: "“Desenvolvimento humano? Continua lá embaixo.”"
+  explicacao: "Para o Nordeste como região, a série começa em 2012."
+  lide: "O IDHM junta renda, educação e expectativa de vida numa nota de 0 a 1. O do Nordeste foi de {idhm_ne.primeiro:3} em {idhm_ne.ano_primeiro} para {idhm_ne.ultimo:3} em {idhm_ne.ano_ultimo}. O do Brasil chegou a {idhm_br.ultimo:3}."
+  graficos:
+    - id: g_idhm
+      descricao: "IDHM, Nordeste e Brasil"
+      casas: 3
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: idhm, territorio: NE, sub: idhm}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: idhm, territorio: BR, sub: idhm}
+  fecho:
+    texto: "subiu, com um tropeço em 2020 e 2021, e a distância para o Brasil encurtou. Ainda não fechou."
+    # Cobre "a distancia para o Brasil encurtou" (exato se as duas series cobrem a mesma janela de anos);
+    # nao cobre "subiu", o tropeco de 2020 e 2021 nem "ainda nao fechou".
+    condicao: "idhm_ne.dif > idhm_br.dif"
+  fonte:
+    - "Fonte: Atlas do Desenvolvimento Humano no Brasil (PNUD, Ipea e Fundação João Pinheiro). O IDHM do Nordeste em 2000 e 2010 não é publicado."
+
+- id: pobreza
+  rotulo: Pobreza
+  frase_feita: "“Os pobres estão do mesmo jeito.”"
+  lide: "A linha de pobreza aqui é de US$ 8,30 por dia por pessoa, a das tabelas que o IBGE publica para os indicadores da ONU. Em {pob_ne.ano_ultimo}, {pob_ne.ultimo:1%} da população do Nordeste vivia abaixo dela, contra {pob_br.ultimo:1%} no Brasil. Em {pob_ne.ano_primeiro}, eram {pob_ne.primeiro:1%} na região. Na extrema pobreza (US$ 3,00 por dia), a região tinha {ext_ne.ultimo:1%}."
+  graficos:
+    - id: g_pob
+      titulo: "Pobreza"
+      subtitulo: "% da população abaixo de US$ 8,30 por dia (paridade de poder de compra de 2021)."
+      descricao: "pobreza, Nordeste e Brasil"
+      casas: 1
+      sufixo: "%"
+      min0: true
+      quebras:
+        - {ano: 2020, rotulo: "5ª entrevista"}
+        - {ano: 2023, rotulo: "1ª entrevista"}
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: pobreza, territorio: NE}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: pobreza, territorio: BR}
+    - id: g_ext
+      titulo: "Extrema pobreza"
+      subtitulo: "% da população abaixo de US$ 3,00 por dia (paridade de poder de compra de 2021)."
+      descricao: "extrema pobreza, Nordeste e Brasil"
+      casas: 1
+      sufixo: "%"
+      min0: true
+      quebras:
+        - {ano: 2020, rotulo: "5ª entrevista"}
+        - {ano: 2023, rotulo: "1ª entrevista"}
+      linhas:
+        - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: extrema_pobreza, territorio: NE}
+        - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: extrema_pobreza, territorio: BR}
+  fecho:
+    texto: "não estão. A proporção de pobres caiu, e a de extremamente pobres caiu mais. A queda não foi em linha reta: em 2021, no auge da pandemia, a pobreza voltou a subir. E o Nordeste ainda tem bem mais pobres, em proporção, que o Brasil."
+    # Cobre "a proporcao de pobres caiu"; nao cobre "extremamente pobres cairam mais", a alta de 2021
+    # nem "bem mais pobres que o Brasil".
+    condicao: "pob_ne.ultimo < pob_ne.primeiro"
+  fonte:
+    - "Fonte: IBGE, PNAD Contínua (SIDRA, tabelas 5877 e 5817)."
+    - "Linha de pobreza declarada segundo o Ipeadata; não conferida em publicação do IBGE, que recusa acesso automatizado."
+    - "2012 a 2019 e 2023 a 2024 vêm das primeiras entrevistas da pesquisa; 2020 a 2022, das quintas. A comparação entre os dois blocos não foi verificada. Não há série regional anterior a 2012 nesta base."

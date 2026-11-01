@@ -1,0 +1,31 @@
+# Numeros citados nos textos: o primeiro e o ultimo ano com valor de cada um, tirados da base publicada.
+# Os filtros sao os do painel aprovado. Um destaque sem dado fica fora do calculo (a condicao que o cita vira falsa).
+pib_pc_razao: {tipo: razao, indicador: pib_per_capita, territorio: NE, referencia: BR_FORA_NE}
+vol_ne: {tipo: serie, indicador: pib_volume, territorio: NE}
+vol_br: {tipo: serie, indicador: pib_volume, territorio: BR}
+part_ne: {tipo: serie, indicador: pib_participacao, territorio: NE}
+ideb_ai_ne: {tipo: serie, indicador: ideb, territorio: NE, sub: anos_iniciais, rede: total}
+ideb_ai_br: {tipo: serie, indicador: ideb, territorio: BR, sub: anos_iniciais, rede: total}
+ideb_af_ne: {tipo: serie, indicador: ideb, territorio: NE, sub: anos_finais, rede: total}
+ideb_af_br: {tipo: serie, indicador: ideb, territorio: BR, sub: anos_finais, rede: total}
+ideb_em_ne: {tipo: serie, indicador: ideb, territorio: NE, sub: ensino_medio, rede: total}
+ideb_em_br: {tipo: serie, indicador: ideb, territorio: BR, sub: ensino_medio, rede: total}
+desoc_ne: {tipo: serie, indicador: desocupacao, territorio: NE, serie: pnadc}
+desoc_br: {tipo: serie, indicador: desocupacao, territorio: BR, serie: pnadc}
+renda_razao: {tipo: razao, indicador: renda_dom_pc, territorio: NE, referencia: BR_FORA_NE}
+renda_ne: {tipo: serie, indicador: renda_dom_pc, territorio: NE}
+renda_ref: {tipo: serie, indicador: renda_dom_pc, territorio: BR_FORA_NE}
+idhm_ne: {tipo: serie, indicador: idhm, territorio: NE, sub: idhm, serie: pnadc}
+idhm_br: {tipo: serie, indicador: idhm, territorio: BR, sub: idhm, serie: pnadc}
+pob_ne: {tipo: serie, indicador: pobreza, territorio: NE}
+pob_br: {tipo: serie, indicador: pobreza, territorio: BR}
+ext_ne: {tipo: serie, indicador: extrema_pobreza, territorio: NE}
+ext_br: {tipo: serie, indicador: extrema_pobreza, territorio: BR}
+superior_ne: {tipo: serie, indicador: superior, territorio: NE, sub: matriculas, rede: total, serie: censup}
+creche_ne: {tipo: serie, indicador: matriculas_basica, territorio: NE, etapa: creche, rede: total, serie: educacenso}
+rend_ne: {tipo: serie, indicador: rendimento_trabalho, territorio: NE}
+rend_br: {tipo: serie, indicador: rendimento_trabalho, territorio: BR}
+informal_ne: {tipo: serie, indicador: informalidade, territorio: NE}
+informal_ref: {tipo: serie, indicador: informalidade, territorio: BR_FORA_NE}
+gini_ne: {tipo: serie, indicador: gini, territorio: NE, serie: pnadc}
+gini_br: {tipo: serie, indicador: gini, territorio: BR, serie: pnadc}

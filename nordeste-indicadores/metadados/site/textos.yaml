@@ -1,0 +1,36 @@
+# Textos fixos do site, em primeira pessoa. Marcadores {destaque.campo[:formato]} como em perguntas.yaml.
+# O recorte de anos do selo ("2000 a ..."), a data da base e o sha256 saem da base publicada, no gerador.
+
+abertura:
+  eyebrow: "Nordeste em Números"
+  titulo:
+    - "O Nordeste está"
+    - "do mesmo jeito?"
+  destaque: "Mudou. E ainda falta chão."
+  intro:
+    - "Volta e meia eu escuto que o Nordeste está do mesmo jeito. Que nada mudou. Fui atrás dos números oficiais dos últimos 25 anos para conferir."
+    - "Em {pib_pc_razao.ano_ultimo}, a riqueza por pessoa do Nordeste era {pib_pc_razao.ultimo:1%} da do resto do país. Em {pib_pc_razao.ano_primeiro}, era {pib_pc_razao.primeiro:1%}. A pobreza caiu de {pob_ne.primeiro:1%} para {pob_ne.ultimo:1%} da população entre {pob_ne.ano_primeiro} e {pob_ne.ano_ultimo}, mas segue acima da média do Brasil, de {pob_br.ultimo:1%}."
+  nota: "Tudo aqui vem do IBGE, do INEP, do Ipea e do Atlas Brasil. Nada é estimado por mim. As faixas cinza nos gráficos mostram quem governava o país em cada período, só para situar o tempo. Nenhum número aqui diz que um governo causou um resultado."
+
+por_que:
+  titulo: "Por que eu fiz este painel"
+  paragrafos:
+    - "Porque cansei de ouvir que o Nordeste está do mesmo jeito, dito com toda a certeza do mundo e sem nenhum número na mão. Juntei os dados oficiais de 2000 para cá, comparei o Nordeste com o Brasil e com o resto do país, e deixei tudo aberto para quem quiser conferir."
+    - "Não é peça de torcida. Onde melhorou, eu mostro. Onde a distância continua grande, eu mostro também."
+
+como_ler:
+  titulo: "Como ler"
+  itens:
+    - "As faixas cinza mostram quem governava o país. Servem para situar o tempo, não para dar crédito nem culpa a ninguém."
+    - "Quando a pesquisa muda (PNAD para PNAD Contínua, por exemplo), a linha do gráfico quebra. Pesquisas diferentes não se emendam."
+    - "Ano sem dado fica em branco. Eu não invento ponto para ligar a linha."
+
+o_que_falta:
+  titulo: "O que ainda falta, e por quê"
+  itens:
+    - "PIB de 2024: as Contas Regionais 2024 ainda não tinham sido divulgadas pelo IBGE na data desta publicação."
+    - "PIB per capita de 2007: não há valor publicado para conferir o cálculo."
+    - "Renda e pobreza antes de 2012: a série da PNAD antiga ainda não foi incorporada."
+    - "Matrículas de 2003 e 2004: existem, mas o INEP só publicou em PDF. Em 2026."
+    - "IDHM do Nordeste em 2000 e 2010: não publicado para a região."
+    - "Linha de pobreza: confirmada pelos metadados do Ipeadata, não por publicação do IBGE."

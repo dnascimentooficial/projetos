@@ -1,0 +1,231 @@
+# Os 17 cards para compartilhar: uma frase feita, o numero de antes e de depois, a frase de contexto,
+# o fecho e a condicao que o sustenta. `de` e `para` sao marcadores; `grafico` e o id de um grafico de
+# perguntas.yaml ou, onde nenhuma pergunta o desenha, o grafico inteiro. `fonte` e so o nome da fonte:
+# o card acrescenta a data da base e o endereco. A condicao e uma unica comparacao; o que ela nao cobre
+# fica registrado no comentario de cada card. Card cuja condicao falha nao e publicado.
+
+- id: pobreza
+  rotulo: Pobreza
+  frase_feita: "“Os pobres estão do mesmo jeito.”"
+  de: "{pob_ne.primeiro:1%}"
+  para: "{pob_ne.ultimo:1%}"
+  frase: "da população do Nordeste vivia abaixo da linha de pobreza, de {pob_ne.ano_primeiro} a {pob_ne.ano_ultimo}. No Brasil, hoje, {pob_br.ultimo:1%}."
+  grafico: g_pob
+  fecho: "Caiu. E ainda é mais que no Brasil."
+  condicao: "pob_ne.ultimo < pob_ne.primeiro"  # cobre "caiu"; nao cobre "ainda e mais que no Brasil"
+  fonte: "IBGE, PNAD Contínua"
+
+- id: extrema
+  rotulo: Extrema pobreza
+  frase_feita: "“A miséria do Nordeste não muda.”"
+  de: "{ext_ne.primeiro:1%}"
+  para: "{ext_ne.ultimo:1%}"
+  frase: "da população vivia com menos de US$ 3,00 por dia, de {ext_ne.ano_primeiro} a {ext_ne.ano_ultimo}. No Brasil, hoje, {ext_br.ultimo:1%}."
+  grafico: g_ext
+  fecho: "Caiu pela metade."
+  condicao: "ext_ne.ultimo < ext_ne.primeiro"  # "pela metade" (ultimo <= primeiro / 2) nao cabe na gramatica: cobre so "caiu"
+  fonte: "IBGE, PNAD Contínua"
+
+- id: gini
+  rotulo: Desigualdade
+  frase_feita: "“O Nordeste é o mais desigual do país.”"
+  de: "{gini_ne.primeiro:3}"
+  para: "{gini_ne.ultimo:3}"
+  frase: "é o índice de Gini do Nordeste, de {gini_ne.ano_primeiro} a {gini_ne.ano_ultimo}. Vai de 0 a 1: quanto maior, mais desigual. O do Brasil está em {gini_br.ultimo:3}."
+  grafico:
+    id: g_gini
+    descricao: "Índice de Gini, Nordeste e Brasil"
+    casas: 3
+    linhas:
+      - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: gini, territorio: NE, serie: pnadc}
+      - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: gini, territorio: BR, serie: pnadc}
+  fecho: "Hoje é menos desigual que a média do Brasil."
+  condicao: "gini_ne.ultimo < gini_br.ultimo"  # cobre o fecho inteiro
+  fonte: "IBGE, PNAD Contínua"
+
+- id: ideb
+  rotulo: "Educação, anos iniciais"
+  frase_feita: "“A educação no Nordeste não melhorou.”"
+  de: "{ideb_ai_ne.primeiro:1}"
+  para: "{ideb_ai_ne.ultimo:1}"
+  frase: "é a nota do IDEB do 1º ao 5º ano no Nordeste, de {ideb_ai_ne.ano_primeiro} a {ideb_ai_ne.ano_ultimo}, numa escala de 0 a 10. O Brasil está em {ideb_ai_br.ultimo:1}."
+  grafico: g_ideb_ai
+  fecho: "Mais que dobrou."
+  condicao: "ideb_ai_ne.dif > ideb_ai_ne.primeiro"  # ultimo > 2 x primeiro: cobre o fecho inteiro
+  fonte: "INEP, IDEB"
+
+- id: ideb_af
+  rotulo: "Educação, anos finais"
+  frase_feita: "“Depois do 5º ano, a escola desanda.”"
+  de: "{ideb_af_ne.primeiro:1}"
+  para: "{ideb_af_ne.ultimo:1}"
+  frase: "é a nota do IDEB do 6º ao 9º ano no Nordeste, de {ideb_af_ne.ano_primeiro} a {ideb_af_ne.ano_ultimo}. O Brasil está em {ideb_af_br.ultimo:1}."
+  grafico: g_ideb_af
+  fecho: "Melhorou, e já encosta no Brasil."
+  condicao: "ideb_af_ne.ultimo > ideb_af_ne.primeiro"  # cobre "melhorou"; nao cobre "encosta no Brasil"
+  fonte: "INEP, IDEB"
+
+- id: ideb_em
+  rotulo: "Ensino médio"
+  frase_feita: "“O ensino médio daqui é perdido.”"
+  de: "{ideb_em_ne.primeiro:1}"
+  para: "{ideb_em_ne.ultimo:1}"
+  frase: "é a nota do IDEB do ensino médio no Nordeste, de {ideb_em_ne.ano_primeiro} a {ideb_em_ne.ano_ultimo}. O Brasil está em {ideb_em_br.ultimo:1}."
+  grafico: g_ideb_em
+  fecho: "Melhorou pouco. E o Brasil inteiro vai mal aqui."
+  condicao: "ideb_em_ne.ultimo > ideb_em_ne.primeiro"  # cobre "melhorou"; nao cobre "pouco" nem "o Brasil vai mal"
+  fonte: "INEP, IDEB"
+
+- id: superior
+  rotulo: "Ensino superior"
+  frase_feita: "“Nordestino não chega na faculdade.”"
+  longo: true
+  de: "{superior_ne.primeiro:auto}"
+  para: "{superior_ne.ultimo:auto}"
+  frase: "de matrículas na graduação no Nordeste, de {superior_ne.ano_primeiro} a {superior_ne.ano_ultimo}."
+  grafico:
+    id: g_superior
+    descricao: "Matrículas no ensino superior, Nordeste"
+    casas: 0
+    linhas:
+      - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: superior, territorio: NE, sub: matriculas, rede: total, serie: censup}
+  fecho: "Quase dobrou. A população cresceu bem menos que isso."
+  condicao: "superior_ne.ultimo > superior_ne.primeiro"  # cobre "cresceu"; nao cobre "quase dobrou" nem a populacao
+  fonte: "INEP, Censo da Educação Superior"
+
+- id: creche
+  rotulo: Creche
+  frase_feita: "“Creche no Nordeste é luxo.”"
+  longo: true
+  de: "{creche_ne.primeiro:auto}"
+  para: "{creche_ne.ultimo:auto}"
+  frase: "de crianças matriculadas em creche no Nordeste, de {creche_ne.ano_primeiro} a {creche_ne.ano_ultimo}."
+  grafico:
+    id: g_creche
+    descricao: "Matrículas em creche, Nordeste"
+    casas: 0
+    linhas:
+      - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: matriculas_basica, territorio: NE, etapa: creche, rede: total, serie: educacenso}
+  fecho: "Mais que dobrou."
+  condicao: "creche_ne.dif > creche_ne.primeiro"  # ultimo > 2 x primeiro: cobre o fecho inteiro
+  fonte: "INEP, Censo Escolar"
+
+- id: pibpc
+  rotulo: "Riqueza por pessoa"
+  frase_feita: "“O Nordeste não sai do lugar.”"
+  de: "{pib_pc_razao.primeiro:1%}"
+  para: "{pib_pc_razao.ultimo:1%}"
+  frase: "é quanto o Nordeste tem de riqueza por pessoa para cada 100% do resto do país, de {pib_pc_razao.ano_primeiro} a {pib_pc_razao.ano_ultimo}."
+  grafico: g_pibpc
+  fecho: "Saiu do lugar. Devagar."
+  condicao: "pib_pc_razao.ultimo > pib_pc_razao.primeiro"  # cobre "saiu do lugar"; nao cobre "devagar"
+  fonte: "IBGE, Contas Regionais"
+
+- id: vol
+  rotulo: Crescimento
+  frase_feita: "“A economia daqui não cresce.”"
+  de: "{vol_ne.primeiro:0}"
+  para: "{vol_ne.ultimo:0}"
+  frase: "é o tamanho da economia do Nordeste em {vol_ne.ano_ultimo}, se {vol_ne.ano_primeiro} valia 100, já sem inflação. O Brasil chegou a {vol_br.ultimo:0}."
+  grafico: g_vol
+  fecho: "Cresceu, e cresceu mais que o país."
+  condicao: "vol_ne.ultimo > vol_br.ultimo"  # cobre "mais que o pais"; "cresceu" vale por construcao (indice parte de 100)
+  fonte: "IBGE, Contas Regionais"
+
+- id: part
+  rotulo: "Peso na economia"
+  frase_feita: "“O Nordeste não pesa na economia do país.”"
+  de: "{part_ne.primeiro:1%}"
+  para: "{part_ne.ultimo:1%}"
+  frase: "é a fatia do Nordeste no PIB do Brasil, de {part_ne.ano_primeiro} a {part_ne.ano_ultimo}. A região tem cerca de um quarto da população."
+  grafico: g_part
+  fecho: "Pesa pouco e mudou pouco. Esse tem fundo de verdade."
+  condicao: "part_ne.ultimo < 25"  # "pesa pouco" = menos que o quarto da populacao da frase; nao cobre "mudou pouco"
+  fonte: "IBGE, Contas Regionais"
+
+- id: renda
+  rotulo: "Renda comparada"
+  frase_feita: "“Nordestino ganha a mesma miséria de sempre.”"
+  de: "{renda_razao.primeiro:1%}"
+  para: "{renda_razao.ultimo:1%}"
+  frase: "é a renda por pessoa no Nordeste para cada 100% do resto do país, de {renda_razao.ano_primeiro} a {renda_razao.ano_ultimo}."
+  grafico: g_renda
+  fecho: "Subiu. E ainda falta muito."
+  condicao: "renda_razao.ultimo > renda_razao.primeiro"  # cobre "subiu"; nao cobre "ainda falta muito"
+  fonte: "IBGE, PNAD Contínua"
+
+- id: renda_rs
+  rotulo: "Renda em reais"
+  frase_feita: "“O dinheiro aqui não rende.”"
+  longo: true
+  de: "R$ {renda_ne.primeiro:0}"
+  para: "R$ {renda_ne.ultimo:0}"
+  frase: "era a renda por pessoa, por mês, no Nordeste em {renda_ne.ano_primeiro} e em {renda_ne.ano_ultimo}, já descontada a inflação. No resto do país, hoje, R$ {renda_ref.ultimo:0}."
+  grafico:
+    id: g_renda_rs
+    descricao: "Renda domiciliar por pessoa, em reais, Nordeste e Brasil fora do Nordeste"
+    casas: 0
+    linhas:
+      - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: renda_dom_pc, territorio: NE}
+      - {rotulo: "Brasil fora do NE", rotulo_curto: "Brasil fora do NE", destaque: false, tipo: serie, indicador: renda_dom_pc, territorio: BR_FORA_NE}
+  fecho: "Subiu mais de um terço."
+  condicao: "renda_ne.ultimo > renda_ne.primeiro"  # "mais de um terco" (3 x dif > primeiro) nao cabe na gramatica: cobre so "subiu"
+  fonte: "IBGE, PNAD Contínua"
+
+- id: rend
+  rotulo: Trabalho
+  frase_feita: "“Trabalhar aqui não paga.”"
+  longo: true
+  de: "R$ {rend_ne.primeiro:0}"
+  para: "R$ {rend_ne.ultimo:0}"
+  frase: "era o rendimento médio de quem trabalha no Nordeste, por mês, de {rend_ne.ano_primeiro} a {rend_ne.ano_ultimo}, em valores de hoje. No Brasil, R$ {rend_br.ultimo:0}."
+  grafico:
+    id: g_rend
+    descricao: "Rendimento do trabalho, em reais, Nordeste e Brasil"
+    casas: 0
+    linhas:
+      - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: rendimento_trabalho, territorio: NE}
+      - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: rendimento_trabalho, territorio: BR}
+  fecho: "Subiu, e ainda é cerca de dois terços da média do país."
+  condicao: "rend_ne.ultimo > rend_ne.primeiro"  # cobre "subiu"; nao cobre "cerca de dois tercos da media do pais"
+  fonte: "IBGE, PNAD Contínua"
+
+- id: desoc
+  rotulo: Desemprego
+  frase_feita: "“Aqui não tem emprego.”"
+  de: "{desoc_ne.primeiro:1%}"
+  para: "{desoc_ne.ultimo:1%}"
+  frase: "foi a taxa de desemprego no Nordeste, de {desoc_ne.ano_primeiro} a {desoc_ne.ano_ultimo}. No Brasil, {desoc_br.ultimo:1%}."
+  grafico: g_desoc
+  fecho: "Caiu. Mas segue acima do Brasil."
+  condicao: "desoc_ne.ultimo < desoc_ne.primeiro"  # cobre "caiu"; nao cobre "segue acima do Brasil"
+  fonte: "IBGE, PNAD Contínua"
+
+- id: informal
+  rotulo: Informalidade
+  frase_feita: "“Aqui todo mundo é informal.”"
+  de: "{informal_ne.primeiro:1%}"
+  para: "{informal_ne.ultimo:1%}"
+  frase: "dos trabalhadores do Nordeste estavam na informalidade, de {informal_ne.ano_primeiro} a {informal_ne.ano_ultimo}. No resto do país, {informal_ref.ultimo:1%}."
+  grafico:
+    id: g_informal
+    descricao: "Informalidade, Nordeste e Brasil fora do Nordeste"
+    casas: 1
+    sufixo: "%"
+    linhas:
+      - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: informalidade, territorio: NE}
+      - {rotulo: "Brasil fora do NE", rotulo_curto: "Brasil fora do NE", destaque: false, tipo: serie, indicador: informalidade, territorio: BR_FORA_NE}
+  fecho: "Metade é. Esse dói."
+  condicao: "informal_ne.ultimo > informal_ref.ultimo"  # cobre "esse doi" (acima do resto do pais); nao cobre "metade"
+  fonte: "IBGE, PNAD Contínua"
+
+- id: idhm
+  rotulo: "Desenvolvimento humano"
+  frase_feita: "“Desenvolvimento humano? Continua lá embaixo.”"
+  de: "{idhm_ne.primeiro:3}"
+  para: "{idhm_ne.ultimo:3}"
+  frase: "é o IDHM do Nordeste, de 0 a 1, de {idhm_ne.ano_primeiro} a {idhm_ne.ano_ultimo}. O do Brasil está em {idhm_br.ultimo:3}."
+  grafico: g_idhm
+  fecho: "Subiu, com um tropeço na pandemia. A distância encurtou."
+  condicao: "idhm_ne.dif > idhm_br.dif"  # a distancia para o Brasil encurtou (mesma janela de anos); nao cobre "subiu" nem o tropeco
+  fonte: "Atlas Brasil (PNUD, Ipea, FJP)"
