@@ -1,6 +1,6 @@
 # Conclusão da base histórica — Design
 
-**Complemento do subprojeto 1** · Data: 2026-11-01 · Status: aprovado em conversa, aguardando revisão do texto
+**Complemento do subprojeto 1** · Data: 2026-11-01 · Status: executado; C6 fechada de forma enxuta; primeira publicação real em 2026-11-01
 
 ## 1. Objetivo
 

@@ -9,8 +9,9 @@ Reducao: quando todas as partes de uma URL declaram `arquivo_no_zip`, o pacote n
 zip reduzido com so os membros declarados, com os bytes comprimidos copiados do original (nada e recomprimido).
 Um membro .xlsx lido so por partes com `aba` (texto) e `formato: xlsx` e ainda podado: ficam as abas declaradas e
 as partes do pacote OOXML que elas alcancam (estilos, textos compartilhados, tema), tambem copiadas sem
-recompressao; o podado so entra se for menor que o membro comprimido original (senao vai o membro cru). Assim o
-zip reduzido nunca e maior que o original. O nome do membro nao muda, entao o padronizador `planilha` le o pacote
+recompressao; o podado so entra se for menor que o membro comprimido original (senao vai o membro cru). Assim os
+dados comprimidos do zip reduzido nunca passam dos do original; o arquivo em si pode ficar alguns bytes maior, pois
+os cabecalhos sao regravados (por exemplo, nome de membro nao ASCII em CP437 passa a UTF-8). O nome do membro nao muda, entao o padronizador `planilha` le o pacote
 como antes. Se a poda nao for segura (aba ausente, estrutura inesperada), o membro segue inteiro e o erro de layout
 aparece no padronizador, como antes. Se o arquivo baixado nao for um zip legivel ou nao tiver um membro declarado
 (download cortado, pagina de erro servida com status 200), sobe ErroColeta: a parte nao e guardada.

@@ -26,7 +26,7 @@ Versionados: `dados/base/` e `dados/relatorios/`. Fora do Git: `dados/brutos/` e
 `censup_pre2009`) não foram baixados de novo na raiz da publicação. São os pacotes coletados com rede no mesmo
 dia, nas Tarefas C4 e C5, reaproveitados depois de conferir que as fichas não mudaram e que o sha256 de cada
 pacote é o do registro de coletas. As demais séries foram coletadas de novo, com rede, na raiz da publicação.
-O ganho foi evitar cerca de duas horas de download com resultado idêntico.
+O ganho foi evitar cerca de duas horas de download; os pacotes usados são os do registro de coletas, com sha256 conferido.
 
 **O que falta e está declarado:** PIB per capita de 2007 (sem valor publicado para conferir o cálculo);
 matrículas de 2003 e 2004 (sinopses só em PDF); renda e pobreza antes de 2012 (PNAD antiga não incorporada);
@@ -79,8 +79,8 @@ python -m nordeste publicar  [--ensaio]
   `base_nordeste_completa.csv`, esta no padrão do Excel brasileiro: UTF-8 com BOM, `;` e vírgula decimal). Com
   `--ensaio`, executa tudo e gera os relatórios sem escrever em `dados/base/`.
 
-Cada comando é idempotente. `coletar` só busca na rede séries com `verificado: true` na ficha: as demais
-(hoje nenhuma) são puladas com um aviso em stderr e não contam como falha. Uma série que
+Cada comando é idempotente. `coletar` só busca na rede séries com `verificado: true` na ficha; as séries
+com `verificado: false`, se houver (hoje nenhuma), são puladas com um aviso em stderr e não contam como falha. Uma série que
 falha na coleta não derruba as outras: o motivo vai para stderr e para `dados/relatorios/falhas_coleta.csv`
 (`indicador_id`, `serie_id`, `motivo`; o cabeçalho sai sempre, e cada `coletar` reescreve o arquivo), o comando
 sai com 1 e a série segue com a coleta anterior. No `consolidar`, série sem coleta, com arquivo bruto ausente
@@ -150,7 +150,9 @@ série: um zip sem compressão, com data e atributos fixos (o mesmo conteúdo da
 que traz `manifesto.json` e um arquivo por URL. Desde novembro de 2026 o pacote não guarda o zip baixado:
 
 - de cada URL cujas partes declaram `arquivo_no_zip`, fica um zip reduzido só com os membros declarados, com os
-  bytes comprimidos copiados do original (nada é recomprimido; o reduzido nunca é maior que o original);
+  bytes comprimidos copiados do original (nada é recomprimido; os dados comprimidos do reduzido nunca passam dos do original, mas os cabeçalhos
+  do zip são regravados, e o arquivo pode ficar alguns bytes maior, por exemplo quando o nome do membro não é
+  ASCII e passa de CP437 para UTF-8);
 - um membro `.xlsx` lido só por partes com `aba` também é podado: ficam as abas declaradas e o que elas usam
   (estilos, textos compartilhados, tema), com as folhas copiadas byte a byte. O podado só entra se for menor
   que o membro comprimido do zip baixado (senão vai o membro como estava). O nome do membro não muda, e o
