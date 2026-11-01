@@ -41,7 +41,7 @@ Em aberto ao pausar: seção 2 (páginas e conteúdo) apresentada e não aprovad
 ## Retomada do brainstorming do site (2026-11-01, depois da primeira publicação real)
 
 Decidido pelo usuário:
-- Endereço: numa pasta do domínio principal, `dnascimento.com.br/nordeste` (o usuário trocou o subdomínio pela pasta). O dnascimento.com.br já roda na Hostinger (hPanel).
+- Endereço: subdomínio `nordeste.dnascimento.com.br` (o usuário cogitou a pasta `/nordeste` e voltou ao subdomínio: com publicação automática, o subdomínio isola o site do Nordeste do site principal; Google trata os dois de forma equivalente; link visível no site principal compensa a busca). O dnascimento.com.br já roda na Hostinger (hPanel).
 - Site estático, mas com fluidez: transições e movimentos suaves (sempre respeitando `prefers-reduced-motion`).
 - Atualização totalmente automática (opção C): sem revisão humana a cada atualização; o que barra a publicação são as regras de validação do pipeline.
 - Voz do autor (Júlio Diógenes), primeira pessoa, linguagem simples, sem cenas; o site responde a quem diz que "o Nordeste está do mesmo jeito".
@@ -51,5 +51,5 @@ Decidido pelo usuário:
 - Imagens: uma imagem gráfica para o OpenGraph (contorno do Nordeste em laranja sobre preto, título e número) e uma foto contemporânea com licença livre e crédito para a abertura. Evitar o estereótipo da seca.
 - Sem Google Analytics; imagem de compartilhamento fixa por página.
 
-Em aberto: como o dnascimento.com.br é publicado hoje (define como a pasta /nordeste convive com o site principal sem uma publicação apagar a outra); repositório do site; seções 3 a 5 do design (publicação/envio, erros/segurança, testes).
+Em aberto: repositório do site; seções 3 a 5 do design (publicação/envio, erros/segurança, testes).
 
