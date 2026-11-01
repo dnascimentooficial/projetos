@@ -392,10 +392,33 @@ def test_parte_cuja_url_nao_esta_no_pacote_e_pacote_ilegivel(ficha_planilha, ter
         padronizar_planilha(b"nao e zip", ficha, serie, "c1", territorios)
 
 
-def test_partes_sem_linhas_aceitas_devolvem_base_vazia_e_partes_invalidas_sao_erro(ficha_planilha, territorios):
-    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais", filtro_linhas={"Rede": "Federal"})])
+def test_parte_sem_nenhuma_linha_aceita_e_erro_de_layout(ficha_planilha, territorios):
+    """Se a fonte renomear "Total", o subindicador inteiro sumiria em silencio: a parte vazia barra."""
+    ficha, serie = _com_partes(ficha_planilha, [
+        _parte_uf("AI", "anos_iniciais"), _parte_uf("AF", "anos_finais", filtro_linhas={"Rede": "Federal"})])
+    with pytest.raises(ErroLayout, match=r"parte 2.*aba AF.*nenhuma linha"):
+        padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+
+
+def test_territorios_esperados_ausentes_na_parte_sao_erro_de_layout(ficha_planilha, territorios):
+    esperados = ["NE", "BA", "RN", "CE", "PE", "PI"]
+    ficha, serie = _com_partes(ficha_planilha, [_parte_uf("AI", "anos_iniciais", territorios_esperados=esperados)])
+    with pytest.raises(ErroLayout, match=r"parte 1.*aba AI.*PE, PI"):
+        padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
+    ficha, serie = _com_partes(ficha_planilha, [
+        _parte_uf("AI", "anos_iniciais", territorios_esperados=["NE", "BA", "RN", "CE"]),
+        {**PARTE_BRASIL, "territorios_esperados": ["BR"]}])
     df = padronizar_planilha(_pacote_ideb(), ficha, serie, "c1", territorios)
-    assert df.empty and list(df.columns) == COLUNAS_BASE
+    assert set(df.territorio_id) == {"NE", "BA", "RN", "CE", "BR"}
+
+
+def test_territorios_esperados_valem_tambem_sem_partes(ficha_planilha, territorios):
+    ficha, serie = com_parametros(ficha_planilha, territorios_esperados=["PI", "NE"])
+    with pytest.raises(ErroLayout, match="NE"):
+        padronizar_planilha(xlsx_sintetico(), ficha, serie, "c1", territorios)
+
+
+def test_partes_invalidas_sao_erro(ficha_planilha, territorios):
     for partes in ([], ["https://x/1.zip"], {"url": URL_UFS}):
         ficha, serie = _com_partes(ficha_planilha, partes)
         with pytest.raises(ErroLayout, match="partes deve ser"):

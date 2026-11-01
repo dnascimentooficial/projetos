@@ -500,6 +500,7 @@ def test_idhm_coleta_offline_registra_um_arquivo_por_serie(projeto_completo):
 # ---------------------------------------------------------------------------
 
 SUBINDICADORES_IDEB = ["anos_finais", "anos_iniciais", "ensino_medio"]
+ORDEM_UFS = ["MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE_UF", "BA"]
 ANOS_IDEB = list(range(2005, 2026, 2))
 
 
@@ -517,6 +518,8 @@ def test_ideb_tem_uma_serie_com_seis_partes_de_dois_arquivos(fichas):
     assert len(partes) == 6
     for parte in partes:
         assert parte["filtro_linhas"] == {"Rede": "Total"} and parte["linha_cabecalho"] == 7
+        esperados = ["BR"] if "brasil" in parte["url"] else ["N", "NE", "SE", "S", "CO", *ORDEM_UFS]
+        assert parte["territorios_esperados"] == esperados
         assert [c["ano"] for c in parte["colunas"]] == ANOS_IDEB
         (subindicador,) = {c["subindicador"] for c in parte["colunas"]}
         assert {c["rede"] for c in parte["colunas"]} == {"total"} and not any("etapa" in c for c in parte["colunas"])

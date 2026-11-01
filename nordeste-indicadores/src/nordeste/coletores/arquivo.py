@@ -1,9 +1,10 @@
 """Coletor generico de arquivos por URL (planilhas e similares), com uma URL ou varias partes por serie.
 
 Com `parametros.partes`, cada URL distinta das partes e baixada uma vez e o arquivo bruto da serie e um
-pacote zip deterministico: `manifesto.json` (lista de {url, nome}, na ordem da primeira aparicao da URL nas
-partes) e um arquivo por URL, com o nome do manifesto. Data fixa e ordem fixa: o mesmo conteudo da fonte
-gera os mesmos bytes, e portanto o mesmo sha256 (uma coleta por serie, como no Ipeadata com `codigos`).
+pacote zip deterministico, sem compressao: `manifesto.json` (lista de {url, nome}, na ordem da primeira
+aparicao da URL nas partes) e um arquivo por URL, com o nome do manifesto. Data, ordem e atributos fixos: o
+mesmo conteudo da fonte gera os mesmos bytes, e portanto o mesmo sha256 (uma coleta por serie, como no
+Ipeadata com `codigos`).
 """
 
 import io
@@ -41,8 +42,15 @@ def url_arquivo(parametros: dict) -> str:
 
 
 def _entrada(nome: str) -> zipfile.ZipInfo:
+    """Entrada sem compressao, com data, sistema de origem (3, Unix) e atributos fixos.
+
+    Sem compressao, os bytes nao dependem da versao do zlib; com `create_system` fixo, nao dependem da plataforma
+    (o padrao do zipfile e 0 no Windows). Assim o sha256 do pacote so muda quando muda o conteudo da fonte.
+    """
     entrada = zipfile.ZipInfo(nome, date_time=_DATA_FIXA)
-    entrada.compress_type = zipfile.ZIP_DEFLATED
+    entrada.compress_type = zipfile.ZIP_STORED
+    entrada.create_system = 3
+    entrada.external_attr = 0o644 << 16
     return entrada
 
 

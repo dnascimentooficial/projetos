@@ -7,6 +7,8 @@ from typing import Any
 
 import yaml
 
+from nordeste.territorios import REGIOES, UFS_NE
+
 SENTIDOS: tuple[str, ...] = ("maior_melhor", "menor_melhor")
 REFERENCIAS: tuple[str, ...] = ("brasil", "brasil_fora_ne", "nenhuma")
 METODOS: tuple[str, ...] = ("soma", "razao", "razao_encadeada")
@@ -20,6 +22,8 @@ _TEXTOS_FICHA = (
 )
 _TEXTOS_SERIE = ("id", "fonte", "base_origem", "url", "coletor", "compatibilidade")
 _FAIXA_DE_ANOS = re.compile(r"^(\d{4})(?:-(\d{4}))?$")
+# Territorios que uma fonte publica (o Brasil fora do Nordeste e derivado pelo projeto, nunca lido de planilha).
+_TERRITORIOS_DA_FONTE = frozenset({"BR", *REGIOES, *UFS_NE})
 
 
 class ErroFicha(ValueError):
@@ -168,12 +172,42 @@ def _validar_serie(serie: Any, posicao: int) -> list[str]:
         problemas.append(f"{nome}.fim deve ser ano inteiro ou null")
     elif _inteiro(inicio) and fim is not None and fim < inicio:
         problemas.append(f"{nome}.fim nao pode ser anterior ao inicio")
-    if not isinstance(serie.get("parametros"), dict):
+    parametros = serie.get("parametros")
+    if not isinstance(parametros, dict):
         problemas.append(f"{nome}.parametros obrigatorio (mapa, pode ser vazio)")
+    else:
+        problemas += _validar_leitura(parametros, f"{nome}.parametros")
+        partes = parametros.get("partes")
+        if isinstance(partes, list):
+            for posicao, parte in enumerate(partes, start=1):
+                if isinstance(parte, dict):
+                    problemas += _validar_leitura(parte, f"{nome}.parametros.partes[{posicao}]")
     if not isinstance(serie.get("verificado"), bool):
         problemas.append(f"{nome}.verificado obrigatorio (true ou false)")
     if "anos_sem_publicacao" in serie:
         problemas += _validar_anos_sem_publicacao(serie["anos_sem_publicacao"], inicio, fim, nome)
+    return problemas
+
+
+def _validar_leitura(parametros: dict, nome: str) -> list[str]:
+    """`territorios_esperados` (ids publicados pela fonte, sem repeticao) e `filtro_linhas` (coluna -> texto ou numero)."""
+    problemas: list[str] = []
+    if "territorios_esperados" in parametros:
+        esperados = parametros["territorios_esperados"]
+        if not isinstance(esperados, list) or not esperados or not all(isinstance(t, str) for t in esperados):
+            problemas.append(f"{nome}.territorios_esperados deve ser uma lista nao vazia de territorio_id")
+        else:
+            desconhecidos = sorted(set(esperados) - _TERRITORIOS_DA_FONTE)
+            if desconhecidos:
+                problemas.append(f"{nome}.territorios_esperados com territorio desconhecido: {', '.join(desconhecidos)}")
+            if len(set(esperados)) != len(esperados):
+                problemas.append(f"{nome}.territorios_esperados repete territorio")
+    if "filtro_linhas" in parametros:
+        filtro = parametros["filtro_linhas"]
+        valido = isinstance(filtro, dict) and filtro and all(
+            isinstance(v, str) or _numero(v) for v in filtro.values())
+        if not valido:
+            problemas.append(f"{nome}.filtro_linhas deve mapear coluna para valor aceito (texto ou numero)")
     return problemas
 
 

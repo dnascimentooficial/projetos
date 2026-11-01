@@ -690,7 +690,8 @@ o mapa de aba e coluna por ano, o filtro de linhas (`Rede = Total`) e, no IDEB, 
 
 - Coleta (`coletor: arquivo`): `parametros.partes` é uma lista; cada parte tem `url` e os parâmetros de leitura da planilha. O coletor
   baixa cada URL distinta uma vez (abas diferentes do mesmo arquivo não repetem o download), com o `ca_extra` da série, e grava **um**
-  arquivo bruto por série: um zip determinístico (data fixa, ordem fixa) com `manifesto.json` (`{"arquivos": [{"url", "nome"}]}`, na
+  arquivo bruto por série: um zip determinístico (sem compressão, data, ordem, sistema de origem e atributos fixos, para que o sha256 não
+  mude com a plataforma nem com o zlib) com `manifesto.json` (`{"arquivos": [{"url", "nome"}]}`, na
   ordem da primeira aparição da URL nas partes) e um arquivo por URL (`01_<nome do arquivo na URL>`, `02_...`). Uma coleta e um sha256
   por série; a `url` registrada em `coletas.csv` são as URLs distintas separadas por um espaço. Falha em qualquer URL: `ErroColeta` da
   série, sem arquivo parcial e sem linha no registro.
@@ -699,7 +700,10 @@ o mapa de aba e coluna por ano, o filtro de linhas (`Rede = Total`) e, no IDEB, 
   de leitura (valem também no modo de uma URL): `filtro_linhas` (mapa coluna → valor aceito; compara sem acento, sem maiúsculas e sem
   marcas de nota, `Total (3)(4)` = `Total`) e `nomes_territorio` (mapa nome como a planilha escreve → `territorio_id`, para abreviações
   como `R. G. do Norte`). Marcas de nota (`(1)`, `(3)(4)`, `*`) saem do nome do território e do texto do filtro. Duas linhas com a mesma
-  chave (filtro ausente ou partes sobrepostas) são erro de layout. Rótulos com chamada de nota (`IDEB\n20215\n(N x P)`) são declarados
+  chave (filtro ausente ou partes sobrepostas) são erro de layout, e uma parte sem nenhuma linha aceita também (um "Total" renomeado
+  não apaga um subindicador em silêncio). `territorios_esperados` (lista de `territorio_id`, conferida contra os 15 territórios da
+  fonte ao carregar a ficha) faz a ausência de qualquer um deles no resultado da parte virar erro de layout. Os valores de
+  `filtro_linhas` só podem ser texto ou número (a ficha recusa nulo, booleano e listas). Rótulos com chamada de nota (`IDEB\n20215\n(N x P)`) são declarados
   na ficha exatamente como estão, coluna a coluna.
 
 ### ideb / ideb
@@ -712,13 +716,17 @@ o mapa de aba e coluna por ano, o filtro de linhas (`Rede = Total`) e, no IDEB, 
   nenhuma linha em `validacao.csv` (nem regra bloqueante nem aviso). Data: 2026-11-01.
 - Arquivos baixados: `divulgacao_regioes_ufs_ideb_2025.zip` (sha256 `a8ecdb2c...0a87`, 757.970 bytes) e
   `divulgacao_brasil_ideb_2025.zip` (sha256 `c841dcbe...b348`, 85.519 bytes); o md5 de cada `.xlsx` confere com o arquivo `md5_*.txt`
-  que o INEP põe no zip. Pacote gravado pela coleta: `88ff10bf....zip` (sha256 `88ff10bfb4ef9c08...07e8`).
+  que o INEP põe no zip. Pacote gravado pela coleta: `e6974a5c....zip` (sha256 `e6974a5c2d363cdc...f403`, formato sem
+  compressão do fix round 1; a primeira verificação, com o pacote comprimido, gravou `88ff10bf....zip` com os mesmos dois zips).
+  Reverificação no fix round 1 (mesma data, ficha com `territorios_esperados`): mesmos 495 linhas, `validar` sem nenhuma linha;
+  conferência do revisor: Nordeste, anos iniciais, 2023 = 5,6.
 - Partes (6): abas `UF e Regiões (AI)`, `UF e Regiões (AF)`, `UF e Regiões (EM)` do `.xlsx` de regiões e UFs e `Brasil (Anos Iniciais)`,
   `Brasil (Anos Finais)`, `Brasil (EM)` do `.xlsx` do Brasil. Cabeçalho na linha 7 (rótulos `IDEB\n<ano>\n(N x P)`; a linha 10 traz os
   códigos `VL_OBSERVADO_<ano>`, mas na aba `Brasil (Anos Finais)` a coluna de 2023 não tem código, por isso a ficha usa os rótulos).
   Rótulos de 2021 como estão nos arquivos: `IDEB\n20215\n(N x P)` (regiões e UFs, as três abas), `IDEB\n20212\n(N x P)` (Brasil, anos
   iniciais) e `IDEB\n20211\n(N x P)` (Brasil, anos finais e ensino médio). Filtro `Rede = Total` (o texto real é `Total`, `Total (4)` ou
-  `Total (3)(4)`); `R. G. do Norte` declarado como RN em `nomes_territorio`.
+  `Total (3)(4)`); `R. G. do Norte` declarado como RN em `nomes_territorio`. `territorios_esperados`: `BR` nas partes do Brasil;
+  N, NE, SE, S, CO e as 9 UFs do Nordeste nas partes de regiões e UFs.
 - Obtido: 495 linhas = 3 etapas x 11 edições (2005, 2007, ..., 2025) x 15 territórios (BR, 5 regiões e as 9 UFs), todas `observado`,
   nenhuma indisponível. Anos pares não têm edição nem linha. Exemplos: Brasil, anos iniciais, 3,8 (2005) e 6,3 (2025); Nordeste,
   anos iniciais, 2,9 (2005) e 6,0 (2025); Nordeste, anos finais, 2,9 e 5,0; Nordeste, ensino médio, 3,0 e 4,3.

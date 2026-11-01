@@ -60,6 +60,7 @@ series:
           linha_cabecalho: 7
           coluna_territorio: "Região/\nUnidade da Federação"
           filtro_linhas: {Rede: Total}
+          territorios_esperados: [N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
           nomes_territorio: {"R. G. do Norte": RN}
           colunas:
             - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_iniciais, rede: total}
@@ -80,6 +81,7 @@ series:
           linha_cabecalho: 7
           coluna_territorio: "Região/\nUnidade da Federação"
           filtro_linhas: {Rede: Total}
+          territorios_esperados: [N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
           nomes_territorio: {"R. G. do Norte": RN}
           colunas:
             - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_finais, rede: total}
@@ -100,6 +102,7 @@ series:
           linha_cabecalho: 7
           coluna_territorio: "Região/\nUnidade da Federação"
           filtro_linhas: {Rede: Total}
+          territorios_esperados: [N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
           nomes_territorio: {"R. G. do Norte": RN}
           colunas:
             - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: ensino_medio, rede: total}
@@ -120,6 +123,7 @@ series:
           linha_cabecalho: 7
           coluna_territorio: Brasil
           filtro_linhas: {Rede: Total}
+          territorios_esperados: [BR]
           colunas:
             - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_iniciais, rede: total}
             - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: anos_iniciais, rede: total}
@@ -139,6 +143,7 @@ series:
           linha_cabecalho: 7
           coluna_territorio: Brasil
           filtro_linhas: {Rede: Total}
+          territorios_esperados: [BR]
           colunas:
             - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: anos_finais, rede: total}
             - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: anos_finais, rede: total}
@@ -158,6 +163,7 @@ series:
           linha_cabecalho: 7
           coluna_territorio: Brasil
           filtro_linhas: {Rede: Total}
+          territorios_esperados: [BR]
           colunas:
             - {coluna: "IDEB\n2005\n(N x P)", ano: 2005, subindicador: ensino_medio, rede: total}
             - {coluna: "IDEB\n2007\n(N x P)", ano: 2007, subindicador: ensino_medio, rede: total}

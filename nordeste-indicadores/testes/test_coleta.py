@@ -396,3 +396,18 @@ def test_pacote_de_partes_e_deterministico_e_rejeita_conteudo_estranho():
     assert ler_pacote(a) == {"https://a/1.zip": b"um", "https://a/2.zip?x=1": b"dois"}
     with pytest.raises(ValueError):
         ler_pacote(b"nao e zip")
+
+
+SHA256_PACOTE_PEQUENO = "4bd4e45c6436351c2292411877920a4554b02361a878a0e4f2bd7d61db73edf1"
+
+
+def test_pacote_de_partes_tem_bytes_fixos_entre_ambientes():
+    """Sem compressao e com create_system fixo: o sha256 so muda quando a fonte muda, nao com a plataforma ou o zlib."""
+    import zipfile
+    from io import BytesIO
+    from nordeste.coletores.arquivo import empacotar_partes
+    pacote = empacotar_partes({"https://a/1.zip": b"um", "https://a/2.xlsx": b"dois"})
+    with zipfile.ZipFile(BytesIO(pacote)) as z:
+        assert [(i.compress_type, i.create_system, i.date_time) for i in z.infolist()] == [
+            (zipfile.ZIP_STORED, 3, (2026, 1, 1, 0, 0, 0))] * 3
+    assert hashlib.sha256(pacote).hexdigest() == SHA256_PACOTE_PEQUENO

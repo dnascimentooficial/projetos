@@ -100,7 +100,9 @@ def padronizar_planilha(
     Linhas cujo nome nao case nenhum territorio (totais, notas) sao descartadas; celulas
     com marcador de ausencia viram indisponivel. Com `parametros.partes`, o conteudo e o pacote do
     coletor `arquivo` (uma entrada por URL) e cada parte e lida como uma planilha independente, com os
-    seus proprios parametros de leitura; o resultado e a concatenacao, na ordem das partes.
+    seus proprios parametros de leitura; o resultado e a concatenacao, na ordem das partes. Parte sem nenhuma
+    linha aceita e erro de layout. Com `territorios_esperados` (na serie ou na parte), a ausencia de qualquer
+    um deles no resultado tambem e.
     """
     parametros = serie.parametros
     if "partes" not in parametros:
@@ -120,10 +122,12 @@ def padronizar_planilha(
         onde = f"{ficha.id}/{serie.id}, parte {posicao} ({parte.get('arquivo_no_zip') or url})"
         if url not in arquivos:
             raise ErroLayout(f"Planilha {ficha.id}/{serie.id}, parte {posicao}: {url} ausente do pacote coletado")
-        quadros.append(_padronizar_tabela(arquivos[url], parte, onde, ficha, serie, coleta_id, territorios))
-    quadros = [q for q in quadros if not q.empty]
-    if not quadros:
-        return normalizar_base(pd.DataFrame(columns=COLUNAS_BASE))
+        quadro = _padronizar_tabela(arquivos[url], parte, onde, ficha, serie, coleta_id, territorios)
+        if quadro.empty:  # "Total" renomeado ou celula mesclada: o subindicador sumiria sem nenhuma regra notar
+            raise ErroLayout(
+                f"Planilha {onde}, aba {parte.get('aba', '-')}: nenhuma linha aceita "
+                "(o filtro_linhas ou os nomes de territorio nao casaram com a planilha)")
+        quadros.append(quadro)
     df = normalizar_base(pd.concat(quadros, ignore_index=True))
     _sem_linhas_repetidas(df, f"{ficha.id}/{serie.id}")
     return df
@@ -213,4 +217,9 @@ def _padronizar_tabela(
             })
     df = normalizar_base(pd.DataFrame(registros, columns=COLUNAS_BASE))
     _sem_linhas_repetidas(df, f"{onde}, aba {aba}")
+    ausentes = [t for t in parametros.get("territorios_esperados") or [] if t not in set(df.territorio_id)]
+    if ausentes:
+        raise ErroLayout(
+            f"Planilha {onde}, aba {aba}: territórios esperados ausentes: {', '.join(ausentes)} "
+            "(nome, filtro_linhas ou nomes_territorio não casaram)")
     return df

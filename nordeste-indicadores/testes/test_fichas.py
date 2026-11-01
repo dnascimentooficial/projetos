@@ -328,3 +328,35 @@ def test_anos_sem_publicacao_em_serie_em_curso_aceita_anos_depois_do_inicio(tmp_
     ficha_minima["series"][0]["fim"] = None
     ficha_minima["series"][0]["anos_sem_publicacao"] = [2030]
     assert carregar_ficha(_gravar(tmp_path, ficha_minima)).series[0].anos_sem_publicacao == (2030,)
+
+
+# Parametros de leitura de planilha validados na ficha: territorios_esperados e filtro_linhas (na serie ou em cada parte)
+def _com_partes(ficha_minima, **parte):
+    ficha_minima["series"][0]["coletor"] = "arquivo"
+    ficha_minima["series"][0]["parametros"] = {
+        "padronizador": "planilha", "partes": [{"url": "https://exemplo.invalid/a.zip", **parte}]}
+    return ficha_minima
+
+
+def test_territorios_esperados_e_filtro_validos_sao_aceitos(tmp_path, ficha_minima):
+    _com_partes(ficha_minima, territorios_esperados=["BR", "NE", "SE_UF"], filtro_linhas={"Rede": "Total", "Ano": 2023})
+    f = carregar_ficha(_gravar(tmp_path, ficha_minima))
+    assert f.series[0].parametros["partes"][0]["territorios_esperados"] == ["BR", "NE", "SE_UF"]
+
+
+@pytest.mark.parametrize("esperados", [["XX"], ["BR_FORA_NE"], [], "BR", [1], ["BR", "BR"]])
+def test_territorios_esperados_invalidos_sao_recusados(tmp_path, ficha_minima, esperados):
+    _gravar(tmp_path, _com_partes(ficha_minima, territorios_esperados=esperados))
+    assert any("territorios_esperados" in m for m in verificar_fichas(tmp_path))
+
+
+def test_territorios_esperados_na_serie_sem_partes_tambem_sao_validados(tmp_path, ficha_minima):
+    ficha_minima["series"][0]["parametros"] = {"territorios_esperados": ["NE", "ZZ"]}
+    _gravar(tmp_path, ficha_minima)
+    assert any("territorios_esperados" in m and "ZZ" in m for m in verificar_fichas(tmp_path))
+
+
+@pytest.mark.parametrize("filtro", [{"Rede": None}, {"Rede": True}, {"Rede": ["Total"]}, {"Rede": {"a": 1}}, ["Rede"]])
+def test_filtro_linhas_aceita_so_texto_ou_numero(tmp_path, ficha_minima, filtro):
+    _gravar(tmp_path, _com_partes(ficha_minima, filtro_linhas=filtro))
+    assert any("filtro_linhas" in m for m in verificar_fichas(tmp_path))
