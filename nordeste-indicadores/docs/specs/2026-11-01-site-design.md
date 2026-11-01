@@ -1,6 +1,6 @@
 # Site Nordeste em Números — Design
 
-**Subprojeto 3** · Data: 2026-11-01 · Status: design aprovado em conversa, aguardando revisão do texto
+**Subprojeto 3** · Data: 2026-11-01 · Status: aprovado pelo usuário em 2026-11-01
 
 ## 1. Objetivo e público
 
@@ -70,7 +70,7 @@ Fora da primeira versão: segunda leva de indicadores, PNAD antiga (próximo cic
 - **OpenGraph:** imagem gráfica com o contorno do Nordeste em laranja sobre preto, o título da página e um número. O contorno vem da malha oficial de estados do IBGE, simplificada. Cada card tem a própria imagem.
 - **Foto da abertura:** contemporânea e urbana ou de pessoas, com licença livre (Wikimedia Commons ou Unsplash) e crédito do autor no rodapé e em "Sobre". Na implementação, três candidatas são apresentadas ao usuário para escolha.
 - **JSON-LD `Dataset`:** nome, descrição, autor (Júlio Diógenes), cobertura temporal e espacial, data de atualização, links para os CSVs em `/dados/` e licença.
-- **Licença da compilação:** CC BY 4.0, a confirmar na revisão desta spec. Os dados de origem são públicos (IBGE, INEP, Ipea, Atlas Brasil).
+- **Licença da compilação:** CC BY 4.0 (aprovada com a spec). Os dados de origem são públicos (IBGE, INEP, Ipea, Atlas Brasil).
 
 ## 7. Publicação automática
 
@@ -135,7 +135,6 @@ Criar `nordeste-em-numeros` (público) com o conteúdo de `nordeste-indicadores/
 
 ## 12. Pendências para o usuário
 
-- Confirmar a licença CC BY 4.0 da compilação.
 - Escolher a foto da abertura entre três candidatas (na implementação).
 - Pôr um link para o site no dnascimento.com.br (menu, rodapé ou conteúdos).
 - Configurar, no fim, o Git do hPanel (guiado) e esvaziar a pasta `nordeste` antes da primeira implantação.
