@@ -33,6 +33,12 @@ def test_cobertura_tira_o_ano_sem_pesquisa_que_nenhuma_outra_serie_cobre():
     assert cobertura_efetiva(fichas["desocupacao"]) == "2001–2009; 2011–"
 
 
+def test_cobertura_de_indicador_calculado_so_tem_os_anos_com_denominador_mapeado():
+    fichas = carregar_fichas(RAIZ / "metadados" / "indicadores")
+    # 2007 nao tem populacao no mapeamento do calculo (ano da Contagem): sai da cobertura, gerado da ficha
+    assert cobertura_efetiva(fichas["pib_per_capita"]) == "2002–2006; 2008–2023"
+
+
 def test_serie_nao_verificada_fica_fora_da_cobertura_e_da_situacao_verificada():
     fichas = carregar_fichas(RAIZ / "metadados" / "indicadores")
     assert cobertura_efetiva(fichas["pobreza"]) == "—"

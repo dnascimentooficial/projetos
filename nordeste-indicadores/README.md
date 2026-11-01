@@ -12,8 +12,8 @@ está em `docs/specs/2026-10-31-base-historica-design.md`; as conferências feit
 ## Requisitos
 
 - Python 3.12 ou mais novo.
-- Dependências (instaladas pelo `pip`): `pandas`, `pyarrow`, `pyyaml`, `requests`, `openpyxl`, `xlrd`; para os
-  testes, `pytest`.
+- Dependências (instaladas pelo `pip`): `pandas`, `numpy`, `pyarrow`, `pyyaml`, `requests`, `certifi`,
+  `openpyxl`, `xlrd`; para os testes, `pytest`.
 - Recursos para a coleta real completa: as séries do INEP com dezenas de arquivos (`matriculas_basica/educacenso`
   e `superior/censup`) baixam ~2 GB cada e usam ~4 GB de RAM no `coletar` e no `consolidar`. Deixe disco livre
   para o cache em `dados/brutos/` (o pacote bruto de cada uma tem ~1,9 GB).
@@ -62,7 +62,9 @@ as séries pendentes mantêm as linhas já publicadas.
 
 R01: **nenhuma linha da base pode vir de uma coleta cuja origem seja `fixture`**. Fixtures são arquivos
 sintéticos usados nos testes; se uma só chegasse à base publicada, um número inventado passaria por dado
-oficial. Por isso a regra não tem parâmetro, opção de linha de comando nem variável de ambiente que a desligue,
+oficial. A regra também barra a linha derivada (Brasil fora do Nordeste, PIB per capita) cuja derivação usa
+algum insumo de origem `fixture`: o registro de derivações lista as coletas usadas, e basta uma ser fixture.
+Por isso a regra não tem parâmetro, opção de linha de comando nem variável de ambiente que a desligue,
 e um teste ponta a ponta exige que o pipeline inteiro com fixtures seja barrado por ela. Ver o desenho da
 validação (regras e avisos) na seção 8 da spec.
 
@@ -72,19 +74,36 @@ validação (regras e avisos) na seção 8 da spec.
 (`dados/relatorios/coletas.csv`, versionado) coletas de origem `fixture`**. O `consolidar` usa a última coleta
 de cada série: se ela for uma coleta de fixture (série sem coleta real, ou `--offline` rodado depois da coleta
 de rede), a base de trabalho passa a ter dado de fixture e `publicar` é barrado pela R01. Para experimentar o
-pipeline offline, use uma cópia do projeto (`--raiz /caminho/da/copia`) e não o repositório de trabalho.
+pipeline offline, use uma cópia do projeto e não o repositório de trabalho. `--raiz` (como `--hoje`) é opção
+global e vem antes do subcomando:
+
+```
+python -m nordeste --raiz /caminho/da/copia coletar --offline
+python -m nordeste --raiz /caminho/da/copia consolidar
+```
 
 ## Domínios que precisam estar liberados na rede
+
+### Usados pelo coletor
+
+Os únicos hosts que `coletar` acessa (um teste confere esta lista contra as URLs que o coletor monta das fichas):
 
 | Domínio | Para quê |
 |---|---|
 | `apisidra.ibge.gov.br` | tabelas do SIDRA (população, PIB, PNAD Contínua) |
 | `ftp.ibge.gov.br` | arquivos das Contas Regionais (PIB em volume) |
 | `www.ipeadata.gov.br` | séries do Ipeadata (Gini e desocupação da PNAD, IDHM) |
-| `www.gov.br` | páginas do INEP com as sinopses e os resultados |
 | `download.inep.gov.br` | arquivos do INEP (IDEB, abandono, matrículas, ensino superior) |
+
+### Citados nas fichas ou de apoio
+
+O coletor não os acessa; servem para conferir à mão as fontes citadas nas fichas e no dicionário de verificação:
+
+| Domínio | Para quê |
+|---|---|
+| `www.gov.br` | páginas do INEP com as sinopses e os resultados |
 | `www.atlasbrasil.org.br` | Atlas do Desenvolvimento Humano, base do IDHM |
-| `secure.globalsign.com` | cadeia de certificação do servidor do INEP |
+| `secure.globalsign.com` | cadeia de certificação citada na conferência TLS do INEP |
 
 ### O `ca_extra`: a cadeia TLS incompleta do INEP
 
@@ -105,6 +124,18 @@ desliga a verificação TLS (nada de `verify=False`).
 5. **`python -m nordeste consolidar`**
 6. **`python -m nordeste publicar --ensaio`**: confira `dados/relatorios/validacao.csv` e `mudancas.csv`.
 7. **`python -m nordeste publicar`**: a primeira publicação real.
+
+### Anos fixos nas fichas: editar quando sair ano novo
+
+Algumas fichas têm o último ano escrito à mão e precisam de edição quando o IBGE publicar um ano novo:
+
+- **PIB** (`pib_nominal`, `pib_participacao`, `pib_volume` e `pib_per_capita`): `fim: 2023` na série
+  `scr_ref2010`. Se a fonte trouxer 2024 com `fim: 2023`, a regra R05 (ano fora da cobertura da série) barra a
+  publicação. Ao estender, suba o `fim` das quatro fichas e acrescente o ano novo em
+  `calculo.denominador.series_por_ano` do `pib_per_capita` (sem o mapeamento, o ano fica sem valor).
+- **População** (`populacao`, série `estimativa_pos_censo2022`): `periodos: 2024-2026` nos parâmetros do
+  SIDRA. A série está em curso (`fim: null`), mas o coletor só pede esses anos: um ano novo não é coletado (nem
+  avisado) até a faixa ser estendida.
 
 ## Indicadores
 
@@ -132,7 +163,7 @@ curso. Indicadores `auxiliar` são insumos (denominadores e contagens) e não s�
 | `ocupados` | Pessoas ocupadas | trabalho | auxiliar | `pnadc` | 2016– | verificada |
 | `pib_nominal` | PIB a preços correntes | economia | auxiliar | `scr_ref2010` | 2002–2023 | verificada |
 | `pib_participacao` | Participação no PIB nacional | economia | exibido | `scr_ref2010` | 2002–2023 | verificada |
-| `pib_per_capita` | PIB per capita | economia | exibido | `scr_ref2010` | 2002–2023 | verificada, calculada pelo projeto |
+| `pib_per_capita` | PIB per capita | economia | exibido | `scr_ref2010` | 2002–2006; 2008–2023 | verificada, calculada pelo projeto |
 | `pib_volume` | PIB real (índice de volume) | economia | exibido | `scr_ref2010` | 2002–2023 | verificada |
 | `pobreza` | Pobreza | social | exibido | `pnadc` | — | não verificada (fora da coleta) |
 | `populacao` | População residente | contexto | exibido | `estimativa_pre_censo2022`, `estimativa_pos_censo2022`, `censo_2000_2010`, `censo_2022` | 2000–2022; 2024– | verificada |

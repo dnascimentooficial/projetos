@@ -9,9 +9,11 @@ description = "Base historica de indicadores do Nordeste brasileiro"
 requires-python = ">=3.12"
 dependencies = [
     "pandas",
+    "numpy",
     "pyarrow",
     "pyyaml",
     "requests",
+    "certifi",
     "openpyxl",
     "xlrd",
 ]

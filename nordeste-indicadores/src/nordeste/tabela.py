@@ -22,12 +22,15 @@ CABECALHO = ("Indicador", "Nome", "Eixo", "Papel", "Séries", "Cobertura efetiva
 def cobertura_efetiva(ficha: Ficha) -> str:
     """Anos que a coleta cobre: as series verificadas, sem os anos em que nenhuma delas tem pesquisa.
 
+    Em indicador calculado, so os anos que o calculo mapeia para um denominador (ex.: sem 2007 no PIB per capita).
     Faixas separadas por "; " e "AAAA–" para serie em curso. Sem serie verificada, "—".
     """
     anos: set[int] = set()
     for serie in (s for s in ficha.series if s.verificado):
         fim = _EM_CURSO if serie.fim is None else serie.fim
         anos |= set(range(serie.inicio, fim + 1)) - set(serie.anos_sem_publicacao)
+    if ficha.calculo is not None:
+        anos = {a for a in anos if ficha.calculo.denominador_do_ano(a) is not None}
     faixas: list[list[int]] = []
     for ano in sorted(anos):
         if faixas and ano == faixas[-1][1] + 1:

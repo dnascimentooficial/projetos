@@ -13,7 +13,7 @@
 ## Restrições globais
 
 - Todos os comandos rodam a partir de `nordeste-indicadores/`. Instalação: `python -m pip install -e '.[dev]'`.
-- `requires-python = ">=3.12"`. Dependências: `pandas`, `pyarrow`, `pyyaml`, `requests`, `openpyxl`; dev: `pytest`. Nenhuma outra.
+- `requires-python = ">=3.12"`. Dependências: `pandas`, `pyarrow`, `pyyaml`, `requests`, `openpyxl`; dev: `pytest`. Nenhuma outra (exceto as do desvio 1: `xlrd`, `numpy` e `certifi`).
 - Colunas da base, nesta ordem: `indicador_id, subindicador, etapa, rede, territorio_id, ano, valor, tipo_dado, serie_id, coleta_id, nota`.
 - Chave única: `indicador_id, subindicador, etapa, rede, territorio_id, ano, serie_id`. Colunas opcionais de texto usam `""`, nunca nulo.
 - `tipo_dado` ∈ {`observado`, `estimativa_oficial`, `derivado`, `indisponivel`}. `valor` nulo ⇔ `indisponivel`.
@@ -27,7 +27,9 @@
 
 ## Desvios da spec (decididos neste plano, a relatar ao usuário)
 
-1. Dependência extra `openpyxl`: o pandas precisa dela para ler as planilhas `.xlsx` do INEP e do PNUD.
+1. Dependências extras `openpyxl` e `xlrd`: o pandas precisa delas para ler as planilhas `.xlsx` e `.xls` (formato antigo)
+   do INEP e do PNUD. `numpy` e `certifi`, já instaladas com `pandas` e `requests`, também ficam declaradas porque o código as
+   importa diretamente (revisão final, M6).
 2. `governos.csv` ganha a coluna `apelido` (FHC, Lula, Dilma, Temer, Bolsonaro), usada para montar `transicao_dilma_temer`.
 3. Ficha ganha campos: `auxiliar` (insumo não exibido, ex.: PIB nominal), `comparacao.fator` (conversão de unidade, ex.: 1000 para R$ mil), `limiar_salto_pct` (aviso A01, padrão 50), `series[].verificado` (parâmetros confirmados na fonte) e `series[].parametros.anos_estimativa`.
 4. Método `razao_encadeada` nomeia o cálculo do índice de volume descrito na seção 6.2 da spec.
