@@ -12,15 +12,18 @@ periodicidade: anual
 metodologia: >-
   Proporção da população abaixo da linha de pobreza nacional, tabela do SIDRA
   5877 (variável 9948, indicador ODS 1.2.1 com a PNAD Contínua), de 2012 em
-  diante. A tabela não informa o valor da linha na própria resposta, e a nota
-  metodológica não pôde ser consultada (a página de descrição do SIDRA responde
-  com desafio anti-robô); por isso a linha em reais ou dólares PPC não está
-  confirmada e a série fica não verificada. Para referência, a Síntese de
-  Indicadores Sociais 2025 (planilha 2.18, ftp.ibge.gov.br) usa US$ 6,85 PPC 2017
-  por dia e dá 27,3% para o Brasil em 2023, contra 29,8% desta tabela; os
-  valores não coincidem, então a linha da tabela 5877 não é a mesma da Síntese.
+  diante. A resposta do SIDRA não informa o valor da linha e a página de
+  descrição da tabela responde com desafio anti-robô. A linha foi identificada
+  pelo Ipeadata (série PNADCA_TXPNUF, "Taxa de pobreza nacional (SIS/IBGE)", que
+  repete os 195 valores da tabela): US$ 8,30 por dia (PPC 2021), convertidos
+  pela paridade do consumo final de R$ 2,4498362 por dólar. Essa linha não foi
+  confirmada em publicação do IBGE, e por isso a série fica não verificada. Não é
+  a linha da Síntese de Indicadores Sociais 2025 (planilha 2.18, ftp.ibge.gov.br),
+  que usa US$ 6,85 PPC 2017 por dia e dá 27,3% para o Brasil em 2023, contra
+  29,8% desta tabela.
 observacoes: >-
-  Série não verificada: a linha de pobreza da tabela 5877 não está confirmada.
+  Série não verificada: a linha da tabela 5877 (US$ 8,30 PPC 2021, segundo o
+  Ipeadata) não está confirmada em publicação do IBGE.
   A pobreza extrema é a ficha `extrema_pobreza` (tabela 5817), separada porque
   cada serie do projeto vem de uma única tabela. A PNAD antiga (2001 a 2015)
   não tem proporção de pobres por UF em fonte consultada, e fica sem série.
@@ -41,7 +44,8 @@ series:
     coletor: sidra
     parametros: {tabela: "5877", variavel: "9948"}
     compatibilidade: >-
-      PNAD Contínua (2012 em diante), linha de pobreza nacional conforme o rótulo
-      do IBGE (valor da linha não confirmado). Não comparável com a série
-      `extrema_pobreza` (outra linha) nem com a PNAD antiga.
+      PNAD Contínua (2012 em diante), linha de pobreza nacional de US$ 8,30 por
+      dia (PPC 2021), segundo o Ipeadata (não confirmada em publicação do IBGE).
+      Não comparável com a série `extrema_pobreza` (outra linha), com a Síntese de
+      Indicadores Sociais 2025 (US$ 6,85 PPC 2017) nem com a PNAD antiga.
     verificado: false

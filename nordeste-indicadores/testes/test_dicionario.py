@@ -768,3 +768,16 @@ def test_series_grandes_do_inep_declaram_o_custo_operacional_medido(fichas, indi
     assert "exercitada de ponta a ponta" in texto and "isoladamente" in texto
     for antigo in ("~1,9 GB", "~4 GB de RAM", "não foi exercitada"):
         assert antigo not in texto, antigo
+
+
+def test_fichas_de_pobreza_registram_a_linha_identificada_mas_seguem_nao_verificadas(fichas):
+    """Linha achada so no Ipeadata (nao em publicacao do IBGE): declarada com a ressalva, serie nao verificada."""
+    texto = DICIONARIO.read_text(encoding="utf-8")
+    for ficha_id, linha in (("pobreza", "8,30"), ("extrema_pobreza", "3,00")):
+        f = fichas[ficha_id]
+        serie = f.serie("pnadc")
+        assert not serie.verificado
+        assert f"US$ {linha} por dia (PPC 2021)" in f.metodologia, ficha_id
+        assert "Ipeadata" in f.metodologia and "não foi confirmada" in f.metodologia, ficha_id
+        assert "PPC 2021" in serie.compatibilidade, ficha_id
+        assert f"US$ {linha}" in texto, ficha_id

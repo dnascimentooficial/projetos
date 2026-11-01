@@ -42,8 +42,8 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `renda_dom_pc` | `pnadc` | SIDRA 7533, v10816 | 2012 a 2025 | sim |
 | `massa_renda_dom_pc` (auxiliar) | `pnadc` | SIDRA 7427, v10495 | 2012 a 2025 | sim |
 | `populacao_pnadc` (auxiliar) | `pnadc` | SIDRA 7436, v606 | 2012 a 2025 | sim |
-| `pobreza` | `pnadc` | SIDRA 5877, v9948 | 2012 a 2024 | **não** (linha de pobreza não confirmada) |
-| `extrema_pobreza` | `pnadc` | SIDRA 5817, v9617 | 2012 a 2024 | **não** (linha de pobreza não confirmada) |
+| `pobreza` | `pnadc` | SIDRA 5877, v9948 | 2012 a 2024 | **não** (linha US$ 8,30 PPC 2021 só no Ipeadata, não em publicação do IBGE) |
+| `extrema_pobreza` | `pnadc` | SIDRA 5817, v9617 | 2012 a 2024 | **não** (linha US$ 3,00 PPC 2021 só no Ipeadata, não em publicação do IBGE) |
 | `gini` | `pnad` | Ipeadata `PGINI` (janela 2001-2014) | 2001 a 2014; 2010 `indisponivel` (ano sem pesquisa) | sim |
 | `gini` | `pnadc` | SIDRA 7435, v10681 | 2012 a 2025 | sim |
 | `desocupacao` | `pnad` | Ipeadata `Dese_Pnad` (janela 2001-2014) | 2001 a 2014; 2010 `indisponivel` (ano sem pesquisa) | sim |
@@ -440,13 +440,27 @@ tabela não está confirmada.
 - Variável 9948: "Proporção da população abaixo da linha de pobreza nacional", Proporção (%) (indicador 1.2.1 dos ODS).
 - Obtido: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, `observado`, sem indisponíveis. Brasil 2012 = 36,8% e 2024 = 26,5%; Nordeste
   2012 = 58,8% e 2024 = 44,7%.
-- Por que não está verificada: a resposta da API não traz o valor da linha e a nota da tabela não pôde ser lida. A Síntese de Indicadores
-  Sociais 2025 (`ftp.ibge.gov.br`, `2_Distribuicao_Renda_xls.zip`, planilha `Tabela 2.18 (Pobr_Geo).xls`) usa US$ 6,85 por dia em PPC 2017
-  (R$ 2,3273771 por US$ 1,00 PPC, valores mensais) e dá 27,3% para o Brasil em 2023 e 23,1% em 2024, contra 29,8% e 26,5% desta tabela.
-  Os números diferem, então a linha ou o tratamento do rendimento da tabela 5877 não é o da Síntese. Também é a mesma série do Ipeadata
-  `PNADCA_TXPNUF` ("Taxa de pobreza nacional (SIS/IBGE)", 2012 a 2025, Brasil, regiões e estados), que dá os mesmos valores
-  (Brasil 29,8% em 2023). Para promover a `verificado: true` basta confirmar a linha na nota da tabela (ou trocar por tabela com a linha
-  documentada).
+- Por que não está verificada: a resposta da API não traz o valor da linha, a página de descrição da tabela
+  (`apisidra.ibge.gov.br/desctabapi.aspx?c=5877`) responde 403 com desafio anti-robô (não contornado) e a tabela não tem
+  classificações além de variável, ano e território (`/c/all` devolve "Parâmetro C inválido"), então não há categoria de linha
+  a fixar nos parâmetros.
+- Linha identificada (Tarefa C3, 2026-11-01), só por fonte secundária: o metadado do Ipeadata `PNADCA_TXPNUF` ("Taxa de pobreza nacional
+  (SIS/IBGE)", fonte IBGE/PNAD Contínua, atualizado em 2026-05-12;
+  `https://www.ipeadata.gov.br/api/odata4/Metadados('PNADCA_TXPNUF')`) declara "Linha de 8,30 dólares por dia, convertidos pela paridade do poder de compra
+  (PPC-2021) do consumo final de R$ 2,44983620 por dólar", consolidado das primeiras entrevistas de 2012 a 2019 e 2023 a 2024 e das quintas
+  entrevistas de 2020 a 2022. Os 195 valores da tabela 5877 (13 anos x 15 territórios) são idênticos, ao décimo, aos da série do Ipeadata
+  (Brasil 36,8% em 2012, 29,8% em 2023 e 26,5% em 2024; Nordeste 58,8%, 50,2% e 44,7%).
+- Por que isso explica a divergência com a Síntese 2025: a Síntese de Indicadores Sociais 2025 (`ftp.ibge.gov.br`, `2_Distribuicao_Renda_xls.zip`, planilhas
+  2.17, 2.18, 2.19 a 2.23) usa só linhas em PPC 2017 (US$ 2,15, US$ 3,65 e US$ 6,85, mais 50% da mediana e frações do salário mínimo); a linha em
+  PPC 2021 (US$ 8,30) não está nela. Conferência de ordem de grandeza (não é verificação): a Síntese dá a linha de US$ 6,85 como R$ 692 por mês em 2024
+  (23,1% das pessoas) e a de US$ 3,65 como R$ 370 (8,6%); 8,30 PPC 2021 equivale a cerca de R$ 775 por mês (valor citado pela FGV IBRE, não pelo IBGE), e
+  a taxa da Síntese sobe a cerca de 26,6% nesse patamar por interpolação linear entre as duas linhas, contra 26,5% da tabela 5877.
+- Por que continua `verificado: false`: o critério pede conferência de pelo menos 3 valores (Brasil e Nordeste de um mesmo ano) contra publicação do IBGE
+  que declare a linha. O Ipeadata é do Ipea e republica a série do IBGE; não é publicação do IBGE. A publicação do IBGE que a declararia, "Rendimento de
+  todas as fontes 2025" (`liv102275_informativo.pdf`, em `biblioteca.ibge.gov.br`), a nota da tabela e o portal de indicadores ODS
+  (`indicadoresods.ibge.gov.br`) não são acessíveis deste ambiente (hosts bloqueados ou fora da lista de rede); `sidra.ibge.gov.br`, `www.ibge.gov.br` e a agência
+  de notícias também não. A SIS 2025, que é acessível, usa outra linha. Para promover a `verificado: true`: ler a linha na nota da tabela 5877 (ou numa
+  publicação do IBGE com US$ 8,30 PPC 2021) e conferir 3 valores; a ficha já traz a linha na metodologia, e a série não muda de linha de 2012 a 2024 segundo o Ipeadata.
 - A ficha `pobreza` é só a medida de pobreza; a extrema pobreza é a ficha `extrema_pobreza` (tabela 5817), porque cada série do projeto vem
   de uma única tabela e uma ficha não junta duas tabelas em subindicadores.
 - Brasil fora do Nordeste: não há (a tabela só traz a proporção e não foi achada contagem de pobres por UF em série anual); comparação com o
@@ -460,8 +474,11 @@ tabela não está confirmada.
 - URL de coleta (usada na evidência, com a cópia temporária da ficha): `https://apisidra.ibge.gov.br/values/t/5817/n1/all/n2/all/n3/21,22,23,24,25,26,27,28,29/v/9617/p/all`
 - Variável 9617: "Proporção da população abaixo da linha de pobreza internacional", Proporção (%) (indicador 1.1.1 dos ODS).
 - Obtido: 195 linhas = 13 anos (2012 a 2024) x 15 territórios, `observado`. Brasil 2012 = 8,8% e 2024 = 4,7%; Nordeste 2012 = 18,5% e 2024 = 9,1%.
-- Linha: não confirmada. A Síntese 2025 (planilha 2.18) usa US$ 2,15 PPC 2017 por dia e dá 4,4% para o Brasil em 2023 e 3,5% em 2024, contra 5,8% e
-  4,7% desta tabela. Ipeadata `PNADCA_TXPIUF` ("Taxa de pobreza internacional (SIS/IBGE)") repete os valores da tabela.
+- Linha: mesmas tentativas e mesma conclusão da `pobreza` (descrição da tabela bloqueada, sem classificações). O metadado do Ipeadata `PNADCA_TXPIUF`
+  ("Taxa de pobreza internacional (SIS/IBGE)", `https://www.ipeadata.gov.br/api/odata4/Metadados('PNADCA_TXPIUF')`) declara "Linha de 3,00 dólares por dia,
+  convertidos pela paridade do poder de compra (PPC-2021) do consumo final de R$ 2,44983620 por dólar", e os 195 valores da tabela 5817 são idênticos aos dele
+  (Brasil 8,8% em 2012, 5,8% em 2023 e 4,7% em 2024; Nordeste 18,5%, 12,1% e 9,1%). A Síntese 2025 usa US$ 2,15 PPC 2017 (3,5% em 2024, 4,4% em 2023), outra linha;
+  por isso os valores diferem. Fonte só do Ipeadata, não do IBGE: segue `verificado: false`, pelos mesmos motivos da `pobreza`.
 - Aviso A01: com o limiar padrão (50%), 7 casos em 2020 a 2021 (alta depois do auxílio emergencial, por exemplo Rio Grande do Norte de 9,2% para
   17,9%); a ficha usa 100%.
 - Brasil fora do Nordeste: não há; comparação com o Brasil. PNAD antiga: sem série.
@@ -582,8 +599,8 @@ tabela não está confirmada.
    R$ 2.316 em 2025): universo das tabelas de rendimento de todas as fontes.
 7. `pobreza` (e a nova `extrema_pobreza`): a spec previa pobreza e extrema pobreza como subindicadores de uma ficha; viraram **duas fichas**, porque cada série do projeto vem de
    uma única tabela e as duas medidas estão em tabelas diferentes do SIDRA (5877 e 5817), com padronizador sem subindicador (decisão do controlador: manter duas fichas).
-   Só `pnadc` (2012 a 2024), e as duas **não verificadas**: a linha de pobreza das tabelas ODS do SIDRA (5877 e 5817) não pôde ser
-   confirmada e os valores não coincidem com a Síntese de Indicadores Sociais (US$ 6,85 e US$ 2,15 PPC 2017). Sem `pnad` (PNAD antiga) e sem Brasil fora do Nordeste (não há contagem de pobres por UF em série
+   Só `pnadc` (2012 a 2024), e as duas **não verificadas**: as linhas das tabelas ODS do SIDRA (5877 e 5817) são, segundo o Ipeadata, US$ 8,30 e US$ 3,00 por dia em PPC 2021
+   (Tarefa C3), mas isso não foi confirmado em publicação do IBGE (nota da tabela e publicações do IBGE inacessíveis); por isso os valores não coincidem com a Síntese de Indicadores Sociais (US$ 6,85 e US$ 2,15 PPC 2017). Sem `pnad` (PNAD antiga) e sem Brasil fora do Nordeste (não há contagem de pobres por UF em série
    anual).
 8. `gini`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `PGINI` (a PNAD de 2015 não está na série), com 2010 `indisponivel`; `pnadc` de 2012 a 2025. Comparação com o Brasil, como na spec.
 9. `desocupacao`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `Dese_Pnad`, com 2010 `indisponivel` e **sem Brasil fora do Nordeste** (não há contagem de desocupados da PNAD
