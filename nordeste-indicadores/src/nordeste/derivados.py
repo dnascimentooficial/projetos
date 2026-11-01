@@ -170,7 +170,7 @@ def brasil_fora_ne(
 # ---------------------------------------------------------------------------
 
 _REFERENCIAS = {"brasil": "BR", "brasil_fora_ne": TERRITORIO_DERIVADO}
-_ALVOS = ("NE", *UFS_NE)  # territorios que recebem razao, diferenca, variacao e crescimento
+_ALVOS = ("NE", *UFS_NE)  # territorios que recebem razao, diferenca e crescimento relativo
 _CHAVE_METRICA = [*_GRUPO, "serie_id"]
 
 
@@ -226,10 +226,12 @@ def _metricas_da_serie(ficha: Ficha, serie: pd.DataFrame, ident: dict) -> list[d
             for ano, valor in valores.dropna().items()
         )
 
+    for territorio_id, dados in por_territorio.items():
+        emite("variacao_acumulada", territorio_id, variacao_acumulada(dados))
+
     for alvo in _ALVOS:
         if alvo not in por_territorio:
             continue
-        emite("variacao_acumulada", alvo, variacao_acumulada(por_territorio[alvo]))
         if referencia is None or referencia not in por_territorio:
             continue
         t, r = por_territorio[alvo], por_territorio[referencia]
@@ -279,7 +281,7 @@ def metricas_convergencia(
     for ficha in fichas.values():
         if ficha.auxiliar:
             continue
-        validas = base[(base.indicador_id == ficha.id) & base.valor.notna()]
+        validas = base[(base.indicador_id == ficha.id) & (base.tipo_dado != "indisponivel") & base.valor.notna()]
         for chaves, serie in validas.groupby(_CHAVE_METRICA, sort=True):
             ident = {"indicador_id": ficha.id, **dict(zip(_CHAVE_METRICA, chaves))}
             linhas.extend(_metricas_da_serie(ficha, serie, ident))

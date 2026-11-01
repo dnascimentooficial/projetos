@@ -61,14 +61,21 @@ def test_colunas_e_primeiro_ultimo_ano():
     assert (linha.primeiro_ano, linha.ultimo_ano, linha.proxima_publicacao) == (2002, 2004, "2006-11")
 
 
-def test_fim_nulo_usa_ultimo_ano_disponivel_e_ano_ausente_conta_como_faltante():
-    c = relatorio_cobertura(base_anos_ne({2002: 1, 2005: 1}), {"x": ficha("x", inicio=2002, fim=None)})
-    assert c.iloc[0].anos_faltantes == "2003;2004"
+def test_fim_nulo_usa_ultimo_ano_disponivel_da_serie():
+    b = pd.concat([base_anos_ne({2002: 1, 2005: 1}, territorio="NE"), base_anos_ne({2002: 1, 2003: 1, 2004: 1}, territorio="BA")], ignore_index=True)
+    c = relatorio_cobertura(b, {"x": ficha("x", inicio=2002, fim=None)}).set_index("territorio_id")
+    assert c.loc["NE", "anos_faltantes"] == "2003;2004" and c.loc["BA", "anos_faltantes"] == "2005"
 
 
-def test_inicio_da_serie_antes_do_primeiro_ano_conta_como_faltante():
+def test_anos_faltantes_ignora_anos_que_a_serie_nao_publica():
+    b = pd.concat([base_anos_ne({2005: 1, 2007: 1}, territorio="NE"), base_anos_ne({2005: 1}, territorio="BA")], ignore_index=True)
+    c = relatorio_cobertura(b, {"x": ficha("x", inicio=2005, fim=2007)}).set_index("territorio_id")
+    assert c.loc["BA", "anos_faltantes"] == "2007" and c.loc["NE", "anos_faltantes"] == ""
+
+
+def test_ano_do_inicio_que_ninguem_publica_nao_e_faltante():
     c = relatorio_cobertura(base_anos_ne({2003: 1, 2004: 1}), {"x": ficha("x", inicio=2002, fim=2004)})
-    assert c.iloc[0].anos_faltantes == "2002"
+    assert c.iloc[0].anos_faltantes == ""
 
 
 def test_um_registro_por_territorio_presente():
@@ -82,7 +89,7 @@ def test_territorio_so_com_indisponivel_aparece_sem_anos():
     c = relatorio_cobertura(base_anos_ne({}, indisponivel=[2002]), {"x": ficha("x", inicio=2002, fim=2003)})
     linha = c.iloc[0]
     assert pd.isna(linha.primeiro_ano) and pd.isna(linha.ultimo_ano)
-    assert linha.anos_faltantes == "2002;2003" and linha.proxima_publicacao == ""
+    assert linha.anos_faltantes == "2002" and linha.proxima_publicacao == ""
 
 
 def test_base_vazia_devolve_colunas():

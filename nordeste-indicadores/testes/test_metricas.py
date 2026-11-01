@@ -103,7 +103,7 @@ def test_sem_referencia_so_saem_tres_metricas(territorios):
     b = base_anos({"x": {2002: {"NE": 1, "BR": 2}, 2003: {"NE": 2, "BR": 2}}})
     m = metricas_convergencia(b, {"x": ficha("x", referencia="nenhuma")}, territorios)
     assert set(m.metrica) <= {"variacao_acumulada", "posicao_regioes", "dispersao_ufs"}
-    assert m[m.metrica == "variacao_acumulada"].valor.tolist() == [0.0, 100.0]
+    assert m[(m.metrica == "variacao_acumulada") & (m.territorio_id == "NE")].valor.tolist() == [0.0, 100.0]
     assert (m.referencia == "").all()
 
 
@@ -118,8 +118,9 @@ def test_referencia_brasil_fora_ne_e_registrada(territorios):
 def test_razao_e_diferenca_saem_para_ne_e_ufs(territorios):
     valores = {"BR": 10, "NE": 5, **{uf: 2 for uf in UFS_NE}}
     m = metricas_convergencia(base_de({"x": valores}), {"x": ficha("x", referencia="brasil")}, territorios)
+    for metrica in ("razao", "diferenca", "crescimento_relativo"):
+        assert set(m[m.metrica == metrica].territorio_id) <= {"NE", *UFS_NE}
     assert set(m[m.metrica == "razao"].territorio_id) == {"NE", *UFS_NE}
-    assert "BR" not in set(m.territorio_id) and "SE" not in set(m.territorio_id)
 
 
 def test_razao_nao_atravessa_serie(territorios):
@@ -180,3 +181,43 @@ def test_crescimento_relativo_so_entre_observacoes_consecutivas_comuns():
 def test_exige_territorios_conhecidos(territorios):
     with pytest.raises(ValueError, match="BR_FORA_NE"):
         metricas_convergencia(base_de({"x": {"NE": 1}}), {"x": ficha("x")}, territorios[territorios.territorio_id != "BR_FORA_NE"])
+
+
+def test_variacao_acumulada_sai_para_referencias(territorios):
+    b = base_anos({"x": {
+        2002: {"NE": 100, "BR": 100, "BR_FORA_NE": 100, "SE": 100},
+        2003: {"NE": 110, "BR": 105, "BR_FORA_NE": 102, "SE": 90},
+    }})
+    m = metricas_convergencia(b, {"x": ficha("x", referencia="brasil_fora_ne")}, territorios)
+    v = m[m.metrica == "variacao_acumulada"].set_index(["territorio_id", "ano"]).valor
+    assert v[("BR", 2003)] == pytest.approx(5.0) and v[("BR_FORA_NE", 2003)] == pytest.approx(2.0)
+    assert v[("NE", 2003)] == pytest.approx(10.0) and v[("SE", 2003)] == pytest.approx(-10.0)
+    assert (m[m.metrica == "variacao_acumulada"].referencia == "").all()
+
+
+def test_crescimento_relativo_com_tres_observacoes():
+    r = crescimento_relativo(serie_anos({2002: 100, 2003: 110, 2004: 121}), serie_anos({2002: 100, 2003: 105, 2004: 110.25}))
+    assert r.round(6).tolist() == [5.0, 5.0] and r.index.tolist() == [2003, 2004]
+
+
+def test_linha_indisponivel_nao_vira_referencia_nem_gera_variacao(territorios):
+    b = base_anos({"x": {
+        2002: {"NE": 100, "BR": 100},
+        2003: {"NE": 110, "BR": None},
+        2004: {"NE": 121, "BR": 110},
+    }})
+    m = metricas_convergencia(b, {"x": ficha("x", referencia="brasil")}, territorios)
+    br = m[(m.territorio_id == "BR") & (m.metrica == "variacao_acumulada")]
+    assert br.ano.tolist() == [2002, 2004] and br.valor.round(6).tolist() == [0.0, 10.0]
+    assert m[(m.metrica == "razao") & (m.territorio_id == "NE")].ano.tolist() == [2002, 2004]
+    # 2002 -> 2004 e o par consecutivo da referencia: 21 pp de NE menos 10 pp do BR
+    c = m[(m.metrica == "crescimento_relativo") & (m.territorio_id == "NE")]
+    assert c.ano.tolist() == [2004] and c.valor.round(6).tolist() == [11.0]
+
+
+def test_linha_indisponivel_e_ignorada_mesmo_com_valor_residual(territorios):
+    b = base_anos({"x": {2002: {"NE": 100, "BR": 100}, 2003: {"NE": 110, "BR": 999}}})
+    b.loc[(b.territorio_id == "BR") & (b.ano == 2003), "tipo_dado"] = "indisponivel"
+    m = metricas_convergencia(b, {"x": ficha("x", referencia="brasil")}, territorios)
+    assert m[(m.metrica == "razao") & (m.territorio_id == "NE")].ano.tolist() == [2002]
+    assert m[(m.territorio_id == "BR")].ano.tolist() == [2002]
