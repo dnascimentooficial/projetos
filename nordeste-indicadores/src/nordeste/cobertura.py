@@ -28,6 +28,7 @@ def relatorio_cobertura(base: pd.DataFrame, fichas: dict[str, Ficha]) -> pd.Data
     separados por ";", os anos entre `inicio` e `fim` da serie (ou o ultimo ano disponivel da serie,
     se `fim` for nulo) em que a serie tem valor em algum territorio mas este nao tem, mais os anos em
     que ele tem linha `indisponivel`. Anos que ninguem publica (serie bienal) nao sao faltantes.
+    `proxima_publicacao` so e prevista para serie em curso (`fim` nulo); com `fim` declarado fica vazia.
     Series que a ficha nao declara ficam de fora: nao ha janela para medir.
     """
     linhas: list[dict] = []
@@ -39,6 +40,7 @@ def relatorio_cobertura(base: pd.DataFrame, fichas: dict[str, Ficha]) -> pd.Data
         publicados = set(serie_base.loc[serie_base.valor.notna(), "ano"].astype(int))
         limite = serie.fim if serie.fim is not None else max(publicados, default=serie.inicio - 1)
         janela = set(range(serie.inicio, limite + 1))
+        em_curso = serie.fim is None  # serie com fim declarado esta encerrada: nao se preve proxima publicacao
         for territorio_id, grupo in serie_base.groupby("territorio_id", sort=True):
             anos = set(grupo.loc[grupo.valor.notna(), "ano"].astype(int))
             indisponiveis = set(grupo.loc[grupo.valor.isna(), "ano"].astype(int))
@@ -48,7 +50,7 @@ def relatorio_cobertura(base: pd.DataFrame, fichas: dict[str, Ficha]) -> pd.Data
                 "indicador_id": indicador_id, "serie_id": serie_id, "territorio_id": territorio_id,
                 "primeiro_ano": min(anos) if anos else None, "ultimo_ano": ultimo,
                 "anos_faltantes": ";".join(map(str, faltantes)),
-                "proxima_publicacao": proxima_publicacao(ultimo, ficha.defasagem_meses) if anos else "",
+                "proxima_publicacao": proxima_publicacao(ultimo, ficha.defasagem_meses) if anos and em_curso else "",
             })
     saida = pd.DataFrame(linhas, columns=COLUNAS_COBERTURA)
     for coluna in ("primeiro_ano", "ultimo_ano"):

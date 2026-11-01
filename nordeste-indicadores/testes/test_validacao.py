@@ -197,6 +197,17 @@ def test_regra_bloqueia(regra, quebra):
     assert not r.aprovado and regra in {f.regra for f in r.erros}
 
 
+def test_r02_rede_fora_do_dominio_bloqueia_e_rede_vazia_passa():
+    c = cenario()
+    assert (c["base"].rede == "").all() and validar(**c).aprovado
+    base = c["base"].copy()
+    base.loc[base.index[0], "rede"] = "particular"
+    r = validar(**{**c, "base": base})
+    assert any(f.regra == "R02" and "rede fora do dominio" in f.mensagem for f in r.erros)
+    base.loc[base.index[0], "rede"] = "publica"
+    assert "R02" not in {f.regra for f in validar(**{**c, "base": base}).erros}
+
+
 def test_quebras_nao_mutam_o_cenario():
     c = cenario()
     copia = {k: (v.copy() if isinstance(v, pd.DataFrame) else v) for k, v in c.items()}

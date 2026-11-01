@@ -58,7 +58,16 @@ def test_colunas_e_primeiro_ultimo_ano():
     ]
     linha = c.iloc[0]
     assert (linha.indicador_id, linha.serie_id, linha.territorio_id) == ("x", "s", "NE")
-    assert (linha.primeiro_ano, linha.ultimo_ano, linha.proxima_publicacao) == (2002, 2004, "2007-11")
+    # serie com fim declarado esta encerrada: nao ha proxima publicacao a prever
+    assert (linha.primeiro_ano, linha.ultimo_ano, linha.proxima_publicacao) == (2002, 2004, "")
+
+
+def test_so_serie_em_curso_tem_proxima_publicacao():
+    base = base_anos_ne({2002: 1, 2004: 1})
+    em_curso = relatorio_cobertura(base, {"x": ficha("x", inicio=2002, fim=None, defasagem_meses=23)}).iloc[0]
+    assert em_curso.proxima_publicacao == "2007-11"
+    encerrada = relatorio_cobertura(base, {"x": ficha("x", inicio=2002, fim=2030, defasagem_meses=23)}).iloc[0]
+    assert encerrada.proxima_publicacao == ""
 
 
 def test_fim_nulo_usa_ultimo_ano_disponivel_da_serie():

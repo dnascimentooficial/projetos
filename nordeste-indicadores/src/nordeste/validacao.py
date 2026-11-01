@@ -9,7 +9,7 @@ import pandas as pd
 
 from nordeste.cobertura import proxima_publicacao
 from nordeste.derivados import TERRITORIO_DERIVADO, _cobre
-from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, COLUNAS_DERIVADOS, METRICAS, TIPOS_DADO
+from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, COLUNAS_DERIVADOS, METRICAS, REDES, TIPOS_DADO
 from nordeste.fichas import Ficha
 from nordeste.territorios import REGIOES, UFS_NE
 
@@ -135,6 +135,7 @@ def _r02_tipos(base: pd.DataFrame) -> list[Falha]:
 
 def _r02_linhas(base: pd.DataFrame, fichas: dict[str, Ficha], conhecidos: set[str]) -> list[Falha]:
     falhas = _agregar("R02", base[~base.tipo_dado.isin(TIPOS_DADO)], "tipo_dado fora do dominio")
+    falhas += _agregar("R02", base[~base.rede.isin(("", *REDES))], f"rede fora do dominio ({', '.join(REDES)} ou vazio)")
     falhas += _agregar("R02", base[base.valor.abs() == math.inf], "valor nao finito (infinito)")
     falhas += _agregar("R02", base[~base.territorio_id.isin(conhecidos)], "territorio_id desconhecido")
     falhas += _agregar("R02", base[~base.indicador_id.isin(fichas)], "indicador_id sem ficha")
