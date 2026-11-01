@@ -1,0 +1,38 @@
+id: pib_participacao
+nome: Participação no PIB nacional
+descricao: >-
+  Participação de cada região e unidade da federação no Produto Interno Bruto
+  do Brasil, em percentual. Para o Nordeste, mostra quanto da economia
+  nacional a região responde.
+eixo: economia
+categoria: renda
+unidade: "%"
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Razão entre o PIB a preços correntes do território e o PIB a preços
+  correntes do Brasil no mesmo ano, em percentual, conforme o Sistema de
+  Contas Regionais do IBGE, referência 2010, série a partir de 2002. O Brasil
+  vale sempre 100.
+observacoes: >-
+  Indicador já relativo: não recebe Brasil fora do Nordeste nem razão sobre
+  uma referência. A participação é calculada sobre valores correntes de cada
+  ano; os dados mais recentes costumam ser revisados na divulgação seguinte.
+sentido: maior_melhor
+limites: {min: 0, max: 100}
+defasagem_meses: 23
+comparacao:
+  referencia: nenhuma
+series:
+  - id: scr_ref2010
+    inicio: 2002
+    fim: 2023
+    fonte: IBGE, Sistema de Contas Regionais (referência 2010)
+    base_origem: SIDRA, tabela 5938 (Contas Regionais do Brasil), variável 496
+    url: https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9054-contas-regionais-do-brasil.html
+    coletor: sidra
+    parametros: {tabela: "5938", variavel: "496"}
+    compatibilidade: >-
+      Não comparável com a série de referência 2002 (anos 2000 a 2001):
+      mudança de base metodológica e de classificações.
+    verificado: true

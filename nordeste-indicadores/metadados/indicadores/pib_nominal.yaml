@@ -32,8 +32,8 @@ series:
     base_origem: SIDRA, Contas Regionais do Brasil
     url: https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9054-contas-regionais-do-brasil.html
     coletor: sidra
-    parametros: {}
+    parametros: {tabela: "5938", variavel: "37"}
     compatibilidade: >-
       Não comparável com a série de referência 2002 (anos 2000 a 2001):
       mudança de base metodológica e de classificações.
-    verificado: false
+    verificado: true

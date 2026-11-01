@@ -1,0 +1,93 @@
+id: populacao
+nome: População residente
+descricao: >-
+  População residente por Brasil, região e unidade da federação, a partir das
+  estimativas anuais do IBGE e dos Censos Demográficos.
+eixo: contexto
+categoria: demografia
+unidade: pessoas
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Estimativas de população residente em 1º de julho (IBGE, Estimativas de
+  População, tabela 6579 do SIDRA) e contagens dos Censos Demográficos de 2000,
+  2010 (tabela 202) e 2022 (tabela 4709). Cada fonte forma uma série própria; o
+  agregado Brasil fora do Nordeste é a soma dos demais territórios, calculada
+  dentro de cada série.
+observacoes: >-
+  A tabela de estimativas não traz 2007, 2010 e 2022, anos de contagem e de
+  censo, nem 2023, que o IBGE não publicou: esses anos não são preenchidos e
+  as séries de censo mostram os valores contados. Cada edição das estimativas
+  tem base própria, por isso há salto entre 2021 e 2024, quando as estimativas
+  passaram a partir do Censo 2022. As estimativas não são o denominador das
+  Contas Regionais (ver populacao_contas_regionais).
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 0
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: estimativa_pre_censo2022
+    inicio: 2001
+    fim: 2021
+    fonte: IBGE, Estimativas de População
+    base_origem: SIDRA, tabela 6579, variável 9324
+    url: https://sidra.ibge.gov.br/pesquisa/estimapop/tabelas
+    coletor: sidra
+    parametros:
+      tabela: "6579"
+      variavel: "9324"
+      periodos: 2001-2021
+      anos_estimativa: [2001, 2002, 2003, 2004, 2005, 2006, 2008, 2009, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
+    compatibilidade: >-
+      Estimativas feitas a partir dos Censos de 2000 e 2010. Não comparável
+      com as estimativas de 2024 em diante nem com as contagens censitárias.
+    verificado: true
+  - id: estimativa_pos_censo2022
+    inicio: 2024
+    fim: null
+    fonte: IBGE, Estimativas de População
+    base_origem: SIDRA, tabela 6579, variável 9324
+    url: https://sidra.ibge.gov.br/pesquisa/estimapop/tabelas
+    coletor: sidra
+    parametros:
+      tabela: "6579"
+      variavel: "9324"
+      periodos: 2024-2026
+      anos_estimativa: [2024, 2025, 2026]
+    compatibilidade: >-
+      Estimativas feitas a partir do Censo 2022. Não comparável com as
+      estimativas de 2021 e anteriores nem com as contagens censitárias.
+    verificado: true
+  - id: censo_2000_2010
+    inicio: 2000
+    fim: 2010
+    fonte: IBGE, Censos Demográficos de 2000 e 2010
+    base_origem: SIDRA, tabela 202, variável 93
+    url: https://sidra.ibge.gov.br/tabela/202
+    coletor: sidra
+    parametros:
+      tabela: "202"
+      variavel: "93"
+      periodos: 2000,2010
+      classificacoes: {c1: "0", c2: "0"}
+    compatibilidade: >-
+      População recenseada em 2000 e 2010, total de situação do domicílio e
+      de sexo. Não comparável com o Censo 2022 nem com as estimativas anuais.
+    verificado: true
+  - id: censo_2022
+    inicio: 2022
+    fim: 2022
+    fonte: IBGE, Censo Demográfico 2022
+    base_origem: SIDRA, tabela 4709, variável 93
+    url: https://sidra.ibge.gov.br/pesquisa/censo-demografico/demografico-2022/primeiros-resultados-populacao-e-domicilios
+    coletor: sidra
+    parametros:
+      tabela: "4709"
+      variavel: "93"
+      periodos: "2022"
+    compatibilidade: >-
+      População recenseada em 2022. Não comparável com os Censos de 2000 e
+      2010 nem com as estimativas anuais.
+    verificado: true

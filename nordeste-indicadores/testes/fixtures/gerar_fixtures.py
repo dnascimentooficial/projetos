@@ -29,26 +29,40 @@ _TERRITORIOS = [
 ]
 _NIVEIS = {"1": "Brasil", "2": "Grande Região", "3": "Unidade da Federação"}
 
+# Cabecalho de uma resposta SIDRA com uma variavel (D2) e o ano (D3), como na API real.
 _CABECALHO = {
     "NC": "Nível Territorial (Código)", "NN": "Nível Territorial",
     "MC": "Unidade de Medida (Código)", "MN": "Unidade de Medida", "V": "Valor",
     "D1C": "Brasil, Grande Região e Unidade da Federação (Código)",
     "D1N": "Brasil, Grande Região e Unidade da Federação",
-    "D2C": "Ano (Código)", "D2N": "Ano", "D3C": "Variável (Código)", "D3N": "Variável",
+    "D2C": "Variável (Código)", "D2N": "Variável", "D3C": "Ano (Código)", "D3N": "Ano",
 }
 
 
-def json_sidra(variavel: str, unidade_codigo: str, unidade: str, valor) -> list[dict]:
-    """Monta o JSON SIDRA sintetico; `valor(nc, codigo, ano, multiplicador)` devolve o texto de V."""
-    linhas = [_CABECALHO]
-    for ano in ANOS:
+def json_sidra(
+    variavel: str, unidade_codigo: str, unidade: str, valor,
+    anos=ANOS, classificacoes: tuple[tuple[str, str], ...] = (),
+) -> list[dict]:
+    """Monta o JSON SIDRA sintetico; `valor(nc, codigo, ano, multiplicador)` devolve o texto de V.
+
+    `classificacoes` e uma tupla de (rotulo, codigo) das classificacoes da tabela, todas no total
+    (colunas D4, D5, ...), como a API devolve quando a consulta fixa a categoria Total.
+    """
+    cabecalho = dict(_CABECALHO)
+    for posicao, (rotulo, _) in enumerate(classificacoes, start=4):
+        cabecalho[f"D{posicao}C"], cabecalho[f"D{posicao}N"] = f"{rotulo} (Código)", rotulo
+    linhas = [cabecalho]
+    for ano in anos:
         for nc, codigo, nome, multiplicador in _TERRITORIOS:
-            linhas.append({
+            linha = {
                 "NC": nc, "NN": _NIVEIS[nc], "MC": unidade_codigo, "MN": unidade,
                 "V": valor(nc, codigo, ano, multiplicador),
-                "D1C": codigo, "D1N": nome, "D2C": str(ano), "D2N": str(ano),
-                "D3C": "99999", "D3N": variavel,
-            })
+                "D1C": codigo, "D1N": nome, "D2C": "99999", "D2N": variavel,
+                "D3C": str(ano), "D3N": str(ano),
+            }
+            for posicao, (_, categoria) in enumerate(classificacoes, start=4):
+                linha[f"D{posicao}C"], linha[f"D{posicao}N"] = categoria, "Total"
+            linhas.append(linha)
     return linhas
 
 
@@ -94,6 +108,16 @@ def _per_capita(nc, codigo, ano, multiplicador) -> str:
     return "..." if (nc, codigo, ano) == ("3", "27", 2010) else "1000"
 
 
+def _participacao(nc, codigo, ano, multiplicador) -> str:
+    """Participacao no PIB do Brasil: multiplicador / 13 (o do Brasil) em %, com duas casas, como o SIDRA."""
+    return f"{multiplicador / 13 * 100:.2f}"
+
+
+# Anos em que a tabela 6579 (estimativas de populacao) tem valores; 2007, 2010 e 2022 sao de contagem
+# e censo, e 2023 nao foi publicado.
+ANOS_ESTIMATIVA_PRE_CENSO2022 = [*range(2001, 2007), 2008, 2009, *range(2011, 2022)]
+ANOS_ESTIMATIVA_POS_CENSO2022 = [2024, 2025, 2026]
+
 GERADORES = {
     "pib_nominal/scr_ref2010.json": lambda: json_sidra(
         "PIB a preços correntes (sintético)", "99999", "Mil Reais", _soma),
@@ -101,6 +125,19 @@ GERADORES = {
         "População (sintético)", "99998", "Pessoas", _soma),
     "pib_per_capita/scr_ref2010.json": lambda: json_sidra(
         "PIB per capita (sintético)", "99997", "Reais", _per_capita),
+    "pib_participacao/scr_ref2010.json": lambda: json_sidra(
+        "Participação do PIB no PIB do Brasil (sintético)", "2", "%", _participacao),
+    "populacao/estimativa_pre_censo2022.json": lambda: json_sidra(
+        "População residente estimada (sintético)", "45", "Pessoas", _soma,
+        anos=ANOS_ESTIMATIVA_PRE_CENSO2022),
+    "populacao/estimativa_pos_censo2022.json": lambda: json_sidra(
+        "População residente estimada (sintético)", "45", "Pessoas", _soma,
+        anos=ANOS_ESTIMATIVA_POS_CENSO2022),
+    "populacao/censo_2000_2010.json": lambda: json_sidra(
+        "População residente (sintético)", "45", "Pessoas", _soma, anos=[2000, 2010],
+        classificacoes=(("Situação do domicílio", "0"), ("Sexo", "0"))),
+    "populacao/censo_2022.json": lambda: json_sidra(
+        "População residente (sintético)", "45", "Pessoas", _soma, anos=[2022]),
 }
 
 

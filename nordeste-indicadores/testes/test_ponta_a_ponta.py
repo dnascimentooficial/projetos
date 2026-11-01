@@ -58,6 +58,9 @@ def test_coletar_indicador_desconhecido_sai_com_1(projeto, capsys):
 
 
 def test_coletar_sem_offline_nao_coleta_serie_nao_verificada(projeto, capsys):
+    for ficha in projeto.fichas.glob("*.yaml"):  # a amostra tem serie verificada; aqui nenhuma pode estar
+        ficha.write_text(ficha.read_text(encoding="utf-8").replace("verificado: true", "verificado: false"),
+                         encoding="utf-8")
     assert main(argumentos(projeto) + ["coletar"]) == 1
     err = capsys.readouterr().err
     assert "série não verificada: pib_nominal/scr_ref2010" in err

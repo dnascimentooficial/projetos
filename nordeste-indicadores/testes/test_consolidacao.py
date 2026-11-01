@@ -33,7 +33,10 @@ def test_usa_apenas_a_ultima_coleta(projeto_coletado, fichas, territorios):
     registro = ler_registro(projeto_coletado.registro_coletas)
     primeira = ultima_coleta(registro, "pib_nominal", "scr_ref2010")
     original = (projeto_coletado.raiz / primeira.arquivo).read_text(encoding="utf-8")
-    linha_ne = '"V": "899991", "D1C": "2", "D1N": "Nordeste", "D2C": "2002"'
+    linha_ne = (
+        '"V": "899991", "D1C": "2", "D1N": "Nordeste", "D2C": "99999", '
+        '"D2N": "PIB a preços correntes (sintético)", "D3C": "2002"'
+    )
     assert original.count(linha_ne) == 1
     alterado = original.replace(linha_ne, linha_ne.replace("899991", "1")).encode("utf-8")
     sha256 = hashlib.sha256(alterado).hexdigest()

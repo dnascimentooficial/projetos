@@ -46,15 +46,16 @@ def test_carrega_pib_per_capita(projeto):
     assert f.serie_do_ano(2001) is None
 
 
-def test_fichas_do_repositorio_sao_validas_e_auxiliares(projeto, fichas):
-    assert verificar_fichas(projeto.fichas) == []
-    assert set(fichas) == {"pib_per_capita", "pib_nominal", "populacao_contas_regionais"}
+def test_fichas_do_repositorio_sao_validas_e_auxiliares(projeto_completo):
+    assert verificar_fichas(projeto_completo.fichas) == []
+    fichas = carregar_fichas(projeto_completo.fichas)
+    assert {"pib_per_capita", "pib_nominal", "populacao_contas_regionais"} <= set(fichas)
     assert {i for i, f in fichas.items() if f.auxiliar} == {"pib_nominal", "populacao_contas_regionais"}
     assert not fichas["pib_per_capita"].auxiliar
     assert fichas["pib_per_capita"].defasagem_meses == 23
     assert fichas["pib_nominal"].unidade == "R$ mil"
     assert fichas["pib_nominal"].tratamento_monetario == {"modo": "razao"}
-    assert all(not s.verificado and s.parametros == {} for f in fichas.values() for s in f.series)
+    assert all(s.parametros for f in fichas.values() for s in f.series if s.verificado)
 
 
 def test_serie_inexistente_levanta_keyerror(fichas):
