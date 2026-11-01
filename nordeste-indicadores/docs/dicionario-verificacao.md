@@ -44,9 +44,9 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `populacao_pnadc` (auxiliar) | `pnadc` | SIDRA 7436, v606 | 2012 a 2025 | sim |
 | `pobreza` | `pnadc` | SIDRA 5877, v9948 | 2012 a 2024 | **não** (linha de pobreza não confirmada) |
 | `extrema_pobreza` | `pnadc` | SIDRA 5817, v9617 | 2012 a 2024 | **não** (linha de pobreza não confirmada) |
-| `gini` | `pnad` | Ipeadata `PGINI` (janela 2001-2014) | 2001 a 2014, sem 2010 | sim |
+| `gini` | `pnad` | Ipeadata `PGINI` (janela 2001-2014) | 2001 a 2014; 2010 `indisponivel` (ano sem pesquisa) | sim |
 | `gini` | `pnadc` | SIDRA 7435, v10681 | 2012 a 2025 | sim |
-| `desocupacao` | `pnad` | Ipeadata `Dese_Pnad` (janela 2001-2014) | 2001 a 2014, sem 2010 | sim |
+| `desocupacao` | `pnad` | Ipeadata `Dese_Pnad` (janela 2001-2014) | 2001 a 2014; 2010 `indisponivel` (ano sem pesquisa) | sim |
 | `desocupacao` | `pnadc` | SIDRA 4562, v4099 | 2012 a 2025 | sim |
 | `desocupados` (auxiliar) | `pnadc` | SIDRA 10364, v4092, c2/6794 | 2012 a 2019 e 2023 a 2025 (2020 a 2022 só Brasil) | sim |
 | `forca_trabalho` (auxiliar) | `pnadc` | SIDRA 10364, v4088, c2/6794 | 2012 a 2019 e 2023 a 2025 (2020 a 2022 só Brasil) | sim |
@@ -357,12 +357,22 @@ anteriores a 2001 precisavam ser cortados. Foi acrescentado ao padronizador do I
 (`"AAAA"` ou `"AAAA-AAAA"`, como o `periodos` do SIDRA), com testes em `testes/test_padronizacao_ipeadata.py`. Sem o
 parâmetro, o comportamento é o de antes. Reportado ao controlador como mudança fora do escopo de pura ficha.
 
-### Pendência para o controlador: 2010 na série `pnad`
+### 2010 na série `pnad`: `anos_sem_publicacao`
 
-A PNAD não foi a campo em 2010 e o Ipeadata não devolve linha para o ano. O padronizador do Ipeadata não gera linha
-`indisponivel` para anos ausentes, então `gini/pnad` e `desocupacao/pnad` não têm linha de 2010 (buraco dentro de 2001 a
-2014, não linha `indisponivel`). O relatório de cobertura não lista 2010 como faltante, porque nenhum território publica o
-ano. Não foi alterado código para gerar a linha; cabe ao controlador decidir.
+A PNAD não foi a campo em 2010 e o Ipeadata não devolve linha para o ano. Por decisão do controlador (fix round 1), a série pode declarar
+`anos_sem_publicacao: [2010]` (lista de anos dentro de `inicio` a `fim`, validada em `fichas.py`), e o despachante `padronizar` gera, para cada
+grupo e território que a série tem, uma linha `indisponivel` (valor nulo, nota "ano sem pesquisa (Censo)") nos anos listados em que a fonte não
+trouxe linha. Aplicado em `gini/pnad` e `desocupacao/pnad`: 2010 tem 15 linhas `indisponivel` em cada uma, e o relatório de cobertura passa a listar 2010
+em `anos_faltantes`. Valor trazido pela fonte nunca é sobrescrito. Não há auxiliares da `pnad`.
+
+### Conferência R08 e precisão do valor oficial (fix round 1)
+
+A taxa de desocupação oficial (tabela 4562) vem com uma casa decimal, e o erro de arredondamento de até 0,05 ponto percentual passa de 0,5% relativo
+quando a taxa é menor que 10%. Testado se o SIDRA dá mais casas: o sufixo `/d/m` (casas decimais máximas) e `/d/s` devolvem os mesmos valores com uma
+casa (7.4, 9.6, 7.9); `/d/3` só completa com zeros (7.400). O dado está guardado com uma casa, então não há ganho em acrescentar o sufixo, e `url_sidra`
+não foi alterado. Em vez disso a ficha declara `comparacao.precisao_oficial: 0.1` e a R08 só reprova se |calculado − oficial| passar do maior entre 0,5% do
+oficial e `precisao_oficial` ÷ 2. Sem o campo, a regra é a de antes. Com os dados reais, a maior diferença do Nordeste é 0,04 ponto percentual (2012, 2014),
+dentro da meia casa (0,05), em 11 anos conferidos.
 
 ### renda_dom_pc / pnadc
 
@@ -446,10 +456,10 @@ tabela não está confirmada.
   entre os indivíduos, calculada a partir das respostas da PNAD.
 - A resposta traz 1976 a 2014 (sem os anos sem PNAD: 1980, 1991, 1994, 2000 e 2010), com Brasil, 5 regiões e 27 UFs. O parâmetro `periodos: "2001-2014"`
   guarda só a janela da ficha (ver "Mudança de código").
-- Obtido (já com a janela): 195 linhas = 13 anos (2001 a 2009 e 2011 a 2014) x 15 territórios, `observado`. Brasil 2001 = 0,596 e 2014 = 0,518;
+- Obtido (já com a janela): 195 linhas observadas = 13 anos (2001 a 2009 e 2011 a 2014) x 15 territórios, mais 15 `indisponivel` em 2010. Brasil 2001 = 0,596 e 2014 = 0,518;
   Nordeste 2001 = 0,600 e 2014 = 0,516. Escala de 0 a 1, a mesma da PNAD Contínua.
 - 2015: a PNAD de 2015 existe, mas a série do Ipeadata termina em 2014; a série fica com `fim: 2014`. Divergência com a spec (2001 a 2015).
-- 2010: sem linha (pendência para o controlador, acima).
+- 2010: `anos_sem_publicacao: [2010]`; 15 linhas `indisponivel` (nota "ano sem pesquisa (Censo)"), 2010 aparece em `anos_faltantes`.
 - Brasil fora do Nordeste: não há (o Gini não se recompõe a partir de totais); comparação com o Brasil.
 
 ### gini / pnadc
@@ -468,9 +478,9 @@ tabela não está confirmada.
 - Série `Dese_Pnad`, "Taxa de desemprego (IBGE/Pnad) - INATIVA": percentual das pessoas que procuraram e não encontraram ocupação entre as economicamente ativas,
   de 10 anos ou mais, na semana de referência; elaboração Disoc/Ipea, série descontinuada.
 - A resposta traz 1992 a 2014 (sem 1994, 2000 e 2010), com Brasil, regiões, UFs e áreas metropolitanas (descartadas). `periodos: "2001-2014"` guarda a janela da ficha.
-- Obtido (já com a janela): 195 linhas = 13 anos (2001 a 2009 e 2011 a 2014) x 15 territórios, `observado`. Brasil 2001 = 10,05% e 2014 = 7,54%;
+- Obtido (já com a janela): 195 linhas observadas = 13 anos (2001 a 2009 e 2011 a 2014) x 15 territórios, mais 15 `indisponivel` em 2010. Brasil 2001 = 10,05% e 2014 = 7,54%;
   Nordeste 2001 = 9,72% e 2014 = 9,33%.
-- 2015: série do Ipeadata termina em 2014 (divergência com a spec, 2001 a 2015). 2010: sem linha (pendência acima).
+- 2015: série do Ipeadata termina em 2014 (divergência com a spec, 2001 a 2015). 2010: `anos_sem_publicacao: [2010]`, 15 linhas `indisponivel`.
 - Brasil fora do Nordeste: **não há na série `pnad`**. Faltam as contagens: o SIDRA traz as pessoas que procuraram trabalho (tabela 1868), que inclui
   ocupadas que também procuraram, e não os desocupados; o Ipeadata só publica a taxa. A razão não se recompõe, e a comparação da ficha vale só
   para a `pnadc`.
@@ -485,8 +495,8 @@ tabela não está confirmada.
 - Brasil fora do Nordeste: por razão, (desocupados BR − NE) ÷ (força de trabalho BR − NE) × 100, com as séries `desocupados` e `forca_trabalho`
   (tabela 10364). Sai em 11 dos 14 anos (2012 a 2019 e 2023 a 2025): em 2020, 2021 e 2022 as contagens por região e UF não são publicadas
   (só o Brasil), e esses anos ficam sem Brasil fora do Nordeste. Brasil fora do Nordeste: 6,65% em 2012 e 4,96% em 2025.
-- R08: o valor oficial do Nordeste confere com a razão em 11 anos, a até **0,469%** (2014), muito perto da tolerância de 0,5%: a taxa oficial vem com uma
-  casa decimal e as contagens, em mil pessoas. Uma revisão futura pode derrubar a regra; é o ponto mais frágil do bloco.
+- R08: o valor oficial do Nordeste confere com a razão nos 11 anos, a até 0,04 ponto percentual (2012 e 2014). A taxa oficial vem com uma casa decimal, então a
+  ficha declara `precisao_oficial: 0.1` e a regra desconta a meia casa (ver "Conferência R08 e precisão do valor oficial").
 
 ### desocupados / pnadc
 
@@ -552,14 +562,15 @@ tabela não está confirmada.
 6. `renda_dom_pc`: só a série `pnadc` (2012 a 2025). A PNAD antiga (`pnad`, 2001 a 2015) não tem renda domiciliar per capita por UF em tabela do SIDRA nem no
    Ipeadata. Brasil fora do Nordeste é exato (massa ÷ população), que a spec previa "se houver totais publicados". O valor não é o destaque do IBGE (R$ 2.264 contra
    R$ 2.316 em 2025): universo das tabelas de rendimento de todas as fontes.
-7. `pobreza` (e a nova `extrema_pobreza`): só `pnadc` (2012 a 2024), e as duas **não verificadas**: a linha de pobreza das tabelas ODS do SIDRA (5877 e 5817) não pôde ser
-   confirmada e os valores não coincidem com a Síntese de Indicadores Sociais (US$ 6,85 e US$ 2,15 PPC 2017). Pobreza e extrema pobreza viraram duas fichas, e não
-   subindicadores de uma, porque cada série do projeto vem de uma única tabela. Sem `pnad` (PNAD antiga) e sem Brasil fora do Nordeste (não há contagem de pobres por UF em série
+7. `pobreza` (e a nova `extrema_pobreza`): a spec previa pobreza e extrema pobreza como subindicadores de uma ficha; viraram **duas fichas**, porque cada série do projeto vem de
+   uma única tabela e as duas medidas estão em tabelas diferentes do SIDRA (5877 e 5817), com padronizador sem subindicador (decisão do controlador: manter duas fichas).
+   Só `pnadc` (2012 a 2024), e as duas **não verificadas**: a linha de pobreza das tabelas ODS do SIDRA (5877 e 5817) não pôde ser
+   confirmada e os valores não coincidem com a Síntese de Indicadores Sociais (US$ 6,85 e US$ 2,15 PPC 2017). Sem `pnad` (PNAD antiga) e sem Brasil fora do Nordeste (não há contagem de pobres por UF em série
    anual).
-8. `gini`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `PGINI` (a PNAD de 2015 não está na série), sem 2010; `pnadc` de 2012 a 2025. Comparação com o Brasil, como na spec.
-9. `desocupacao`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `Dese_Pnad`, sem 2010 e **sem Brasil fora do Nordeste** (não há contagem de desocupados da PNAD
-   antiga); `pnadc` de 2012 a 2025, com Brasil fora do Nordeste exato em 11 anos (faltam 2020, 2021 e 2022, sem contagem regional). R08 passa por pouco (0,469%).
+8. `gini`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `PGINI` (a PNAD de 2015 não está na série), com 2010 `indisponivel`; `pnadc` de 2012 a 2025. Comparação com o Brasil, como na spec.
+9. `desocupacao`: `pnad` de 2001 a 2014 (spec: 2001 a 2015), do Ipeadata `Dese_Pnad`, com 2010 `indisponivel` e **sem Brasil fora do Nordeste** (não há contagem de desocupados da PNAD
+   antiga); `pnadc` de 2012 a 2025, com Brasil fora do Nordeste exato em 11 anos (faltam 2020, 2021 e 2022, sem contagem regional). R08 usa a precisão publicada da taxa (0,1).
 10. `informalidade`: só `pnadc` (2016 a 2025), com Brasil fora do Nordeste exato nos 10 anos (informais ÷ ocupados).
 11. `rendimento_trabalho`: só `pnadc` (2012 a 2025), comparação com o Brasil, como na spec.
-12. Pendência de código para o controlador: o Ipeadata não devolve 2010 (PNAD não foi a campo) e o padronizador do Ipeadata não gera linha `indisponivel` para o ano; `gini/pnad`
-    e `desocupacao/pnad` têm buraco em 2010. O parâmetro `periodos` do padronizador do Ipeadata foi acrescentado nesta tarefa para cortar os anos anteriores a 2001.
+12. Mudanças de código desta tarefa: o parâmetro `periodos` do padronizador do Ipeadata (corta os anos anteriores a 2001); o campo `anos_sem_publicacao` da série
+    (linhas `indisponivel` no ano sem pesquisa, 2010 na `pnad`); o campo `comparacao.precisao_oficial` e a tolerância correspondente na R08.

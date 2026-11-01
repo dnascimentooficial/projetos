@@ -77,6 +77,7 @@ def test_padroes_dos_campos_opcionais(tmp_path, ficha_minima):
     f = carregar_ficha(_gravar(tmp_path, ficha_minima))
     assert (f.tratamento_monetario, f.auxiliar, f.limiar_salto_pct) == (None, False, 50.0)
     assert f.comparacao.fator == 1.0
+    assert f.comparacao.precisao_oficial is None and f.series[0].anos_sem_publicacao == ()
 
 
 def test_campo_ausente_nomeia_o_campo(tmp_path, ficha_minima):
@@ -296,3 +297,34 @@ def test_ano_fixo_igual_ao_inicio_da_faixa_e_aceito(pasta_com_calculo):
     calculada["calculo"]["denominador"]["series_por_ano"]["2011"] = {"serie": "censo", "ano": 2011}
     _gravar(pasta, calculada, "calculada.yaml")
     assert verificar_fichas(pasta) == []
+
+
+def test_precisao_oficial_e_lida(tmp_path, ficha_minima):
+    ficha_minima["comparacao"] = {"referencia": "brasil", "precisao_oficial": 0.1}
+    assert carregar_ficha(_gravar(tmp_path, ficha_minima)).comparacao.precisao_oficial == 0.1
+
+
+@pytest.mark.parametrize("valor", [0, -0.1, "0.1", True, None])
+def test_precisao_oficial_invalida_e_recusada(tmp_path, ficha_minima, valor):
+    ficha_minima["comparacao"] = {"referencia": "brasil", "precisao_oficial": valor}
+    _gravar(tmp_path, ficha_minima)
+    assert any("precisao_oficial" in m for m in verificar_fichas(tmp_path))
+
+
+def test_anos_sem_publicacao_sao_lidos(tmp_path, ficha_minima):
+    ficha_minima["series"][0]["anos_sem_publicacao"] = [2010, 2005]
+    f = carregar_ficha(_gravar(tmp_path, ficha_minima))
+    assert f.series[0].anos_sem_publicacao == (2005, 2010)
+
+
+@pytest.mark.parametrize("anos", [[2001], [2024], [2010, 2010], ["2010"], 2010, [True]])
+def test_anos_sem_publicacao_invalidos_sao_recusados(tmp_path, ficha_minima, anos):
+    ficha_minima["series"][0]["anos_sem_publicacao"] = anos  # cobertura 2002 a 2023
+    _gravar(tmp_path, ficha_minima)
+    assert any("anos_sem_publicacao" in m for m in verificar_fichas(tmp_path))
+
+
+def test_anos_sem_publicacao_em_serie_em_curso_aceita_anos_depois_do_inicio(tmp_path, ficha_minima):
+    ficha_minima["series"][0]["fim"] = None
+    ficha_minima["series"][0]["anos_sem_publicacao"] = [2030]
+    assert carregar_ficha(_gravar(tmp_path, ficha_minima)).series[0].anos_sem_publicacao == (2030,)

@@ -66,13 +66,18 @@ def _agregar(regra: str, linhas: pd.DataFrame, problema: str) -> list[Falha]:
     return falhas
 
 
-def _diverge(oficial: float, calculado: float) -> bool:
-    """Diferenca relativa acima da tolerancia; qualquer termo nao finito (inf, nan) diverge."""
+def _diverge(oficial: float, calculado: float, precisao: float | None = None) -> bool:
+    """Diferenca acima da tolerancia; qualquer termo nao finito (inf, nan) diverge.
+
+    A tolerancia e 0,5% do valor oficial ou, se o valor oficial e publicado arredondado a `precisao` (ex.: 0,1 para
+    uma casa decimal), meia unidade de precisao, o que for maior: o arredondamento do oficial nao e divergencia.
+    """
     if not (math.isfinite(oficial) and math.isfinite(calculado)):
         return True
     if oficial == 0:
         return calculado != 0
-    return abs(oficial - calculado) / abs(oficial) > TOLERANCIA
+    folga = max(TOLERANCIA * abs(oficial), (precisao or 0.0) / 2)
+    return abs(oficial - calculado) > folga * (1 + 1e-9)  # a borda da meia casa passa (7,9 contra 7,95)
 
 
 def _pct(oficial: float, calculado: float) -> str:
@@ -241,7 +246,7 @@ def _r08_razao(base: pd.DataFrame, fichas: dict[str, Ficha]) -> list[Falha]:
                 )))
                 continue
             calculado = r["num"] / r["den"] * comp.fator
-            if _diverge(r["oficial"], calculado):
+            if _diverge(r["oficial"], calculado, comp.precisao_oficial):
                 falhas.append(Falha("R08", (
                     f"{onde}: "
                     f"oficial = {r['oficial']:g}, recalculado {comp.numerador} / {comp.denominador} x {comp.fator:g} "

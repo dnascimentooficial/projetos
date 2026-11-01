@@ -287,3 +287,41 @@ def test_infinitos_opostos_nas_ufs_bloqueiam_sem_warning():
         warnings.simplefilter("error")
         r = validar(**ufs_infinitas(cenario()))
     assert "R02" in {f.regra for f in r.erros}
+
+
+def test_diverge_com_precisao_publicada():
+    assert _diverge(7.9, 7.94) and not _diverge(7.9, 7.94, precisao=0.1)  # 0,04 > 0,5% de 7,9, mas < 0,05
+    assert not _diverge(7.9, 7.95, precisao=0.1)  # a borda da meia casa decimal passa
+    assert _diverge(7.9, 7.96, precisao=0.1)
+    assert _diverge(7.9, 7.84, precisao=0.1) and not _diverge(7.9, 7.86, precisao=0.1)
+    assert _diverge(100.0, 100.6, precisao=0.1)  # a tolerancia relativa de 0,5% continua valendo quando e maior
+    assert not _diverge(100.0, 100.4, precisao=0.1)
+    assert _diverge(float("inf"), 1.0, precisao=0.1) and _diverge(1.0, float("nan"), precisao=0.1)
+
+
+def _cenario_r08_com_precisao(fator_oficial, precisao):
+    """Per capita oficial do NE `fator_oficial` vezes o valor recalculado; a ficha declara `precisao_oficial`."""
+    c = cenario()
+    base = c["base"].copy()
+    ne = _linha(base, "amostra_per_capita", "NE", 2002)
+    recalculado = base.loc[ne, "valor"].iloc[0]
+    base.loc[ne, "valor"] = recalculado * fator_oficial
+    fichas = dict(c["fichas"])
+    ficha = fichas["amostra_per_capita"]
+    fichas["amostra_per_capita"] = dataclasses.replace(
+        ficha, comparacao=dataclasses.replace(ficha.comparacao, precisao_oficial=precisao))
+    return {**c, "base": base, "fichas": fichas}, recalculado
+
+
+def test_r08_aceita_diferenca_dentro_da_meia_casa_do_valor_publicado():
+    # oficial 0,6% acima do recalculado: falha pela regra antiga (0,5%), passa com precisao de 2% do valor (meia casa = 1%)
+    c, recalculado = _cenario_r08_com_precisao(1.006, precisao=None)
+    assert "R08" in {f.regra for f in validar(**c).erros}
+    c, _ = _cenario_r08_com_precisao(1.006, precisao=recalculado * 0.02)
+    assert "R08" not in {f.regra for f in validar(**c).erros}
+
+
+def test_r08_reprova_diferenca_maior_que_a_meia_casa_do_valor_publicado():
+    _, recalculado = _cenario_r08_com_precisao(1.0, precisao=None)
+    c, _ = _cenario_r08_com_precisao(1.012, precisao=recalculado * 0.02)  # 1,2% acima, meia casa = 1%
+    assert "R08" in {f.regra for f in validar(**c).erros}

@@ -18,7 +18,7 @@ metodologia: >-
   Nordeste: o índice de Gini não se recompõe a partir de totais.
 observacoes: >-
   A PNAD antiga não foi a campo em 2010 (ano do Censo), por isso a série `pnad`
-  não tem 2010. A PNAD de 2015 existe, mas a série PGINI do Ipeadata termina em
+  traz linhas `indisponivel` em 2010 (`anos_sem_publicacao`). A PNAD de 2015 existe, mas a série PGINI do Ipeadata termina em
   2014 e não foi encontrada outra fonte por UF para 2015. As duas séries se
   sobrepõem em 2012 a 2014 e dão valores diferentes (pesquisa e universo
   distintos); servem para ver cada período, não para emendar. A série `pnad` do
@@ -38,6 +38,7 @@ series:
     url: https://www.ipeadata.gov.br/ExibeSerieR.aspx?serid=1422364745
     coletor: ipeadata
     parametros: {codigo: PGINI, periodos: "2001-2014"}
+    anos_sem_publicacao: [2010]
     compatibilidade: >-
       PNAD antiga (2001 a 2014, sem 2010). Não comparável com a PNAD Contínua
       (série `pnadc`), que tem outra metodologia e outro universo.

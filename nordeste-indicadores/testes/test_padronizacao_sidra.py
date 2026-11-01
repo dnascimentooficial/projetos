@@ -151,3 +151,40 @@ def test_padronizador_desconhecido(projeto, fichas, territorios):
     )
     with pytest.raises(ErroLayout, match="padronizador desconhecido.*inventado"):
         padronizar(f, s, coleta, projeto, territorios)
+
+
+def _coleta_da_amostra(f, s):
+    return Coleta(
+        coleta_id="c9", indicador_id=f.id, serie_id=s.id, url="x", data_coleta="2026-11-01",
+        sha256="0" * 64, origem="fixture", arquivo="testes/fixtures/amostra_per_capita/scr_ref2010.json",
+    )
+
+
+def test_anos_sem_publicacao_viram_linhas_indisponiveis_por_territorio(projeto, fichas, territorios):
+    f = fichas["amostra_per_capita"]
+    s = replace(f.serie("scr_ref2010"), anos_sem_publicacao=(2005,))
+    # a fixture tem 2005; o ano sem pesquisa so entra onde a fonte nao trouxe linha
+    arquivo = projeto.raiz / "testes/fixtures/amostra_per_capita/scr_ref2010.json"
+    linhas = [l for l in json.loads(arquivo.read_text(encoding="utf-8")) if l.get("D3C") != "2005"]
+    arquivo.write_text(json.dumps(linhas), encoding="utf-8")
+    df = padronizar(f, s, _coleta_da_amostra(f, s), projeto, territorios)
+    ano = df[df.ano == 2005]
+    assert len(ano) == 15 and set(ano.territorio_id) == set(df.territorio_id)
+    assert set(ano.tipo_dado) == {"indisponivel"} and ano.valor.isna().all()
+    assert set(ano.nota) == {"ano sem pesquisa (Censo)"} and set(ano.coleta_id) == {"c9"}
+    assert set(ano.serie_id) == {s.id} and set(ano.indicador_id) == {f.id}
+    assert set(df[df.ano != 2005].tipo_dado) <= {"observado", "indisponivel"} and (df.ano == 2004).sum() == 15
+
+
+def test_ano_sem_publicacao_nao_sobrescreve_valor_da_fonte(projeto, fichas, territorios):
+    f = fichas["amostra_per_capita"]
+    s = replace(f.serie("scr_ref2010"), anos_sem_publicacao=(2005,))
+    df = padronizar(f, s, _coleta_da_amostra(f, s), projeto, territorios)
+    assert set(df[df.ano == 2005].tipo_dado) == {"observado"} and len(df[df.ano == 2005]) == 15
+
+
+def test_ano_sem_publicacao_fora_da_cobertura_nao_gera_linha(projeto, fichas, territorios):
+    f = fichas["amostra_per_capita"]
+    s = replace(f.serie("scr_ref2010"), anos_sem_publicacao=(1999, 2030))
+    df = padronizar(f, s, _coleta_da_amostra(f, s), projeto, territorios)
+    assert not {1999, 2030} & set(df.ano)

@@ -330,12 +330,28 @@ def test_parametros_sidra_da_pnadc(fichas):
     assert obtido == esperado
 
 
-def test_gini_da_pnad_antiga_vem_do_ipeadata_e_nao_inventa_o_ano_sem_pesquisa(fichas, base):
+def test_gini_da_pnad_antiga_vem_do_ipeadata_e_declara_o_ano_sem_pesquisa(fichas, base):
     s = fichas["gini"].serie("pnad")
     assert (s.coletor, s.parametros, s.inicio, s.fim) == (
         "ipeadata", {"codigo": "PGINI", "periodos": "2001-2014"}, 2001, 2014)
-    anos = set(base[(base.indicador_id == "gini") & (base.serie_id == "pnad")].ano)  # o Ipeadata traz desde 1976: `periodos` corta
-    assert anos == set(range(2001, 2015)) - {2010}  # a PNAD nao foi a campo em 2010: sem linha, sem interpolacao
+    assert s.anos_sem_publicacao == (2010,)
+    linhas = base[(base.indicador_id == "gini") & (base.serie_id == "pnad")]  # o Ipeadata traz desde 1976: `periodos` corta
+    assert set(linhas.ano) == set(range(2001, 2015))
+    sem_pesquisa = linhas[linhas.ano == 2010]  # a PNAD nao foi a campo em 2010: linha indisponivel, sem interpolacao
+    assert set(sem_pesquisa.territorio_id) == TERRITORIOS_COMPLETOS
+    assert set(sem_pesquisa.tipo_dado) == {"indisponivel"} and sem_pesquisa.valor.isna().all()
+    assert set(linhas[linhas.ano != 2010].tipo_dado) == {"observado"}
+
+
+def test_desocupacao_da_pnad_antiga_declara_o_ano_sem_pesquisa(fichas, base):
+    assert fichas["desocupacao"].serie("pnad").anos_sem_publicacao == (2010,)
+    linhas = base[(base.indicador_id == "desocupacao") & (base.serie_id == "pnad") & (base.ano == 2010)]
+    assert set(linhas.tipo_dado) == {"indisponivel"} and len(linhas) == 15
+
+
+def test_desocupacao_declara_a_precisao_da_taxa_oficial(fichas):
+    assert fichas["desocupacao"].comparacao.precisao_oficial == 0.1  # a tabela 4562 traz uma casa decimal
+    assert "0,47%" not in fichas["desocupacao"].metodologia
 
 
 def test_desocupacao_da_pnad_antiga_vem_do_ipeadata(fichas):

@@ -38,6 +38,7 @@ class Serie:
     parametros: dict
     compatibilidade: str
     verificado: bool
+    anos_sem_publicacao: tuple[int, ...] = ()  # anos dentro da cobertura em que a fonte nao tem pesquisa (ex.: Censo)
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,7 @@ class Comparacao:
     numerador: str | None = None
     denominador: str | None = None
     fator: float = 1.0
+    precisao_oficial: float | None = None  # passo de arredondamento do valor oficial (0,1 = uma casa decimal)
 
 
 @dataclass(frozen=True)
@@ -144,6 +146,8 @@ def _validar_comparacao(comp: Any, calculada: bool) -> list[str]:
     fator = comp.get("fator", 1.0)
     if not _numero(fator) or fator <= 0:
         problemas.append("comparacao.fator deve ser um numero positivo")
+    if "precisao_oficial" in comp and (not _numero(comp["precisao_oficial"]) or comp["precisao_oficial"] <= 0):
+        problemas.append("comparacao.precisao_oficial deve ser um numero positivo")
     return problemas
 
 
@@ -168,6 +172,22 @@ def _validar_serie(serie: Any, posicao: int) -> list[str]:
         problemas.append(f"{nome}.parametros obrigatorio (mapa, pode ser vazio)")
     if not isinstance(serie.get("verificado"), bool):
         problemas.append(f"{nome}.verificado obrigatorio (true ou false)")
+    if "anos_sem_publicacao" in serie:
+        problemas += _validar_anos_sem_publicacao(serie["anos_sem_publicacao"], inicio, fim, nome)
+    return problemas
+
+
+def _validar_anos_sem_publicacao(anos: Any, inicio: Any, fim: Any, nome: str) -> list[str]:
+    if not isinstance(anos, list) or not all(_inteiro(a) for a in anos):
+        return [f"{nome}.anos_sem_publicacao deve ser uma lista de anos inteiros"]
+    problemas = [f"{nome}.anos_sem_publicacao repete o ano {a}" for a in sorted({a for a in anos if anos.count(a) > 1})]
+    if _inteiro(inicio) and (fim is None or _inteiro(fim)):
+        for ano in sorted(set(anos)):
+            if ano < inicio or (fim is not None and ano > fim):
+                problemas.append(
+                    f"{nome}.anos_sem_publicacao: o ano {ano} esta fora da cobertura da serie "
+                    f"({inicio} a {fim if fim is not None else 'em curso'})"
+                )
     return problemas
 
 
@@ -309,9 +329,14 @@ def _montar(dados: dict) -> Ficha:
         referencia=comp["referencia"], metodo=comp.get("metodo"),
         numerador=comp.get("numerador"), denominador=comp.get("denominador"),
         fator=float(comp.get("fator", 1.0)),
+        precisao_oficial=float(comp["precisao_oficial"]) if "precisao_oficial" in comp else None,
     )
     series = tuple(
-        Serie(**{campo: s[campo] for campo in Serie.__dataclass_fields__}) for s in dados["series"]
+        Serie(
+            **{campo: s[campo] for campo in Serie.__dataclass_fields__ if campo != "anos_sem_publicacao"},
+            anos_sem_publicacao=tuple(sorted(s.get("anos_sem_publicacao", []))),
+        )
+        for s in dados["series"]
     )
     campos = {campo: dados[campo] for campo in _TEXTOS_FICHA}
     calculo = None
