@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import pandas as pd
 import pytest
+from gerar_fixtures import xls_abas as montar_xls_abas
 from gerar_fixtures import xls_sintetico as montar_xls
 from gerar_fixtures import xlsx_sintetico as montar_xlsx
 
@@ -243,6 +244,17 @@ def test_planilha_xls_com_layout_do_ibge(ficha_planilha, territorios):
         ("BR", 2002): 100.0, ("BR", 2003): 99999.0, ("NE", 2002): 100.0, ("NE", 2003): 101.5,
         ("SE_UF", 2002): 100.0}
     assert df.query("territorio_id == 'SE_UF' and ano == 2003").tipo_dado.tolist() == ["indisponivel"]
+
+
+def test_planilha_xls_com_varias_abas_le_cada_uma_pelo_nome(ficha_planilha, territorios):
+    def aba(valor):
+        return [["Indicador sintético"], [], CABECALHO, ["Piauí", valor, valor + 1, valor + 2]]
+
+    conteudo = montar_xls_abas({"1.1": aba(10), "5.1": aba(20), "Outra aba": aba(30)})
+    for nome, base in (("1.1", 10), ("5.1", 20), ("Outra aba", 30)):
+        ficha, serie = com_parametros(ficha_planilha, formato="xls", aba=nome)
+        df = padronizar_planilha(conteudo, ficha, serie, "c1", territorios)
+        assert df.set_index("ano").valor.to_dict() == {2019: base, 2021: base + 1, 2023: base + 2}, nome
 
 
 def test_planilha_xls_ilegivel_e_erro_de_layout(ficha_planilha, territorios):

@@ -1,0 +1,459 @@
+id: abandono_em
+nome: Taxa de abandono no ensino médio
+descricao: >-
+  Taxa de abandono escolar no ensino médio (total das séries, incluindo o não
+  seriado), em porcentagem dos alunos matriculados, por Brasil, região e unidade
+  da federação, no total das localizações (urbana e rural) e das redes de
+  ensino. Quanto menor, melhor.
+eixo: educacao_basica
+categoria: fluxo_escolar
+unidade: "%"
+orgao: INEP
+periodicidade: anual
+metodologia: >-
+  Taxa de abandono do ensino médio das planilhas "Taxas de Rendimento Escolar"
+  dos Indicadores Educacionais do INEP, calculada a partir do Censo Escolar: o
+  percentual de alunos que deixaram de frequentar a escola durante o ano letivo
+  (colunas "Total Abandono - Médio" nos arquivos de 2007 a 2010, "Taxa de
+  Abandono - Ensino Médio" de 2011 a 2015, `tab_MED` em 2016 a 2020 e
+  `3_CAT_MED` a partir de 2021). Linha de localização "Total" e de rede
+  (dependência administrativa) "Total", ou seja, urbana e rural, redes pública
+  e privada. Cada ano é publicado em arquivos distintos, de layout próprio:
+  de 2007 a 2016 o Brasil, as regiões e as UFs vêm em três planilhas (`.xls`
+  até 2012 e `.xlsx` depois, com UFs por sigla até 2014) e de 2017 em diante
+  numa só. Cada arquivo é uma parte da série (`partes`), com o ano conferido na
+  própria coluna de ano da planilha, e a coleta guarda os 19 zips num único
+  pacote. Uma edição nova exige acrescentar as partes e rever `fim`.
+observacoes: >-
+  (1) Anos de pandemia: em 2020 e 2021 a taxa de abandono foi afetada pelo
+  ensino remoto e pelas regras excepcionais de aprovação; o INEP recomenda
+  cautela na comparação com os demais anos. (2) A taxa não se recalcula a
+  partir das UFs nem de totais publicados: não há Brasil fora do Nordeste, e a
+  comparação é com o Brasil. (3) Só o total do ensino médio, na rede `total`;
+  as taxas por série, por localização e por rede do mesmo arquivo não entram.
+  (4) `defasagem_meses`: a taxa de cada ano letivo sai de seis a oito meses
+  depois do fim do ano (2025 em 26/06/2026, 2024 em 11/08/2025).
+sentido: menor_melhor
+limites: {min: 0, max: 100}
+defasagem_meses: 8
+comparacao:
+  referencia: brasil
+series:
+  - id: indicadores_inep
+    inicio: 2007
+    fim: 2025
+    fonte: INEP, Indicadores Educacionais, Taxas de Rendimento Escolar (2007 a 2025)
+    base_origem: >-
+      Planilhas das Taxas de Rendimento Escolar (Brasil, regiões e UFs) de cada
+      ano, um zip por ano em download.inep.gov.br
+    url: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/indicadores-educacionais/taxas-de-rendimento-escolar
+    coletor: arquivo
+    parametros:
+      padronizador: planilha
+      ca_extra: metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem
+      partes:
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2007/tx_rendimento_brasil_regioes_UFs_2007.zip
+        formato: xls
+        arquivo_no_zip: Taxas de Rendimento_ REGIσES_ 2007.xls
+        aba: REND. REGIÕES 2007
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2007, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        nomes_territorio: {Centro - Oeste: CO}
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2007, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2007/tx_rendimento_brasil_regioes_UFs_2007.zip
+        formato: xls
+        arquivo_no_zip: TX RENDIMENTO BRASIL 2007.xls
+        aba: REND. BRASIL 2007
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2007, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2007, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2007/tx_rendimento_brasil_regioes_UFs_2007.zip
+        formato: xls
+        arquivo_no_zip: TX RENDIMENTO UFS 2007.xls
+        aba: REND. POR UF
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 2'
+        filtro_linhas: {'Unnamed: 0': 2007, 'Unnamed: 3': Total, 'Unnamed: 4': Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2007, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2008/tx_rendimento_brasil_regioes_UFs_2008.zip
+        formato: xls
+        arquivo_no_zip: Taxas de Rendimento_REGIσES_ 2008.xls
+        aba: Tx Rendimento - 2008
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2008, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        nomes_territorio: {Centro - Oeste: CO}
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2008, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2008/tx_rendimento_brasil_regioes_UFs_2008.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO UF 2008.xls
+        aba: Rendimento por UF - 2009
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2008, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2008, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2008/tx_rendimento_brasil_regioes_UFs_2008.zip
+        formato: xls
+        arquivo_no_zip: TX DE RENDIMENTO BRASIL 2008.xls
+        aba: QUERY_FOR_RENDIMENTOUFREGBRASIL
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2008, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2008, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2009/tx_rendimento_brasil_regioes_UFs_2009.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO BRASIL 2009.xls
+        aba: Rendimento Brasil
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2009, 'Unnamed: 3': Total, 'Unnamed: 2': Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2009, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2009/tx_rendimento_brasil_regioes_UFs_2009.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO REGIσES 2009.xls
+        aba: Tx Rendimento - 2009
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2009, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2009, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2009/tx_rendimento_brasil_regioes_UFs_2009.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO UF 2009.xls
+        aba: Rendimento por UF - 2009
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2009, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2009, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2010/tx_rendimento_brasil_regioes_UFs_2010.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO UF 2010.xls
+        aba: RENDIMENTOS UFS 2010
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2010, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2010, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2010/tx_rendimento_brasil_regioes_UFs_2010.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO BRASIL 2010.xls
+        aba: Rendimento Brasil 2010
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2010, 'Unnamed: 3': Total, 'Unnamed: 2': Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2010, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2010/tx_rendimento_brasil_regioes_UFs_2010.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO REGIσES 2010.xls
+        aba: RENDIMENTOS REGIÕES 2010
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 0': 2010, 'Unnamed: 2': Total, 'Unnamed: 3': Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: Total Abandono - Médio, ano: 2010, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2011/tx_rendimento_brasil_regioes_UFs_2011_2.zip
+        formato: xls
+        arquivo_no_zip: tx_rendimento_brasil_2011.xls
+        aba: Rendimento Brasil 2011
+        linha_cabecalho: 7
+        coluna_territorio: Abrangência
+        filtro_linhas: {Ano: 2011, Localização: Total, Rede: Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2011, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2011/tx_rendimento_brasil_regioes_UFs_2011_2.zip
+        formato: xls
+        arquivo_no_zip: tx_rendimento_regiΣes_2011.xls
+        aba: RENDIMENTOS REGIÕES 2011
+        linha_cabecalho: 7
+        coluna_territorio: Região
+        filtro_linhas: {Ano: 2011, Localização: Total, Rede: Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2011, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2011/tx_rendimento_brasil_regioes_UFs_2011_2.zip
+        formato: xls
+        arquivo_no_zip: tx_rendimento_uf_2011.xls
+        aba: RENDIMENTOS UFS 2011
+        linha_cabecalho: 7
+        coluna_territorio: UF
+        filtro_linhas: {Ano: 2011, Localização: Total, Rede: Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2011, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2012/taxas_rendimento/tx_rendimento_brasil_regioes_UFs_2012.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rendimento_brasil_2012.xlsx
+        aba: BRASIL 2012
+        linha_cabecalho: 7
+        coluna_territorio: Abrangência
+        filtro_linhas: {Ano: 2012, Localização: Total, Rede: Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2012, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2012/taxas_rendimento/tx_rendimento_brasil_regioes_UFs_2012.zip
+        formato: xls
+        arquivo_no_zip: tx_rendimento_regioes_2012.xls
+        aba: RENDIMENTOS REGIÕES 2012
+        linha_cabecalho: 7
+        coluna_territorio: Região
+        filtro_linhas: {Ano: 2012, Localização: Total, Rede: Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2012, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2012/taxas_rendimento/tx_rendimento_brasil_regioes_UFs_2012.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rendimento_UFs_2012.xlsx
+        aba: UF 2012
+        linha_cabecalho: 7
+        coluna_territorio: UF
+        filtro_linhas: {Ano: 2012, Localização: Total, Rede: Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2012, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2013/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2013.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTO REGIσES 2013.xls
+        aba: RENDIMENTOS REGIÕES 2013
+        linha_cabecalho: 7
+        coluna_territorio: Região
+        filtro_linhas: {Ano: 2013, Localização: Total, Rede: Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2013, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2013/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2013.zip
+        formato: xlsx
+        arquivo_no_zip: TAXAS RENDIMENTOS BRASIL 2013.xlsx
+        aba: BRASIL 2013
+        linha_cabecalho: 7
+        coluna_territorio: Abrangência
+        filtro_linhas: {Ano: 2013, Localização: Total, Rede: Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2013, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2013/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2013.zip
+        formato: xlsx
+        arquivo_no_zip: TAXAS RENDIMENTOS UF 2013.xlsx
+        aba: UF 2013
+        linha_cabecalho: 7
+        coluna_territorio: UF
+        filtro_linhas: {Ano: 2013, Localização: Total, Rede: Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2013, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2014/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2014.zip
+        formato: xlsx
+        arquivo_no_zip: TAXAS RENDIMENTOS BRASIL 2014.xlsx
+        aba: BRASIL
+        linha_cabecalho: 7
+        coluna_territorio: Abrangência
+        filtro_linhas: {Ano: 2014, Localização: Total, Rede: Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2014, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2014/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2014.zip
+        formato: xls
+        arquivo_no_zip: TAXAS RENDIMENTOS REGIσES 2014.xls
+        aba: REGIÕES
+        linha_cabecalho: 7
+        coluna_territorio: Região
+        filtro_linhas: {Ano: 2014, Localização: Total, Rede: Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2014, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2014/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2014.zip
+        formato: xlsx
+        arquivo_no_zip: TAXAS RENDIMENTOS UF 2014.xlsx
+        aba: 'UF '
+        linha_cabecalho: 7
+        coluna_territorio: UF
+        filtro_linhas: {Ano: 2014, Localização: Total, Rede: Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {MA: MA, PI: PI, CE: CE, RN: RN, PB: PB, PE: PE, AL: AL, SE: SE_UF, BA: BA}
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2014, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2015/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2015.zip
+        formato: xlsx
+        arquivo_no_zip: TAXA_REND_2015_BRASIL_REGIOES_UFS/TX_REND_BRASIL_2015.xlsx
+        aba: BRASIL
+        linha_cabecalho: 7
+        coluna_territorio: Abrangência
+        filtro_linhas: {Ano: 2015, Localização: Total, Rede: Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2015, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2015/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2015.zip
+        formato: xlsx
+        arquivo_no_zip: TAXA_REND_2015_BRASIL_REGIOES_UFS/TX_REND_REG_2015.xlsx
+        aba: REGIÕES
+        linha_cabecalho: 7
+        coluna_territorio: Região
+        filtro_linhas: {Ano: 2015, Localização: Total, Rede: Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2015, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2015/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2015.zip
+        formato: xlsx
+        arquivo_no_zip: TAXA_REND_2015_BRASIL_REGIOES_UFS/TX_REND_UFS_2015.xlsx
+        aba: 'UF '
+        linha_cabecalho: 7
+        coluna_territorio: UF
+        filtro_linhas: {Ano: 2015, Localização: Total, Rede: Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: Taxa de Abandono - Ensino Médio, ano: 2015, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2016/TAXA_REND_2016_BRASIL_REGIOES_UFS.zip
+        formato: xlsx
+        arquivo_no_zip: TAXA_REND_2016_BRASIL_REGIOES_UFS/TX_REND_BRASIL_2016.xlsx
+        aba: BRASIL
+        linha_cabecalho: 9
+        coluna_territorio: no_cod
+        filtro_linhas: {ano: 2016, Dependad: Total, TIPOLOCA: Total}
+        territorios_esperados: [BR]
+        colunas:
+        - {coluna: tab_MED, ano: 2016, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2016/TAXA_REND_2016_BRASIL_REGIOES_UFS.zip
+        formato: xlsx
+        arquivo_no_zip: TAXA_REND_2016_BRASIL_REGIOES_UFS/TX_REND_REGIOES_2016.xlsx
+        aba: REGIÕES
+        linha_cabecalho: 9
+        coluna_territorio: no_cod
+        filtro_linhas: {ano: 2016, TIPOLOCA: Total, DEPENDAD: Total}
+        territorios_esperados: [N, NE, SE, S, CO]
+        colunas:
+        - {coluna: tab_MED, ano: 2016, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2016/TAXA_REND_2016_BRASIL_REGIOES_UFS.zip
+        formato: xlsx
+        arquivo_no_zip: TAXA_REND_2016_BRASIL_REGIOES_UFS/TX_REND_UFS_2016.xlsx
+        aba: 'UF '
+        linha_cabecalho: 9
+        coluna_territorio: no_cod
+        filtro_linhas: {ano: 2016, TIPOLOCA: Total, DEPENDAD: Total}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: tab_MED, ano: 2016, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2017/TAXA_REND_2017_BRASIL_REGIOES_UFS.zip
+        formato: xlsx
+        arquivo_no_zip: TAXA_REND_2017_BRASIL_REGIOES_UFS/TX_REND_BRASIL_REGIOES_UFS_2017.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {ano: 2017, TIPOLOCA: Total, DEPENDAD: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: tab_MED, ano: 2017, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2018/TX_REND_BRASIL_REGIOES_UFS_2018.zip
+        formato: xlsx
+        arquivo_no_zip: TX_REND_BRASIL_REGIOES_UFS_2018/TX_REND_BRASIL_REGIOES_UFS_2018.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {ano: 2018, TIPOLOCA: Total, DEPENDAD: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: tab_MED, ano: 2018, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2019/tx_rend_brasil_regioes_ufs_2019.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rend_brasil_regioes_ufs_2019/tx_rend_brasil_regioes_ufs_2019.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {ano: 2019, TIPOLOCA: Total, DEPENDAD: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: tab_MED, ano: 2019, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2020/tx_rend_brasil_regioes_ufs_2020.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rend_brasil_regioes_ufs_2020/tx_rend_brasil_regioes_ufs_2020.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {ano: 2020, TIPOLOCA: Total, DEPENDAD: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: tab_MED, ano: 2020, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2021/tx_rend_brasil_regioes_ufs_2021.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rend_brasil_regioes_ufs_2021/tx_rend_brasil_regioes_ufs_2021.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: UNIDGEO
+        filtro_linhas: {NU_ANO_CENSO: 2021, NO_CATEGORIA: Total, NO_DEPENDENCIA: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 3_CAT_MED, ano: 2021, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2022/tx_rend_brasil_regioes_ufs_2022.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rend_brasil_regioes_ufs_2022/tx_rend_brasil_regioes_ufs_2022.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: UNIDGEO
+        filtro_linhas: {NU_ANO_CENSO: 2022, NO_CATEGORIA: Total, NO_DEPENDENCIA: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 3_CAT_MED, ano: 2022, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2023/tx_rend_brasil_regioes_ufs_2023.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rend_brasil_regioes_ufs_2023/tx_rend_brasil_regioes_ufs_2023.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: UNIDGEO
+        filtro_linhas: {NU_ANO_CENSO: 2023, NO_CATEGORIA: Total, NO_DEPENDENCIA: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 3_CAT_MED, ano: 2023, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2024/tx_rend_brasil_regioes_ufs_2024.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rend_brasil_regioes_ufs_2024/tx_rend_brasil_regioes_ufs_2024.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: UNIDGEO
+        filtro_linhas: {NU_ANO_CENSO: 2024, NO_CATEGORIA: Total, NO_DEPENDENCIA: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 3_CAT_MED, ano: 2024, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2025/tx_rend_brasil_regioes_ufs_2025.zip
+        formato: xlsx
+        arquivo_no_zip: tx_rend_brasil_regioes_ufs_2025/tx_rend_brasil_regioes_ufs_2025.xlsx
+        aba: 'BRASIL_REGIOES_UFS '
+        linha_cabecalho: 9
+        coluna_territorio: UNIDGEO
+        filtro_linhas: {NU_ANO_CENSO: 2025, NO_CATEGORIA: Total, NO_DEPENDENCIA: Total}
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 3_CAT_MED, ano: 2025, rede: total}
+    compatibilidade: >-
+      Série única de 2007 a 2025, anual, com o mesmo conceito (taxa de abandono
+      do ensino médio, total) em todos os arquivos; 2020 e 2021 foram afetados
+      pela pandemia (ver observações).
+    verificado: true

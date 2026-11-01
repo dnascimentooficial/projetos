@@ -1,0 +1,804 @@
+id: superior
+nome: Ensino superior, matrículas de graduação e instituições
+descricao: >-
+  Matrículas nos cursos de graduação (total, em instituições públicas e em
+  instituições privadas) e número de instituições de educação superior (IES),
+  com o recorte das universidades, por Brasil, região e unidade da federação.
+  A unidade é uma contagem; quanto maior, maior a oferta de ensino superior.
+eixo: educacao_superior
+categoria: oferta_de_ensino
+unidade: número (matrículas ou instituições)
+orgao: INEP
+periodicidade: anual
+metodologia: >-
+  Contagens da Sinopse Estatística da Educação Superior do INEP (Censo da
+  Educação Superior), por Brasil, região e UF. Três subindicadores:
+  `matriculas` (matrículas em cursos de graduação, rede `total`, `publica` e
+  `privada`), `ies` (todas as instituições, por sede administrativa, rede
+  `total`) e `universidades` (as instituições de organização acadêmica
+  "Universidade", rede `total`). Cada ano é um arquivo distinto, e cada arquivo
+  é uma parte da série (`partes`), com a coleta guardando todos os anos num
+  único pacote. As duas séries têm métodos de contagem diferentes e não se
+  somam nem se comparam: `censup_pre2009` (2001 a 2008) lê as tabelas 1.1 e
+  5.1 dos `.xls` de cada ano (matrículas em cursos de graduação presenciais);
+  `censup` (2009 em diante) lê as mesmas tabelas da sinopse por município
+  (matrículas em cursos de graduação presenciais e a distância).
+observacoes: >-
+  (1) Brasil fora do Nordeste por soma (Brasil menos Nordeste), subindicador a
+  subindicador e rede a rede. (2) `censup_pre2009`: só a rede `total` nas
+  matrículas, porque as linhas de Pública e Privada vêm abaixo da linha do
+  território, sem o nome dele, e o padronizador lê um território por linha; as
+  matrículas são só as de cursos presenciais. O ano de 2000 só existe em PDF.
+  (3) `censup`: cobre 2009 a 2019, anos cujo arquivo se baixa em menos de
+  cinco minutos; os arquivos de 2020 a 2024 têm de 284 a 397 MB e ficam como
+  pendência (e o de 2025 ainda não foi publicado). (4) `defasagem_meses`: o
+  Censo da Educação Superior de cada ano sai cerca de dez meses depois do fim
+  do ano.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 10
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: censup_pre2009
+    inicio: 2001
+    fim: 2008
+    fonte: INEP, Censo da Educação Superior, sinopses estatísticas de 2001 a 2008
+    base_origem: >-
+      Sinopses estatísticas da educação superior de 2001 a 2008 (um .xls por
+      ano, tabelas 1.1 e 5.1)
+    url: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-superior
+    coletor: arquivo
+    parametros:
+      padronizador: planilha
+      ca_extra: metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem
+      partes:
+      - url: https://download.inep.gov.br/download/censo/2001/Superior/Sinopse_Superior_2001.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_Superior_2001.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2001, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2001, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/censo/2001/Superior/Sinopse_Superior_2001.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_Superior_2001.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2001, subindicador: matriculas, rede: total}
+      - url: https://download.inep.gov.br/download/censo/2002/sinopse/Sinopse_2002_censosuperior.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2002_atualizada.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2002, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2002, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/censo/2002/sinopse/Sinopse_2002_censosuperior.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2002_atualizada.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2002, subindicador: matriculas, rede: total}
+      - url: https://download.inep.gov.br/download/superior/2004/SES2003.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2003_031204_form.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2003, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2003, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/superior/2004/SES2003.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2003_031204_form.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2003, subindicador: matriculas, rede: total}
+      - url: https://download.inep.gov.br/download/superior/2004/Sinopse_2004_010206.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2004_010206.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2004, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2004, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/superior/2004/Sinopse_2004_010206.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2004_010206.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2004, subindicador: matriculas, rede: total}
+      - url: https://download.inep.gov.br/download/superior/2005/Sinopse_2005a.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2005.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2005, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2005, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/superior/2005/Sinopse_2005a.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_2005.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2005, subindicador: matriculas, rede: total}
+      - url: https://download.inep.gov.br/download/superior/censo/2006/Sinopse_EducacaoSuperior_2006.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_EducacaoSuperior_2006.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2006, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2006, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/superior/censo/2006/Sinopse_EducacaoSuperior_2006.zip
+        formato: xls
+        arquivo_no_zip: Sinopse_EducacaoSuperior_2006.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2006, subindicador: matriculas, rede: total}
+      - url: https://download.inep.gov.br/download/superior/censo/2007/Sinopse2007.zip
+        formato: xls
+        arquivo_no_zip: MIOLO_Sinopse Estatística da Educaç╞o Superior 2007.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2007, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2007, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/superior/censo/2007/Sinopse2007.zip
+        formato: xls
+        arquivo_no_zip: MIOLO_Sinopse Estatística da Educaç╞o Superior 2007.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2007, subindicador: matriculas, rede: total}
+      - url: https://download.inep.gov.br/download/censo/2008/sinop_sup_2008_versao_preliminar.zip
+        formato: xls
+        arquivo_no_zip: sinop_sup_2008_versao_preliminar.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '1.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2008, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2008, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/download/censo/2008/sinop_sup_2008_versao_preliminar.zip
+        formato: xls
+        arquivo_no_zip: sinop_sup_2008_versao_preliminar.xls
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        aba: '5.1'
+        colunas:
+        - {coluna: 'Unnamed: 3', ano: 2008, subindicador: matriculas, rede: total}
+    compatibilidade: >-
+      Série de 2001 a 2008, com matrículas só de cursos de graduação
+      presenciais e só na rede `total`; não é comparável com `censup`, que
+      conta também os cursos a distância (por isso são séries separadas).
+    verificado: true
+  - id: censup
+    inicio: 2009
+    fim: 2019
+    fonte: INEP, Censo da Educação Superior, sinopse estatística (por município) de 2009 a 2019
+    base_origem: >-
+      Sinopses estatísticas da educação superior de 2009 a 2019 (um zip por ano,
+      com a planilha da sinopse por município; tabelas 1.1 e 5.1)
+    url: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-superior
+    coletor: arquivo
+    parametros:
+      padronizador: planilha
+      ca_extra: metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem
+      partes:
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2009/Sinopse_Educação_Superior_Municipio_2009.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2009, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2009, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2009/Sinopse_Educação_Superior_Municipio_2009.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2009, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2009, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2009/Sinopse_Educação_Superior_Municipio_2009.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2009, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2009, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2009, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2009/Sinopse_Educação_Superior_Municipio_2009.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2009, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2009, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2009, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2010/Sinopse_Educação_Superior_Municipio_2010.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2010, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2010, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2010/Sinopse_Educação_Superior_Municipio_2010.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2010, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2010, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2010/Sinopse_Educação_Superior_Municipio_2010.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2010, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2010, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2010, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2010/Sinopse_Educação_Superior_Municipio_2010.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2010, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2010, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2010, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2011/Sinopse_Educação_Superior_Municipio_2011.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2011, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2011, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2011/Sinopse_Educação_Superior_Municipio_2011.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2011, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2011, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2011/Sinopse_Educação_Superior_Municipio_2011.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2011, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2011, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2011, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2011/Sinopse_Educação_Superior_Municipio_2011.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2011, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2011, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2011, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2012/Sinopse_Educação_Superior_Municipio_2012.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2012, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2012, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2012/Sinopse_Educação_Superior_Municipio_2012.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2012, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2012, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2012/Sinopse_Educação_Superior_Municipio_2012.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2012, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2012, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2012, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2012/Sinopse_Educação_Superior_Municipio_2012.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2012, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2012, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2012, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2013/Sinopse_Educação_Superior_Municipio_2013.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2013, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2013, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2013/Sinopse_Educação_Superior_Municipio_2013.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2013, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2013, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2013/Sinopse_Educação_Superior_Municipio_2013.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2013, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2013, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2013, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2013/Sinopse_Educação_Superior_Municipio_2013.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2013, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2013, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2013, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2014/Sinopse_Educação_Superior_Municipio_2014.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2014, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2014, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2014/Sinopse_Educação_Superior_Municipio_2014.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2014, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2014, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2014/Sinopse_Educação_Superior_Municipio_2014.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2014, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2014, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2014, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2014/Sinopse_Educação_Superior_Municipio_2014.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2014, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2014, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2014, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2015/Sinopse_Educação_Superior_Municipio_2015.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2015, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2015, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2015/Sinopse_Educação_Superior_Municipio_2015.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2015, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2015, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2015/Sinopse_Educação_Superior_Municipio_2015.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2015, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2015, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2015, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2015/Sinopse_Educação_Superior_Municipio_2015.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2015, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2015, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2015, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2016/Sinopse_Educação_Superior_Municipio_2016.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2016, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2016, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2016/Sinopse_Educação_Superior_Municipio_2016.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2016, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2016, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2016/Sinopse_Educação_Superior_Municipio_2016.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2016, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2016, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2016, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2016/Sinopse_Educação_Superior_Municipio_2016.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2016, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2016, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2016, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2017/Sinopse_Educação_Superior_Municipio_2017.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2017, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2017, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2017/Sinopse_Educação_Superior_Municipio_2017.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2017, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2017, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2017/Sinopse_Educação_Superior_Municipio_2017.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2017, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2017, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2017, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2017/Sinopse_Educação_Superior_Municipio_2017.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2017, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2017, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2017, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2018/Sinopse_Educação_Superior_Municipio_2018.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2018, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2018, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2018/Sinopse_Educação_Superior_Municipio_2018.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2018, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2018, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2018/Sinopse_Educação_Superior_Municipio_2018.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2018, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2018, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2018, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2018/Sinopse_Educação_Superior_Municipio_2018.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2018, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2018, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2018, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2019.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2019/Sinopse_Educação_Superior_Municipio_2019.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2019, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2019, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2019.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2019/Sinopse_Educação_Superior_Municipio_2019.xlsx
+        aba: '1.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2019, subindicador: ies, rede: total}
+        - {coluna: 'Unnamed: 12', ano: 2019, subindicador: universidades, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2019.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2019/Sinopse_Educação_Superior_Municipio_2019.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        nomes_territorio: {Total Brasil: BR, Total Norte: N, Total Nordeste: NE, Total Sudeste: SE, Total Sul: S, Total Centro-Oeste: CO}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2019, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2019, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2019, subindicador: matriculas, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2019.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Educação_Superior_2019/Sinopse_Educação_Superior_Municipio_2019.xlsx
+        aba: '5.1'
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 3': '', 'Unnamed: 2': Graduação}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {Total Maranhão: MA, Total Piauí: PI, Total Ceará: CE, Total Rio Grande do Norte: RN, Total Paraíba: PB, Total Pernambuco: PE,
+          Total Alagoas: AL, Total Sergipe: SE_UF, Total Bahia: BA}
+        colunas:
+        - {coluna: 'Unnamed: 5', ano: 2019, subindicador: matriculas, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2019, subindicador: matriculas, rede: publica}
+        - {coluna: 'Unnamed: 10', ano: 2019, subindicador: matriculas, rede: privada}
+    compatibilidade: >-
+      Série de 2009 a 2019, com matrículas de cursos de graduação presenciais e
+      a distância (rede `total`, `publica` e `privada`); layout idêntico em
+      todos os anos. A continuação (2020 a 2024) está pendente por tamanho dos
+      arquivos.
+    verificado: true

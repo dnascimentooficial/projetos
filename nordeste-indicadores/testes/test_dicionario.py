@@ -20,7 +20,8 @@ FICHAS_PARTE_B = {
     "desocupacao", "desocupados", "forca_trabalho", "informalidade", "informais", "ocupados",
     "rendimento_trabalho",
 }
-FICHAS_COMPLETAS = FICHAS_PARTE_A | FICHAS_PARTE_B | {"pib_volume", "ideb"}  # as que trazem os 15 territorios em todo ano
+FICHAS_INEP = {"ideb", "abandono_em", "matriculas_basica", "superior"}
+FICHAS_COMPLETAS = FICHAS_PARTE_A | FICHAS_PARTE_B | {"pib_volume"} | FICHAS_INEP  # as que trazem os 15 territorios em todo ano
 HOJE = ["--hoje", "2026-11-01"]
 DICIONARIO = Path(__file__).resolve().parent.parent / "docs" / "dicionario-verificacao.md"
 URL_DO_COLETOR = {"sidra": url_sidra, "ipeadata": url_ipeadata, "arquivo": url_arquivo}
@@ -559,3 +560,200 @@ def test_ideb_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
     coletas = pd.read_csv(projeto_completo.registro_coletas)
     assert coletas.serie_id.tolist() == ["ideb"] and coletas.origem.tolist() == ["fixture"]
     assert coletas.arquivo[0].endswith(".zip")
+
+
+# ---------------------------------------------------------------------------
+# INEP: abandono no ensino medio, matriculas da educacao basica e ensino superior (Tarefa 15B).
+# Cada ano e um arquivo de layout proprio: uma parte por arquivo (ou por aba), todas da mesma serie.
+# ---------------------------------------------------------------------------
+
+REDES_DO_INEP = ["federal", "estadual", "municipal", "privada"]
+
+
+def _partes(fichas, indicador, serie):
+    return fichas[indicador].serie(serie).parametros["partes"]
+
+
+def _anos_das_partes(partes):
+    return sorted({c["ano"] for parte in partes for c in parte["colunas"]})
+
+
+def _urls_das_partes(partes):
+    return list(dict.fromkeys(parte["url"] for parte in partes))
+
+
+def _territorios_por_ano(partes):
+    por_ano = {}
+    for parte in partes:
+        for c in parte["colunas"]:
+            por_ano.setdefault(c["ano"], set()).update(parte["territorios_esperados"])
+    return por_ano
+
+
+def test_abandono_em_tem_uma_parte_por_arquivo_de_cada_ano(fichas):
+    f = fichas["abandono_em"]
+    (s,) = f.series
+    assert (s.id, s.inicio, s.fim, s.coletor, s.verificado) == ("indicadores_inep", 2007, 2025, "arquivo", True)
+    assert s.parametros["padronizador"] == "planilha"
+    assert s.parametros["ca_extra"] == "metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem"
+    partes = s.parametros["partes"]
+    assert _anos_das_partes(partes) == list(range(2007, 2026))
+    assert len(_urls_das_partes(partes)) == 19 and url_arquivo(s.parametros) == " ".join(_urls_das_partes(partes))
+    for ano in range(2007, 2026):
+        do_ano = [p for p in partes if p["colunas"][0]["ano"] == ano]
+        assert len(do_ano) == (3 if ano <= 2016 else 1), ano  # Brasil, regioes e UFs em arquivos separados ate 2016
+        assert len({p["url"] for p in do_ano}) == 1 and str(ano) in do_ano[0]["url"], ano
+    assert _territorios_por_ano(partes) == {ano: TERRITORIOS_COMPLETOS for ano in range(2007, 2026)}
+
+
+def test_abandono_em_confere_o_ano_do_arquivo_e_so_le_o_total_de_localizacao_e_rede(fichas):
+    for parte in _partes(fichas, "abandono_em", "indicadores_inep"):
+        (coluna,) = parte["colunas"]
+        anos_no_filtro = [v for v in parte["filtro_linhas"].values() if isinstance(v, int)]
+        assert anos_no_filtro == [coluna["ano"]], parte["arquivo_no_zip"]  # o ano do arquivo e conferido na planilha
+        assert sorted(v for v in parte["filtro_linhas"].values() if isinstance(v, str)) == ["Total", "Total"]
+        assert coluna["rede"] == "total" and set(coluna) == {"coluna", "ano", "rede"}
+        assert parte["formato"] in {"xls", "xlsx"} and parte["linha_cabecalho"] in {7, 8, 9}
+
+
+def test_abandono_em_menor_e_melhor_e_compara_com_o_brasil(fichas):
+    f = fichas["abandono_em"]
+    assert (f.sentido, f.unidade, f.limites, f.defasagem_meses) == ("menor_melhor", "%", {"min": 0, "max": 100}, 8)
+    assert f.comparacao.referencia == "brasil" and f.comparacao.metodo is None and f.tratamento_monetario is None
+    assert "2020" in f.observacoes and "pandemia" in f.observacoes
+
+
+def test_abandono_em_offline_tem_15_territorios_so_na_rede_total_e_sem_brasil_fora_ne(base):
+    from gerar_fixtures import VALOR_ABANDONO
+    a = base[base.indicador_id == "abandono_em"]
+    assert sorted(set(a.ano)) == list(range(2007, 2026)) and len(a) == 19 * 15
+    assert set(a.serie_id) == {"indicadores_inep"} and set(a.rede) == {"total"} and set(a.tipo_dado) == {"observado"}
+    assert set(a.subindicador) == {""} and set(a.etapa) == {""}
+    assert set(a.valor) == {VALOR_ABANDONO}  # as linhas-isca (outra localizacao ou rede) valem 1 e ficam de fora
+    assert "BR_FORA_NE" not in set(a.territorio_id)
+
+
+def test_abandono_em_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline", "--indicador", "abandono_em"]) == 0
+    coletas = pd.read_csv(projeto_completo.registro_coletas)
+    assert coletas.serie_id.tolist() == ["indicadores_inep"] and coletas.origem.tolist() == ["fixture"]
+    assert coletas.arquivo[0].endswith(".zip")
+
+
+def test_matriculas_basica_tem_duas_series_com_partes_por_ano(fichas):
+    f = fichas["matriculas_basica"]
+    assert [(s.id, s.inicio, s.fim, s.coletor, s.verificado) for s in f.series] == [
+        ("censo_escolar_pre2007", 2005, 2006, "arquivo", True), ("educacenso", 2007, 2021, "arquivo", True)]
+    assert f.comparacao.referencia == "brasil_fora_ne" and f.comparacao.metodo == "soma"
+    assert (f.unidade, f.limites, f.tratamento_monetario) == ("matrículas", {"min": 0}, None)
+    pre, educacenso = (f.serie(i).parametros["partes"] for i in ("censo_escolar_pre2007", "educacenso"))
+    assert _anos_das_partes(pre) == [2005, 2006] and _anos_das_partes(educacenso) == list(range(2007, 2022))
+    assert [p["aba"] for p in pre[:5]] == ["1.1", "1.6", "1.12", "1.18", "1.43"]
+    assert len(pre) == 2 * 5 and len(educacenso) == 15 * 6  # tres abas, cada uma em duas partes (Brasil e regioes; UFs)
+    assert len(_urls_das_partes(pre)) == 2 and len(_urls_das_partes(educacenso)) == 15
+    assert {p["aba"] for p in educacenso} == {"Educação Básica 1.1", "Educação Infantil 1.5", "Ensino Fundamental 1.14"}
+    assert _territorios_por_ano(pre) == {2005: TERRITORIOS_COMPLETOS, 2006: TERRITORIOS_COMPLETOS}
+    assert _territorios_por_ano(educacenso) == {ano: TERRITORIOS_COMPLETOS for ano in range(2007, 2022)}
+    for parte in educacenso:  # Brasil e regioes (UF em branco) ou UFs (municipio em branco): as linhas de municipio ficam de fora
+        assert parte["filtro_linhas"] in ({"Unnamed: 1": ""}, {"Unnamed: 2": ""})
+        assert all(set(c) == {"coluna", "ano", "etapa", "rede"} for c in parte["colunas"])
+
+
+def test_matriculas_basica_offline_etapas_e_redes_de_cada_serie(base):
+    m = base[(base.indicador_id == "matriculas_basica") & (base.territorio_id != "BR_FORA_NE")]
+    redes = {(serie, etapa): sorted(g.rede.unique()) for (serie, etapa), g in m.groupby(["serie_id", "etapa"])}
+    todas = sorted(["total", *REDES_DO_INEP])
+    assert redes == {
+        ("censo_escolar_pre2007", "educacao_basica"): ["total"], ("censo_escolar_pre2007", "educacao_infantil"): ["total"],
+        ("censo_escolar_pre2007", "creche"): todas, ("censo_escolar_pre2007", "pre_escola"): todas,
+        ("censo_escolar_pre2007", "ensino_fundamental"): todas, ("censo_escolar_pre2007", "ensino_medio"): todas,
+        ("educacenso", "educacao_basica"): ["total"], ("educacenso", "educacao_infantil"): ["total"],
+        ("educacenso", "creche"): todas, ("educacenso", "pre_escola"): todas,
+        ("educacenso", "ensino_fundamental"): ["total"], ("educacenso", "ensino_medio"): ["total"],
+        ("educacenso", "anos_iniciais"): todas, ("educacenso", "anos_finais"): todas,
+    }
+    assert set(m.subindicador) == {""} and set(m.tipo_dado) == {"observado"}
+    assert {s: sorted(set(g.ano)) for s, g in m.groupby("serie_id")} == {
+        "censo_escolar_pre2007": [2005, 2006], "educacenso": list(range(2007, 2022))}
+
+
+def test_matriculas_basica_offline_so_le_a_linha_de_cada_territorio_e_deriva_o_brasil_fora_ne(base):
+    from gerar_fixtures import valor_contagem
+    m = base[base.indicador_id == "matriculas_basica"]
+    assert m.groupby(["serie_id", "etapa", "rede"]).ngroups == 22 + 24  # grupos de cada serie (ver o teste das etapas)
+    for (serie, etapa, rede), grupo in m.groupby(["serie_id", "etapa", "rede"]):
+        spec = {"etapa": etapa, "rede": rede}
+        valores = grupo[grupo.ano == grupo.ano.min()].set_index("territorio_id")
+        assert valores.valor["BA"] == valores.valor["MA"] == valor_contagem("BA", spec), (serie, etapa, rede)
+        assert valores.valor["NE"] == valor_contagem("NE", spec) == 9 * valor_contagem("MA", spec)
+        assert valores.valor["BR_FORA_NE"] == valor_contagem("BR", spec) - valor_contagem("NE", spec)
+        assert valores.tipo_dado["BR_FORA_NE"] == "derivado" and valores.valor["BR_FORA_NE"] == 4 * valor_contagem("CE", spec)
+
+
+def test_matriculas_basica_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline", "--indicador", "matriculas_basica"]) == 0
+    coletas = pd.read_csv(projeto_completo.registro_coletas)
+    assert sorted(coletas.serie_id) == ["censo_escolar_pre2007", "educacenso"] and set(coletas.origem) == {"fixture"}
+
+
+def test_superior_tem_duas_series_com_partes_por_ano(fichas):
+    f = fichas["superior"]
+    assert [(s.id, s.inicio, s.fim, s.coletor, s.verificado) for s in f.series] == [
+        ("censup_pre2009", 2001, 2008, "arquivo", True), ("censup", 2009, 2019, "arquivo", True)]
+    assert f.comparacao.referencia == "brasil_fora_ne" and f.comparacao.metodo == "soma"
+    assert (f.unidade, f.limites, f.tratamento_monetario) == ("número (matrículas ou instituições)", {"min": 0}, None)
+    pre, censup = (f.serie(i).parametros["partes"] for i in ("censup_pre2009", "censup"))
+    assert _anos_das_partes(pre) == list(range(2001, 2009)) and _anos_das_partes(censup) == list(range(2009, 2020))
+    assert len(pre) == 8 * 2 and len(censup) == 11 * 4  # tabelas 1.1 e 5.1; no censup, cada uma em Brasil e regioes e em UFs
+    assert len(_urls_das_partes(pre)) == 8 and len(_urls_das_partes(censup)) == 11
+    assert {p["formato"] for p in pre} == {"xls"} and {p["formato"] for p in censup} == {"xlsx"}
+    assert _territorios_por_ano(pre) == {ano: TERRITORIOS_COMPLETOS for ano in range(2001, 2009)}
+    assert _territorios_por_ano(censup) == {ano: TERRITORIOS_COMPLETOS for ano in range(2009, 2020)}
+    for parte in censup:  # nas linhas "Total <territorio>"; a 5.1 so le a graduacao (a tabela traz tambem os sequenciais)
+        assert ("Graduação" in parte["filtro_linhas"].values()) == (parte["aba"] == "5.1")
+        assert all(nome.startswith("Total ") for nome in parte["nomes_territorio"])
+    assert {p["aba"] for p in pre + censup} == {"1.1", "5.1"}
+    assert [p["linha_cabecalho"] for p in censup[:1]] == [10]
+
+
+def test_superior_declara_que_a_serie_antiga_so_tem_matriculas_totais_e_presenciais(fichas):
+    f = fichas["superior"]
+    assert "presenciais" in f.observacoes and "PDF" in f.observacoes and "pendência" in f.observacoes
+    assert "não é comparável" in f.serie("censup_pre2009").compatibilidade
+
+
+def test_superior_offline_subindicadores_e_redes_de_cada_serie(base):
+    s = base[(base.indicador_id == "superior") & (base.territorio_id != "BR_FORA_NE")]
+    grupos = {(serie, sub): sorted(g.rede.unique()) for (serie, sub), g in s.groupby(["serie_id", "subindicador"])}
+    assert grupos == {
+        ("censup_pre2009", "ies"): ["total"], ("censup_pre2009", "universidades"): ["total"],
+        ("censup_pre2009", "matriculas"): ["total"],
+        ("censup", "ies"): ["total"], ("censup", "universidades"): ["total"],
+        ("censup", "matriculas"): ["privada", "publica", "total"],
+    }
+    assert set(s.etapa) == {""} and set(s.tipo_dado) == {"observado"}
+    assert {x: sorted(set(g.ano)) for x, g in s.groupby("serie_id")} == {
+        "censup_pre2009": list(range(2001, 2009)), "censup": list(range(2009, 2020))}
+
+
+def test_superior_offline_so_le_a_linha_de_cada_territorio_e_deriva_o_brasil_fora_ne(base):
+    from gerar_fixtures import valor_contagem
+    s = base[base.indicador_id == "superior"]
+    for (serie, sub, rede), grupo in s.groupby(["serie_id", "subindicador", "rede"]):
+        spec = {"subindicador": sub, "rede": rede}
+        valores = grupo[grupo.ano == grupo.ano.min()].set_index("territorio_id")
+        assert valores.valor["PE"] == valor_contagem("PE", spec), (serie, sub, rede)  # a linha-isca vale 1
+        assert valores.valor["NE"] == 9 * valores.valor["PE"] and valores.valor["BR"] == 13 * valores.valor["PE"]
+        assert valores.valor["BR_FORA_NE"] == 4 * valores.valor["PE"] and valores.tipo_dado["BR_FORA_NE"] == "derivado"
+    censup = s[(s.serie_id == "censup") & (s.territorio_id == "BR") & (s.ano == 2009)].set_index(["subindicador", "rede"]).valor
+    assert censup[("matriculas", "total")] == censup[("matriculas", "publica")] + censup[("matriculas", "privada")]
+    assert censup[("ies", "total")] > censup[("universidades", "total")]
+
+
+def test_superior_coleta_offline_registra_um_pacote_por_serie(projeto_completo):
+    raiz = ["--raiz", str(projeto_completo.raiz), *HOJE]
+    assert main(raiz + ["coletar", "--offline", "--indicador", "superior"]) == 0
+    coletas = pd.read_csv(projeto_completo.registro_coletas)
+    assert sorted(coletas.serie_id) == ["censup", "censup_pre2009"] and set(coletas.origem) == {"fixture"}

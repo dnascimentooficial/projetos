@@ -15,11 +15,13 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
+import yaml
 from openpyxl import Workbook
 
 from nordeste.coletores.arquivo import empacotar_partes
 
 PASTA = Path(__file__).resolve().parent
+RAIZ = PASTA.parent.parent
 PASTA_AMOSTRA = PASTA.parent / "amostra" / "fixtures"
 ANOS = range(2002, 2024)
 BASE = 99999
@@ -118,13 +120,7 @@ def _texto_biff(texto: str, tamanho_bytes: int) -> bytes:
     return prefixo + b"\x01" + texto.encode("utf-16-le")
 
 
-def _fluxo_biff8(aba: str, linhas: list[list]) -> bytes:
-    """Fluxo `Workbook` minimo: globais com uma aba e as celulas de texto e numero da planilha."""
-    def bof(tipo: int) -> bytes:
-        return _registro_biff(0x0809, struct.pack("<HHHHII", 0x0600, tipo, 0x0DBB, 0x07CC, 0, 6))
-
-    nome = _texto_biff(aba, 1)
-    tamanho_globais = len(bof(0x0005)) + 6 + (4 + 4 + 2 + len(nome)) + 4  # BOF, CODEPAGE, ABA, EOF
+def _celulas_biff(linhas: list[list]) -> bytes:
     celulas = b""
     for i, linha in enumerate(linhas):
         for j, valor in enumerate(linha):
@@ -134,11 +130,24 @@ def _fluxo_biff8(aba: str, linhas: list[list]) -> bytes:
                 celulas += _registro_biff(0x0204, struct.pack("<HHH", i, j, 0) + _texto_biff(valor, 2))
             else:
                 celulas += _registro_biff(0x0203, struct.pack("<HHHd", i, j, 0, float(valor)))
+    return celulas
+
+
+def _fluxo_biff8(abas: dict[str, list[list]]) -> bytes:
+    """Fluxo `Workbook` minimo: globais com uma entrada por aba e as celulas de texto e numero de cada planilha."""
+    def bof(tipo: int) -> bytes:
+        return _registro_biff(0x0809, struct.pack("<HHHHII", 0x0600, tipo, 0x0DBB, 0x07CC, 0, 6))
+
+    nomes = [_texto_biff(aba, 1) for aba in abas]
+    tamanho_globais = len(bof(0x0005)) + 6 + sum(4 + 4 + 2 + len(n) for n in nomes) + 4  # BOF, CODEPAGE, ABAS, EOF
+    planilhas = [bof(0x0010) + _celulas_biff(linhas) + _registro_biff(0x000A, b"") for linhas in abas.values()]
+    registros_de_aba, inicio = b"", tamanho_globais
+    for nome, planilha in zip(nomes, planilhas):
+        registros_de_aba += _registro_biff(0x0085, struct.pack("<IH", inicio, 0) + nome)
+        inicio += len(planilha)
     return (
-        bof(0x0005) + _registro_biff(0x0042, struct.pack("<H", 1200))
-        + _registro_biff(0x0085, struct.pack("<IH", tamanho_globais, 0) + nome)
-        + _registro_biff(0x000A, b"")
-        + bof(0x0010) + celulas + _registro_biff(0x000A, b"")
+        bof(0x0005) + _registro_biff(0x0042, struct.pack("<H", 1200)) + registros_de_aba
+        + _registro_biff(0x000A, b"") + b"".join(planilhas)
     )
 
 
@@ -152,12 +161,17 @@ def _entrada_diretorio(nome: str, tipo: int, filho: int, inicio: int, tamanho: i
 
 
 def xls_sintetico(aba: str, linhas: list[list]) -> bytes:
-    """Monta um .xls (BIFF8 em contêiner OLE2) com uma aba; `linhas` como em `xlsx_sintetico`.
+    """Monta um .xls (BIFF8 em contêiner OLE2) com uma aba; `linhas` como em `xlsx_sintetico`."""
+    return xls_abas({aba: linhas})
+
+
+def xls_abas(abas: dict[str, list[list]]) -> bytes:
+    """Monta um .xls (BIFF8 em contêiner OLE2) com uma aba por chave, na ordem do mapa; valores como `linhas`.
 
     Escritor minimo, so com texto e numero, para nao depender de uma biblioteca de escrita de .xls.
     O fluxo e completado a ao menos 4096 bytes para dispensar o mini-fluxo do OLE2; sem datas: bytes estaveis.
     """
-    fluxo = _fluxo_biff8(aba, linhas)
+    fluxo = _fluxo_biff8(abas)
     setores = max(-(-len(fluxo) // _TAMANHO_SETOR), 4096 // _TAMANHO_SETOR)  # o diretorio vem depois, depois a FAT
     fluxo = fluxo.ljust(setores * _TAMANHO_SETOR, b"\0")
     fat = 1
@@ -339,6 +353,121 @@ def pacote_ideb() -> bytes:
     })
 
 
+# ---------------------------------------------------------------------------
+# INEP: abandono, matriculas e ensino superior. Cada serie e um pacote de partes (um arquivo por ano, de layout
+# proprio), e a fixture segue as proprias partes da ficha, que descrevem os arquivos reais lidos: mesma URL, mesmo
+# arquivo no zip, mesma aba, mesma linha de cabecalho, mesmas colunas (rotulo ou "Unnamed: n" para celula de cabecalho
+# vazia), mesmos filtros e mesmos nomes de territorio. Cada territorio ganha uma linha que passa nos filtros, com valor
+# derivado de 99999, e linhas-isca com cada filtro trocado (valor 1), para que um filtro errado apareca nos testes.
+# ---------------------------------------------------------------------------
+
+_UNNAMED = re.compile(r"Unnamed: (\d+)")
+MULTIPLICADOR_TERRITORIO = {"BR": 13, "NE": 9}  # BR = soma das cinco regioes; NE = soma das nove UFs; o resto vale 1
+
+
+def _ficha(indicador_id: str) -> dict:
+    return yaml.safe_load((RAIZ / "metadados" / "indicadores" / f"{indicador_id}.yaml").read_text(encoding="utf-8"))
+
+
+def _nomes_dos_territorios() -> dict[str, str]:
+    linhas = (RAIZ / "metadados" / "territorios.csv").read_text(encoding="utf-8").splitlines()[1:]
+    return {l.split(",")[0]: l.split(",")[1] for l in linhas}
+
+
+def zip_com_arquivos(arquivos: dict[str, bytes]) -> bytes:
+    """Zip com varios arquivos na ordem do mapa, com data fixa: a mesma entrada gera sempre os mesmos bytes."""
+    saida = io.BytesIO()
+    with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as pacote:
+        for nome, conteudo in arquivos.items():
+            item = zipfile.ZipInfo(nome, date_time=(2026, 1, 1, 0, 0, 0))
+            item.compress_type = zipfile.ZIP_DEFLATED
+            pacote.writestr(item, conteudo)
+    return saida.getvalue()
+
+
+def _posicoes(partes: list[dict]) -> dict[str, int]:
+    """Posicao de cada coluna usada pelas partes de uma aba: "Unnamed: n" e a posicao n; as demais, as primeiras livres."""
+    nomes: list[str] = []
+    for parte in partes:
+        for nome in [*parte.get("filtro_linhas", {}), parte["coluna_territorio"], *(c["coluna"] for c in parte["colunas"])]:
+            if nome not in nomes:
+                nomes.append(nome)
+    posicoes = {n: int(_UNNAMED.fullmatch(n).group(1)) for n in nomes if _UNNAMED.fullmatch(n)}
+    livre = iter(i for i in range(10_000) if i not in posicoes.values())
+    posicoes.update({n: next(livre) for n in nomes if n not in posicoes})
+    return posicoes
+
+
+def _aba_das_partes(partes: list[dict], valor, nomes: dict[str, str]) -> list[list]:
+    """Planilha com as linhas que as partes (da mesma aba) aceitam e as linhas-isca de cada filtro."""
+    posicoes = _posicoes(partes)
+    largura = max(posicoes.values()) + 1
+    cabecalho = max(p["linha_cabecalho"] for p in partes)
+    assert len({p["linha_cabecalho"] for p in partes}) == 1 and cabecalho >= 3, "cabecalho das partes da mesma aba"
+    linhas = [[None, "Ministério da Educação (sintético)"], [None, "Valores derivados de 99999; não são dado oficial."]]
+    linhas += [[] for _ in range(cabecalho - 1 - len(linhas))]
+    nomes_na_linha = [None] * largura
+    for nome, posicao in posicoes.items():
+        if not _UNNAMED.fullmatch(nome):
+            nomes_na_linha[posicao] = nome
+    linhas.append(nomes_na_linha)
+    for parte in partes:
+        filtros = parte.get("filtro_linhas", {})
+        apelidos = {destino: nome for nome, destino in parte.get("nomes_territorio", {}).items()}
+        for territorio in parte["territorios_esperados"]:
+            def linha(filtro_trocado=None) -> list:
+                nova = [None] * largura
+                nova[posicoes[parte["coluna_territorio"]]] = apelidos.get(territorio, nomes[territorio])
+                for coluna, aceito in filtros.items():
+                    if coluna == filtro_trocado:
+                        aceito = 1900 if isinstance(aceito, int) else f"Isca ({aceito or 'em branco'})"
+                    nova[posicoes[coluna]] = aceito if aceito != "" else None
+                for spec in parte["colunas"]:
+                    nova[posicoes[spec["coluna"]]] = 1 if filtro_trocado else valor(territorio, spec)
+                return nova
+
+            linhas.append(linha())
+            linhas += [linha(coluna) for coluna in filtros]
+    linhas.append(["Fonte: INEP (sintético)."])
+    return linhas
+
+
+def pacote_de_partes(indicador_id: str, serie_id: str, valor) -> bytes:
+    """Pacote do coletor `arquivo` com as partes da serie: um zip por URL, com um arquivo por `arquivo_no_zip`."""
+    serie = next(s for s in _ficha(indicador_id)["series"] if s["id"] == serie_id)
+    nomes = _nomes_dos_territorios()
+    por_url: dict[str, dict[str, dict]] = {}
+    formatos: dict[tuple[str, str], str] = {}
+    for parte in serie["parametros"]["partes"]:
+        membro = parte["arquivo_no_zip"]
+        por_url.setdefault(parte["url"], {}).setdefault(membro, {}).setdefault(parte["aba"], []).append(parte)
+        formatos[(parte["url"], membro)] = parte["formato"]
+    baixados = {}
+    for url, membros in por_url.items():
+        arquivos = {}
+        for membro, abas in membros.items():
+            planilhas = {aba: _aba_das_partes(partes, valor, nomes) for aba, partes in abas.items()}
+            arquivos[membro] = (xls_abas if formatos[(url, membro)] == "xls" else xlsx_abas)(planilhas)
+        baixados[url] = zip_com_arquivos(arquivos)
+    return empacotar_partes(baixados)
+
+
+# Abandono: taxa de 9,9999 % (derivada de 99999) em todo territorio, como a taxa de desocupacao (comparacao com o Brasil).
+VALOR_ABANDONO = BASE / 10000
+# Matriculas e ensino superior: contagens que somam (UFs -> NE, regioes -> BR). Cada subindicador, etapa e rede tem um fator.
+FATOR_REDE = {"total": 10, "publica": 4, "privada": 6, "federal": 1, "estadual": 2, "municipal": 3}
+FATOR_ETAPA = {
+    "educacao_basica": 10, "educacao_infantil": 3, "creche": 1, "pre_escola": 2, "ensino_fundamental": 5,
+    "anos_iniciais": 3, "anos_finais": 2, "ensino_medio": 2,
+}
+FATOR_SUBINDICADOR = {"matriculas": 5, "ies": 2, "universidades": 1}
+
+
+def valor_contagem(territorio: str, spec: dict) -> int:
+    fator = FATOR_REDE[spec["rede"]] * FATOR_ETAPA.get(spec.get("etapa"), 1) * FATOR_SUBINDICADOR.get(spec.get("subindicador"), 1)
+    return BASE * MULTIPLICADOR_TERRITORIO.get(territorio, 1) * fator
+
+
 def _soma(nc, codigo, ano, multiplicador) -> str:
     return str(BASE * multiplicador)
 
@@ -449,6 +578,13 @@ GERADORES = {
         "Rendimento médio mensal real do trabalho (sintético)", "38", "Reais", _constante("99999"),
         anos=ANOS_PNADC),
     "ideb/ideb.zip": pacote_ideb,
+    "abandono_em/indicadores_inep.zip": lambda: pacote_de_partes(
+        "abandono_em", "indicadores_inep", lambda territorio, spec: VALOR_ABANDONO),
+    "matriculas_basica/censo_escolar_pre2007.zip": lambda: pacote_de_partes(
+        "matriculas_basica", "censo_escolar_pre2007", valor_contagem),
+    "matriculas_basica/educacenso.zip": lambda: pacote_de_partes("matriculas_basica", "educacenso", valor_contagem),
+    "superior/censup_pre2009.zip": lambda: pacote_de_partes("superior", "censup_pre2009", valor_contagem),
+    "superior/censup.zip": lambda: pacote_de_partes("superior", "censup", valor_contagem),
 }
 
 

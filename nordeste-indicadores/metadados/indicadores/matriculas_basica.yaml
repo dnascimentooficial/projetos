@@ -1,0 +1,1750 @@
+id: matriculas_basica
+nome: Matrículas na educação básica, por etapa e rede
+descricao: >-
+  Número de matrículas na educação básica por etapa de ensino (educação básica
+  total, educação infantil, creche, pré-escola, ensino fundamental, anos
+  iniciais, anos finais e ensino médio) e, onde a fonte publica, por rede
+  (federal, estadual, municipal e privada), por Brasil, região e unidade da
+  federação. A unidade é uma contagem de matrículas.
+eixo: educacao_basica
+categoria: acesso_e_oferta
+unidade: matrículas
+orgao: INEP
+periodicidade: anual
+metodologia: >-
+  Contagens das Sinopses Estatísticas da Educação Básica do INEP (Censo
+  Escolar). Cada ano é um arquivo distinto, e cada arquivo é uma parte da série
+  (`partes`), com a coleta guardando todos os anos num único pacote. A etapa
+  vai em `etapa` (`educacao_basica`, `educacao_infantil`, `creche`,
+  `pre_escola`, `ensino_fundamental`, `anos_iniciais`, `anos_finais`,
+  `ensino_medio`) e a rede em `rede` (`total`, `federal`, `estadual`,
+  `municipal`, `privada`); a rede `total` de cada etapa vem da tabela por etapa
+  e as redes vêm das tabelas por dependência administrativa, sem repetir a
+  mesma célula. `censo_escolar_pre2007` lê as tabelas 1.1, 1.6, 1.12, 1.18 e
+  1.43 do `.xls` de resultados do Censo Escolar (uma linha por território);
+  `educacenso` lê as tabelas 1.1, 1.5 e 1.14 da sinopse (uma linha por
+  município, com as linhas de Brasil, regiões e UFs entre elas, separadas pelo
+  filtro de município vazio).
+observacoes: >-
+  (1) Brasil fora do Nordeste por soma (Brasil menos Nordeste), etapa a etapa e
+  rede a rede. (2) As duas séries não são comparáveis nas etapas do ensino
+  fundamental: até 2006 a fonte publica o ensino fundamental por rede (sem
+  separar anos iniciais e finais), e de 2007 em diante publica anos iniciais e
+  anos finais por rede, mas o ensino fundamental só no total. Por isso o ensino
+  fundamental por rede só existe em `censo_escolar_pre2007` e os anos iniciais
+  e finais por rede só em `educacenso`. (3) O ensino médio por rede só existe
+  em `censo_escolar_pre2007`: nas sinopses de 2007 em diante as tabelas de
+  ensino médio por dependência vêm por série, sem total do ensino médio, e o
+  padronizador não soma colunas. (4) Pendências de cobertura: 2000 a 2004
+  (2003 e 2004 só em PDF; 2000 a 2002 com layout de abas próprio, não lido) e
+  2022 a 2025 (a sinopse de 2022 tem 309 MB e não terminou de baixar em cinco
+  minutos; as de 2023 e 2024 mudam o cabeçalho das tabelas 1.1, 1.5 e 1.14 e a
+  de 2025 renumera as tabelas, e a série precisa ser contínua). (5)
+  `defasagem_meses`: as sinopses saem de dois a sete meses depois do fim do ano
+  (a de 2025 foi atualizada em julho de 2026); seis meses é uma estimativa.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 6
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: censo_escolar_pre2007
+    inicio: 2005
+    fim: 2006
+    fonte: INEP, Censo Escolar, resultados de 2005 e 2006
+    base_origem: >-
+      Resultados do Censo Escolar de 2005 e de 2006 (um .xls por ano, tabelas
+      1.1, 1.6, 1.12, 1.18 e 1.43)
+    url: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-basica
+    coletor: arquivo
+    parametros:
+      padronizador: planilha
+      ca_extra: metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem
+      partes:
+      - url: https://download.inep.gov.br/download/censo/2005/Censo2005.zip
+        formato: xls
+        arquivo_no_zip: Censo2005/Censo Escolar 2005.xls
+        aba: '1.1'
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 1', ano: 2005, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 2', ano: 2005, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 3', ano: 2005, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 4', ano: 2005, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/download/censo/2005/Censo2005.zip
+        formato: xls
+        arquivo_no_zip: Censo2005/Censo Escolar 2005.xls
+        aba: '1.6'
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 1', ano: 2005, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 2', ano: 2005, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2005, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2005, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2005, etapa: creche, rede: privada}
+      - url: https://download.inep.gov.br/download/censo/2005/Censo2005.zip
+        formato: xls
+        arquivo_no_zip: Censo2005/Censo Escolar 2005.xls
+        aba: '1.12'
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 1', ano: 2005, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 2', ano: 2005, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2005, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2005, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2005, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/download/censo/2005/Censo2005.zip
+        formato: xls
+        arquivo_no_zip: Censo2005/Censo Escolar 2005.xls
+        aba: '1.18'
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 2', ano: 2005, etapa: ensino_fundamental, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2005, etapa: ensino_fundamental, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2005, etapa: ensino_fundamental, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2005, etapa: ensino_fundamental, rede: privada}
+      - url: https://download.inep.gov.br/download/censo/2005/Censo2005.zip
+        formato: xls
+        arquivo_no_zip: Censo2005/Censo Escolar 2005.xls
+        aba: '1.43'
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 2', ano: 2005, etapa: ensino_medio, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2005, etapa: ensino_medio, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2005, etapa: ensino_medio, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2005, etapa: ensino_medio, rede: privada}
+      - url: https://download.inep.gov.br/download/censo/2006/resultados_censo_escolar2006.zip
+        formato: xls
+        arquivo_no_zip: Resultados Censo Escolar 2006.xls
+        aba: '1.1'
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 1', ano: 2006, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 2', ano: 2006, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 3', ano: 2006, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 4', ano: 2006, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/download/censo/2006/resultados_censo_escolar2006.zip
+        formato: xls
+        arquivo_no_zip: Resultados Censo Escolar 2006.xls
+        aba: '1.6'
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 1', ano: 2006, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 2', ano: 2006, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2006, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2006, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2006, etapa: creche, rede: privada}
+      - url: https://download.inep.gov.br/download/censo/2006/resultados_censo_escolar2006.zip
+        formato: xls
+        arquivo_no_zip: Resultados Censo Escolar 2006.xls
+        aba: '1.12'
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 1', ano: 2006, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 2', ano: 2006, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2006, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2006, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2006, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/download/censo/2006/resultados_censo_escolar2006.zip
+        formato: xls
+        arquivo_no_zip: Resultados Censo Escolar 2006.xls
+        aba: '1.18'
+        linha_cabecalho: 8
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 2', ano: 2006, etapa: ensino_fundamental, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2006, etapa: ensino_fundamental, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2006, etapa: ensino_fundamental, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2006, etapa: ensino_fundamental, rede: privada}
+      - url: https://download.inep.gov.br/download/censo/2006/resultados_censo_escolar2006.zip
+        formato: xls
+        arquivo_no_zip: Resultados Censo Escolar 2006.xls
+        aba: '1.43'
+        linha_cabecalho: 9
+        coluna_territorio: 'Unnamed: 0'
+        territorios_esperados: [BR, N, NE, SE, S, CO, MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        nomes_territorio: {R. G. do Norte: RN}
+        colunas:
+        - {coluna: 'Unnamed: 2', ano: 2006, etapa: ensino_medio, rede: federal}
+        - {coluna: 'Unnamed: 3', ano: 2006, etapa: ensino_medio, rede: estadual}
+        - {coluna: 'Unnamed: 4', ano: 2006, etapa: ensino_medio, rede: municipal}
+        - {coluna: 'Unnamed: 5', ano: 2006, etapa: ensino_medio, rede: privada}
+    compatibilidade: >-
+      Série de 2005 e 2006, com ensino fundamental e ensino médio por rede e
+      sem anos iniciais e finais; não é comparável com `educacenso` nas etapas
+      do ensino fundamental (ver observações).
+    verificado: true
+  - id: educacenso
+    inicio: 2007
+    fim: 2021
+    fonte: INEP, Censo Escolar, sinopses estatísticas da educação básica de 2007 a 2021
+    base_origem: >-
+      Sinopses Estatísticas da Educação Básica de 2007 a 2021 (um zip por ano,
+      com a planilha da sinopse por município; tabelas 1.1, 1.5 e 1.14)
+    url: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-basica
+    coletor: arquivo
+    parametros:
+      padronizador: planilha
+      ca_extra: metadados/certificados/rnp-icpedu-gr46-ov-tls-ca-2025.pem
+      partes:
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2007/Sinopse_Estatistica_da_Educaç╞o_Basica_2007.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2007, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2007, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2007, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2007, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2007, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2007, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2007, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2007, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2007/Sinopse_Estatistica_da_Educaç╞o_Basica_2007.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2007, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2007, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2007, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2007, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2007, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2007, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2007, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2007, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2007/Sinopse_Estatistica_da_Educaç╞o_Basica_2007.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2007, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2007, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2007, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2007, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2007, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2007, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2007, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2007, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2007/Sinopse_Estatistica_da_Educaç╞o_Basica_2007.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2007, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2007, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2007, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2007, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2007, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2007, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2007, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2007, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2007/Sinopse_Estatistica_da_Educaç╞o_Basica_2007.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2007, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2007, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2007, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2007, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2007, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2007, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2007, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2007, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2007/Sinopse_Estatistica_da_Educaç╞o_Basica_2007.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2007, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2007, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2007, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2007, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2007, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2007, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2007, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2007, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2008/Sinopse_Estatistica_da_Educaç╞o_Basica_2008.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2008, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2008, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2008, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2008, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2008, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2008, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2008, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2008, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2008/Sinopse_Estatistica_da_Educaç╞o_Basica_2008.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2008, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2008, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2008, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2008, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2008, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2008, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2008, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2008, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2008/Sinopse_Estatistica_da_Educaç╞o_Basica_2008.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2008, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2008, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2008, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2008, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2008, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2008, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2008, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2008, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2008/Sinopse_Estatistica_da_Educaç╞o_Basica_2008.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2008, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2008, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2008, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2008, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2008, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2008, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2008, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2008, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2008/Sinopse_Estatistica_da_Educaç╞o_Basica_2008.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2008, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2008, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2008, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2008, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2008, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2008, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2008, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2008, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2008/Sinopse_Estatistica_da_Educaç╞o_Basica_2008.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2008, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2008, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2008, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2008, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2008, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2008, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2008, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2008, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2009/Sinopse_Estatistica_da_Educaç╞o_Basica_2009.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2009, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2009, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2009, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2009, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2009, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2009, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2009, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2009, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2009/Sinopse_Estatistica_da_Educaç╞o_Basica_2009.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2009, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2009, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2009, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2009, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2009, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2009, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2009, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2009, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2009/Sinopse_Estatistica_da_Educaç╞o_Basica_2009.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2009, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2009, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2009, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2009, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2009, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2009, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2009, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2009, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2009/Sinopse_Estatistica_da_Educaç╞o_Basica_2009.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2009, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2009, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2009, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2009, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2009, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2009, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2009, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2009, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2009/Sinopse_Estatistica_da_Educaç╞o_Basica_2009.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2009, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2009, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2009, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2009, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2009, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2009, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2009, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2009, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2009/Sinopse_Estatistica_da_Educaç╞o_Basica_2009.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2009, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2009, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2009, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2009, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2009, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2009, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2009, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2009, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2010/Sinopse_Estatistica_da_Educaç╞o_Basica_2010.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2010, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2010, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2010, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2010, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2010, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2010, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2010, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2010, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2010/Sinopse_Estatistica_da_Educaç╞o_Basica_2010.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2010, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2010, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2010, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2010, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2010, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2010, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2010, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2010, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2010/Sinopse_Estatistica_da_Educaç╞o_Basica_2010.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2010, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2010, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2010, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2010, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2010, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2010, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2010, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2010, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2010/Sinopse_Estatistica_da_Educaç╞o_Basica_2010.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2010, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2010, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2010, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2010, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2010, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2010, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2010, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2010, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2010/Sinopse_Estatistica_da_Educaç╞o_Basica_2010.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2010, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2010, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2010, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2010, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2010, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2010, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2010, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2010, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2010/Sinopse_Estatistica_da_Educaç╞o_Basica_2010.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2010, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2010, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2010, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2010, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2010, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2010, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2010, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2010, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2011/Sinopse_Estatistica_da_Educaç╞o_Basica_2011.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2011, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2011, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2011, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2011, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2011, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2011, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2011, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2011, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2011/Sinopse_Estatistica_da_Educaç╞o_Basica_2011.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2011, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2011, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2011, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2011, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2011, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2011, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2011, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2011, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2011/Sinopse_Estatistica_da_Educaç╞o_Basica_2011.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2011, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2011, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2011, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2011, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2011, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2011, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2011, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2011, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2011/Sinopse_Estatistica_da_Educaç╞o_Basica_2011.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2011, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2011, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2011, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2011, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2011, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2011, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2011, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2011, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2011/Sinopse_Estatistica_da_Educaç╞o_Basica_2011.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2011, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2011, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2011, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2011, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2011, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2011, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2011, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2011, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2011/Sinopse_Estatistica_da_Educaç╞o_Basica_2011.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2011, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2011, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2011, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2011, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2011, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2011, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2011, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2011, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2012/Sinopse_Estatistica_da_Educaç╞o_Basica_2012.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2012, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2012, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2012, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2012, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2012, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2012, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2012, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2012, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2012/Sinopse_Estatistica_da_Educaç╞o_Basica_2012.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2012, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2012, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2012, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2012, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2012, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2012, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2012, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2012, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2012/Sinopse_Estatistica_da_Educaç╞o_Basica_2012.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2012, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2012, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2012, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2012, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2012, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2012, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2012, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2012, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2012/Sinopse_Estatistica_da_Educaç╞o_Basica_2012.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2012, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2012, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2012, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2012, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2012, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2012, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2012, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2012, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2012/Sinopse_Estatistica_da_Educaç╞o_Basica_2012.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2012, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2012, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2012, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2012, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2012, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2012, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2012, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2012, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2012/Sinopse_Estatistica_da_Educaç╞o_Basica_2012.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2012, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2012, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2012, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2012, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2012, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2012, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2012, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2012, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2013/Sinopse_Estatistica_da_Educaç╞o_Basica_2013.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2013, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2013, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2013, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2013, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2013, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2013, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2013, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2013, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2013/Sinopse_Estatistica_da_Educaç╞o_Basica_2013.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2013, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2013, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2013, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2013, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2013, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2013, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2013, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2013, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2013/Sinopse_Estatistica_da_Educaç╞o_Basica_2013.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2013, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2013, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2013, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2013, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2013, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2013, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2013, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2013, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2013/Sinopse_Estatistica_da_Educaç╞o_Basica_2013.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2013, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2013, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2013, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2013, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2013, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2013, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2013, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2013, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2013/Sinopse_Estatistica_da_Educaç╞o_Basica_2013.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2013, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2013, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2013, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2013, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2013, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2013, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2013, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2013, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2013/Sinopse_Estatistica_da_Educaç╞o_Basica_2013.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2013, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2013, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2013, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2013, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2013, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2013, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2013, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2013, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2014/Sinopse_Estatistica_da_Educaç╞o_Basica_2014.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2014, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2014, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2014, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2014, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2014, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2014, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2014, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2014, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2014/Sinopse_Estatistica_da_Educaç╞o_Basica_2014.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2014, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2014, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2014, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2014, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2014, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2014, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2014, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2014, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2014/Sinopse_Estatistica_da_Educaç╞o_Basica_2014.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2014, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2014, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2014, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2014, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2014, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2014, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2014, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2014, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2014/Sinopse_Estatistica_da_Educaç╞o_Basica_2014.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2014, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2014, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2014, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2014, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2014, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2014, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2014, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2014, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2014/Sinopse_Estatistica_da_Educaç╞o_Basica_2014.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2014, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2014, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2014, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2014, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2014, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2014, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2014, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2014, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2014/Sinopse_Estatistica_da_Educaç╞o_Basica_2014.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2014, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2014, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2014, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2014, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2014, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2014, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2014, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2014, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2015/Sinopse_Estatistica_da_Educaç╞o_Basica_2015.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2015, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2015, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2015, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2015, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2015, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2015, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2015, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2015, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2015/Sinopse_Estatistica_da_Educaç╞o_Basica_2015.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2015, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2015, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2015, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2015, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2015, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2015, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2015, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2015, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2015/Sinopse_Estatistica_da_Educaç╞o_Basica_2015.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2015, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2015, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2015, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2015, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2015, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2015, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2015, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2015, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2015/Sinopse_Estatistica_da_Educaç╞o_Basica_2015.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2015, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2015, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2015, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2015, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2015, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2015, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2015, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2015, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2015/Sinopse_Estatistica_da_Educaç╞o_Basica_2015.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2015, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2015, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2015, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2015, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2015, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2015, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2015, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2015, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2015/Sinopse_Estatistica_da_Educaç╞o_Basica_2015.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2015, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2015, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2015, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2015, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2015, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2015, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2015, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2015, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2016/Sinopse_Estatistica_da_Educaç╞o_Basica_2016.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2016, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2016, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2016, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2016, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2016, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2016, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2016, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2016, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2016/Sinopse_Estatistica_da_Educaç╞o_Basica_2016.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2016, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2016, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2016, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2016, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2016, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2016, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2016, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2016, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2016/Sinopse_Estatistica_da_Educaç╞o_Basica_2016.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2016, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2016, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2016, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2016, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2016, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2016, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2016, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2016, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2016/Sinopse_Estatistica_da_Educaç╞o_Basica_2016.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2016, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2016, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2016, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2016, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2016, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2016, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2016, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2016, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2016/Sinopse_Estatistica_da_Educaç╞o_Basica_2016.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2016, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2016, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2016, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2016, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2016, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2016, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2016, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2016, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2016/Sinopse_Estatistica_da_Educaç╞o_Basica_2016.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2016, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2016, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2016, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2016, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2016, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2016, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2016, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2016, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2017/Sinopse_Estatistica_da_Educaç╞o_Basica_2017.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2017, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2017, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2017, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2017, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2017, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2017, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2017, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2017, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2017/Sinopse_Estatistica_da_Educaç╞o_Basica_2017.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2017, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2017, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2017, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2017, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2017, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2017, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2017, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2017, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2017/Sinopse_Estatistica_da_Educaç╞o_Basica_2017.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2017, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2017, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2017, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2017, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2017, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2017, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2017, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2017, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2017/Sinopse_Estatistica_da_Educaç╞o_Basica_2017.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2017, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2017, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2017, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2017, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2017, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2017, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2017, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2017, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2017/Sinopse_Estatistica_da_Educaç╞o_Basica_2017.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2017, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2017, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2017, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2017, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2017, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2017, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2017, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2017, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2017/Sinopse_Estatistica_da_Educaç╞o_Basica_2017.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2017, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2017, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2017, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2017, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2017, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2017, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2017, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2017, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2018/Sinopse_Estatistica_da_Educaç╞o_Basica_2018.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2018, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2018, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2018, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2018, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2018, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2018, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2018, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2018, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2018/Sinopse_Estatistica_da_Educaç╞o_Basica_2018.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2018, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2018, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2018, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2018, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2018, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2018, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2018, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2018, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2018/Sinopse_Estatistica_da_Educaç╞o_Basica_2018.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2018, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2018, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2018, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2018, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2018, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2018, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2018, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2018, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2018/Sinopse_Estatistica_da_Educaç╞o_Basica_2018.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2018, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2018, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2018, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2018, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2018, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2018, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2018, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2018, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2018/Sinopse_Estatistica_da_Educaç╞o_Basica_2018.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2018, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2018, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2018, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2018, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2018, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2018, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2018, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2018, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2018/Sinopse_Estatistica_da_Educaç╞o_Basica_2018.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2018, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2018, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2018, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2018, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2018, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2018, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2018, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2018, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip
+        formato: xlsx
+        arquivo_no_zip: sinopse_estatística_educaç╞o_básica_2019/Sinopse_Estatistica_da_Educaç╞o_Basica_2019.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2019, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2019, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2019, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2019, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2019, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2019, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2019, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2019, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip
+        formato: xlsx
+        arquivo_no_zip: sinopse_estatística_educaç╞o_básica_2019/Sinopse_Estatistica_da_Educaç╞o_Basica_2019.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2019, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2019, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2019, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2019, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2019, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2019, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2019, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2019, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip
+        formato: xlsx
+        arquivo_no_zip: sinopse_estatística_educaç╞o_básica_2019/Sinopse_Estatistica_da_Educaç╞o_Basica_2019.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2019, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2019, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2019, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2019, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2019, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2019, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2019, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2019, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip
+        formato: xlsx
+        arquivo_no_zip: sinopse_estatística_educaç╞o_básica_2019/Sinopse_Estatistica_da_Educaç╞o_Basica_2019.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2019, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2019, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2019, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2019, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2019, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2019, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2019, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2019, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip
+        formato: xlsx
+        arquivo_no_zip: sinopse_estatística_educaç╞o_básica_2019/Sinopse_Estatistica_da_Educaç╞o_Basica_2019.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2019, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2019, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2019, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2019, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2019, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2019, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2019, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2019, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip
+        formato: xlsx
+        arquivo_no_zip: sinopse_estatística_educaç╞o_básica_2019/Sinopse_Estatistica_da_Educaç╞o_Basica_2019.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2019, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2019, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2019, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2019, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2019, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2019, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2019, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2019, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2020/Sinopse_Estatistica_da_Educaç╞o_Basica_2020.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2020, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2020, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2020, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2020, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2020, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2020, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2020, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2020, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2020/Sinopse_Estatistica_da_Educaç╞o_Basica_2020.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2020, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2020, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2020, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2020, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2020, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2020, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2020, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2020, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2020/Sinopse_Estatistica_da_Educaç╞o_Basica_2020.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2020, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2020, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2020, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2020, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2020, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2020, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2020, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2020, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2020/Sinopse_Estatistica_da_Educaç╞o_Basica_2020.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2020, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2020, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2020, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2020, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2020, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2020, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2020, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2020, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2020/Sinopse_Estatistica_da_Educaç╞o_Basica_2020.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2020, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2020, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2020, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2020, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2020, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2020, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2020, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2020, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2020/Sinopse_Estatistica_da_Educaç╞o_Basica_2020.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2020, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2020, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2020, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2020, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2020, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2020, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2020, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2020, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2021/Sinopse_Estatistica_da_Educaç╞o_Basica_2021.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2021, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2021, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2021, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2021, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2021, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2021, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2021, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2021, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2021/Sinopse_Estatistica_da_Educaç╞o_Basica_2021.xlsx
+        aba: Educação Básica 1.1
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 4', ano: 2021, etapa: educacao_basica, rede: total}
+        - {coluna: 'Unnamed: 5', ano: 2021, etapa: educacao_infantil, rede: total}
+        - {coluna: 'Unnamed: 6', ano: 2021, etapa: creche, rede: total}
+        - {coluna: 'Unnamed: 7', ano: 2021, etapa: pre_escola, rede: total}
+        - {coluna: 'Unnamed: 8', ano: 2021, etapa: ensino_fundamental, rede: total}
+        - {coluna: 'Unnamed: 9', ano: 2021, etapa: anos_iniciais, rede: total}
+        - {coluna: 'Unnamed: 10', ano: 2021, etapa: anos_finais, rede: total}
+        - {coluna: 'Unnamed: 11', ano: 2021, etapa: ensino_medio, rede: total}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2021/Sinopse_Estatistica_da_Educaç╞o_Basica_2021.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2021, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2021, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2021, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2021, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2021, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2021, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2021, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2021, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2021/Sinopse_Estatistica_da_Educaç╞o_Basica_2021.xlsx
+        aba: Educação Infantil 1.5
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2021, etapa: creche, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2021, etapa: creche, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2021, etapa: creche, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2021, etapa: creche, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2021, etapa: pre_escola, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2021, etapa: pre_escola, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2021, etapa: pre_escola, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2021, etapa: pre_escola, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2021/Sinopse_Estatistica_da_Educaç╞o_Basica_2021.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 0'
+        filtro_linhas: {'Unnamed: 1': ''}
+        territorios_esperados: [BR, N, NE, SE, S, CO]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2021, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2021, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2021, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2021, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2021, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2021, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2021, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2021, etapa: anos_finais, rede: privada}
+      - url: https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip
+        formato: xlsx
+        arquivo_no_zip: Sinopse_Estatistica_da_Educaç╞o_Basica_2021/Sinopse_Estatistica_da_Educaç╞o_Basica_2021.xlsx
+        aba: Ensino Fundamental 1.14
+        linha_cabecalho: 10
+        coluna_territorio: 'Unnamed: 1'
+        filtro_linhas: {'Unnamed: 2': ''}
+        territorios_esperados: [MA, PI, CE, RN, PB, PE, AL, SE_UF, BA]
+        colunas:
+        - {coluna: 'Unnamed: 6', ano: 2021, etapa: anos_iniciais, rede: federal}
+        - {coluna: 'Unnamed: 7', ano: 2021, etapa: anos_iniciais, rede: estadual}
+        - {coluna: 'Unnamed: 8', ano: 2021, etapa: anos_iniciais, rede: municipal}
+        - {coluna: 'Unnamed: 9', ano: 2021, etapa: anos_iniciais, rede: privada}
+        - {coluna: 'Unnamed: 11', ano: 2021, etapa: anos_finais, rede: federal}
+        - {coluna: 'Unnamed: 12', ano: 2021, etapa: anos_finais, rede: estadual}
+        - {coluna: 'Unnamed: 13', ano: 2021, etapa: anos_finais, rede: municipal}
+        - {coluna: 'Unnamed: 14', ano: 2021, etapa: anos_finais, rede: privada}
+    compatibilidade: >-
+      Série de 2007 a 2021, com layout idêntico das três tabelas em todos os
+      anos; a continuação (2022 a 2025) está pendente (ver observações).
+    verificado: true

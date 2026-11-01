@@ -57,6 +57,11 @@ Resultado: as 6 séries coletaram com os parâmetros das fichas, `validar` saiu 
 | `idhm` | `censo` | Ipeadata `IDHM`, `IDHMRE`, `IDHMED`, `IDHMLO` (janela 2000-2010) | 2000 e 2010, só Brasil e 9 UFs (sem regiões e sem NE) | sim (para o subconjunto declarado) |
 | `idhm` | `pnadc` | Ipeadata `IDHM`, `IDHMRE`, `IDHMED`, `IDHMLO` (janela 2012-2024) | 2012 a 2024, 15 territórios | sim (fonte Ipeadata; não cotejada com o arquivo oficial do Radar IDHM) |
 | `ideb` | `ideb` | INEP, `divulgacao_regioes_ufs_ideb_2025.zip` e `divulgacao_brasil_ideb_2025.zip` (6 abas, linha "Total") | 2005 a 2025, anos ímpares, 15 territórios, 3 etapas | sim |
+| `abandono_em` | `indicadores_inep` | INEP, Taxas de Rendimento Escolar, 19 zips (coluna do total do ensino médio, localização e rede "Total") | 2007 a 2025, 15 territórios | sim |
+| `matriculas_basica` | `censo_escolar_pre2007` | INEP, Censo Escolar 2005 e 2006 (`.xls`, tabelas 1.1, 1.6, 1.12, 1.18 e 1.43) | 2005 e 2006, 15 territórios, 6 etapas, rede total e 4 redes | sim (só 2005 e 2006; 2000 a 2004 pendentes) |
+| `matriculas_basica` | `educacenso` | INEP, Sinopses da Educação Básica 2007 a 2021 (tabelas 1.1, 1.5 e 1.14) | 2007 a 2021, 15 territórios, 8 etapas | sim (só 2007 a 2021; 2022 a 2025 pendentes) |
+| `superior` | `censup_pre2009` | INEP, Sinopses da Educação Superior 2001 a 2008 (`.xls`, tabelas 1.1 e 5.1) | 2001 a 2008, 15 territórios; IES, universidades e matrículas totais | sim (só 2001 a 2008; 2000 só em PDF) |
+| `superior` | `censup` | INEP, Sinopses da Educação Superior 2009 a 2019 (sinopse por município, tabelas 1.1 e 5.1) | 2009 a 2019, 15 territórios; IES, universidades e matrículas (total, pública, privada) | sim (só 2009 a 2019; 2020 a 2024 pendentes) |
 
 ## pib_nominal / scr_ref2010
 
@@ -579,6 +584,10 @@ tabela não está confirmada.
     (linhas `indisponivel` no ano sem pesquisa, 2010 na `pnad`); o campo `comparacao.precisao_oficial` e a tolerância correspondente na R08.
 13. `ideb`: série `ideb` de 2005 a **2025** (spec: 2005–2023), porque o INEP divulgou a edição de 2025 em 05/08/2026; bienal, só a rede `total`
     (spec não fixa a rede), comparação com o Brasil, como na spec (Tarefa 15A).
+14. `abandono_em`: série `indicadores_inep` de 2007 a **2025** (spec: 2007 em diante), completa e verificada; só o total do ensino médio, na localização e na rede "Total" (spec não fixa o recorte); comparação com o Brasil, como na spec (Tarefa 15B).
+15. `matriculas_basica`: a spec previa `educacenso` (2007+) e `censo_escolar_pre2007` (2000-2006). Verificadas `educacenso` de 2007 a **2021** (2022 a 2025 pendentes: a sinopse de 2022 tem 309 MB e passa de cinco minutos, e o cabeçalho das de 2023 a 2025 mudou) e `censo_escolar_pre2007` só de **2005 e 2006** (2003 e 2004 existem só em PDF e 2000 a 2002 têm layout de abas próprio, não lido). A etapa e a rede variam por série: ensino fundamental e ensino médio por rede só até 2006; anos iniciais e anos finais por rede só de 2007 em diante; ensino médio de 2007 em diante só no total (as tabelas por dependência vêm por série, sem soma). Brasil fora do Nordeste por soma, como na spec (Tarefa 15B).
+16. `superior`: a spec previa `censup_pre2009` e `censup` (2009+). Verificadas `censup_pre2009` de **2001 a 2008** (2000 só em PDF; matrículas só totais e só de cursos presenciais, porque as linhas de Pública e Privada vêm sem o nome do território) e `censup` de 2009 a **2019** (2020 a 2024 pendentes por tamanho: de 284 a 397 MB; 2025 ainda não publicada). Subindicadores `matriculas` (rede `total`, `publica`, `privada`), `ies` e `universidades`; Brasil fora do Nordeste por soma, como na spec (Tarefa 15B).
+17. Tarefa 15B: nenhuma mudança no código de coleta nem de padronização. A única mudança de código é do gerador de fixtures (`xls_abas`, `.xls` com várias abas, e o montador de pacotes a partir das partes da ficha).
 
 ## Bloco PNUD: IDHM
 
@@ -645,11 +654,11 @@ componente (`IDHM`/`ADH_IDHM`, `IDHMRE`/`ADH_IDHM_R`, `IDHMED`/`ADH_IDHM_E`, `ID
 - Não comparável com `censo` (pesquisa e método diferentes); sem variação calculada entre as duas.
 - Comparação `brasil`; não há Brasil fora do Nordeste.
 
-## Bloco INEP: acesso confirmado (Tarefa 15), IDEB verificado (Tarefa 15A), demais fichas pendentes
+## Bloco INEP: acesso confirmado (Tarefa 15), IDEB (Tarefa 15A), abandono, matrículas e superior (Tarefa 15B)
 
 Data: 2026-11-01. Na Tarefa 15 nenhuma ficha do INEP foi escrita: os arquivos reais do INEP não cabiam no mecanismo de coleta e
 padronização (uma série = uma URL, uma aba, sem filtro de linhas). A Tarefa 15A acrescentou as séries com partes (abaixo) e a ficha
-`ideb`; `abandono_em`, `matriculas_basica` e `superior` seguem sem ficha. Detalhes do que foi baixado e lido na Tarefa 15:
+`ideb`, e a Tarefa 15B escreveu as fichas `abandono_em`, `matriculas_basica` e `superior` (seções ao fim do bloco). Detalhes do que foi baixado e lido na Tarefa 15:
 
 **Acesso.** `download.inep.gov.br` responde com a cadeia TLS incompleta (só a folha `*.inep.gov.br`); falta a intermediária
 "RNP ICPEdu GR46 OV TLS CA 2025" (emitida por GlobalSign Root R46, sha256
@@ -735,3 +744,163 @@ o mapa de aba e coluna por ano, o filtro de linhas (`Rede = Total`) e, no IDEB, 
 - 2021: edição afetada pela pandemia; a ficha registra a cautela em `observacoes` (nota informativa do Ideb 2021).
 - Comparação `brasil`; não há Brasil fora do Nordeste (o IDEB não se recalcula a partir das UFs).
 - Série fechada em 2025 (`fim: 2025`): uma edição nova exige rever `fim`, as URLs e as colunas das partes.
+
+### Tarefa 15B: abandono, matrículas e ensino superior
+
+Data: 2026-11-01. Método comum: os parâmetros de cada série vêm da ficha; a coleta é a do projeto (`coletar_serie`, que baixa cada URL distinta
+com o `ca_extra` da RNP e grava um pacote único), seguida de `consolidar` e `validar` numa raiz temporária fora do repositório. Os arquivos
+baixados não são versionados. As tabelas por ano abaixo trazem o tamanho e o sha256 (8 primeiros caracteres) de cada zip baixado e valores
+de conferência lidos da base consolidada.
+
+Limite de tempo e de tamanho. Os zips das sinopses são grandes (112 a 397 MB) e o servidor do INEP serve cerca de 0,5 MB/s por conexão (medido:
+26 MB em 50 s, uma conexão). O `abandono_em` e as séries pequenas (`censup_pre2009`, `censo_escolar_pre2007`) foram coletados pela rede pelo coletor do
+projeto (`python -I -m nordeste --raiz <tmp> --hoje 2026-11-01 coletar --indicador <id>`, com `verificado: true` só na cópia temporária das fichas).
+Os zips das sinopses `censup` (2009 a 2019) e `educacenso` (2007 a 2021) foram baixados com `curl` (mesmas URLs da ficha, mesma CA), 12 a 16 de
+cada vez, cada um em menos de cinco minutos (124 a 259 s), e a coleta do projeto rodou sobre esses arquivos (sessão HTTP que serve os arquivos locais, com o
+`empacotar_partes` e o registro de coletas reais). Não se repetiu a coleta sequencial de rede dessas duas séries: 11 e 15 zips de 112 a 240 MB a 0,5 MB/s
+levam de 50 a 60 minutos cada. `consolidar` de `censup` levou 4 min 54 s (CPU) e 4,2 GB de memória; o de `educacenso`, 2 min 53 s e 3,9 GB.
+
+Mecanismos de leitura usados, todos já existentes (nenhuma mudança de código): `partes` com `filtro_linhas` (incluindo o valor vazio, para escolher a linha de total
+quando o município ou a UF está em branco, e o ano do arquivo, conferido na própria planilha), `nomes_territorio` (`Total Bahia` como BA, `R. G. do Norte` como RN, siglas de UF como
+`MA`), `territorios_esperados` em toda parte, colunas por rótulo ou por posição (`Unnamed: n`, quando a célula de cabeçalho está vazia) e `linha_cabecalho` numa linha em branco
+quando o cabeçalho tem várias linhas. Os nomes dos arquivos dentro dos zips antigos vêm como o Python os decodifica (CP437): `Taxas de Rendimento_ REGIσES_ 2007.xls`,
+`Sinopse_Estatistica_da_Educaç╞o_Basica_2013.xlsx`, e a ficha os declara assim.
+
+### abandono_em / indicadores_inep
+
+- Página oficial: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/indicadores-educacionais/taxas-de-rendimento-escolar (uma página por ano, com os
+  arquivos de Brasil, regiões e UFs, de municípios e de escolas; só o primeiro entra).
+- URLs de coleta (um zip por ano, na ordem do pacote): `https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2007/tx_rendimento_brasil_regioes_UFs_2007.zip https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2008/tx_rendimento_brasil_regioes_UFs_2008.zip https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2009/tx_rendimento_brasil_regioes_UFs_2009.zip https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2010/tx_rendimento_brasil_regioes_UFs_2010.zip https://download.inep.gov.br/informacoes_estatisticas/2011/indicadores_educacionais/taxa_rendimento/2011/tx_rendimento_brasil_regioes_UFs_2011_2.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2012/taxas_rendimento/tx_rendimento_brasil_regioes_UFs_2012.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2013/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2013.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2014/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2014.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2015/taxa_rendimento/tx_rendimento_brasil_regioes_UFs_2015.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2016/TAXA_REND_2016_BRASIL_REGIOES_UFS.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2017/TAXA_REND_2017_BRASIL_REGIOES_UFS.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2018/TX_REND_BRASIL_REGIOES_UFS_2018.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2019/tx_rend_brasil_regioes_ufs_2019.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2020/tx_rend_brasil_regioes_ufs_2020.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2021/tx_rend_brasil_regioes_ufs_2021.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2022/tx_rend_brasil_regioes_ufs_2022.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2023/tx_rend_brasil_regioes_ufs_2023.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2024/tx_rend_brasil_regioes_ufs_2024.zip https://download.inep.gov.br/informacoes_estatisticas/indicadores_educacionais/2025/tx_rend_brasil_regioes_ufs_2025.zip`
+- Coleta de rede pelo coletor do projeto em 54 s, 19 zips; `validar` saiu com código 0, sem regra bloqueante e com um aviso A01 em 32 casos
+  (passagens de 2019 para 2020, de 2020 para 2021, de 2022 para 2023 e de 2024 para 2025; é variação real em taxas pequenas e do ensino remoto da pandemia, sem salto de método).
+- Valor lido: taxa de abandono do total do ensino médio, na localização e na rede ("dependência administrativa") "Total". Cada arquivo traz as taxas de aprovação, de
+  reprovação e de abandono por série; a ficha escolhe só a coluna do total do ensino médio da taxa de abandono.
+- Layout por era (cada ano é um arquivo de layout próprio; 39 partes):
+  - 2007 a 2010: três `.xls` (Brasil, regiões, UFs), cabeçalho na linha 8, colunas sem rótulo de cabeçalho exceto as de dados (`Unnamed: n`); o total está em "Total Abandono - Médio"
+    (coluna 57, ou 58 no arquivo das UFs de 2007). Cuidado: a coluna que a linha 7 chama de "Taxa de Abandono - Ensino Médio" é a da 1ª série, não a do total; por isso o
+    cabeçalho é a linha 8. Região "Centro - Oeste" em 2007 e 2008 (`nomes_territorio`), UFs por sigla.
+  - 2011 a 2015: três arquivos (`.xls` e `.xlsx`, conforme o ano), cabeçalho na linha 7, total em "Taxa de Abandono - Ensino Médio" (a linha 8 confere: "Total Abandono Médio"); UFs por sigla até 2014 e por nome em 2015.
+  - 2016: três `.xlsx`, cabeçalho de códigos na linha 9, total em `tab_MED`, filtros `TIPOLOCA` e `DEPENDAD` (`Dependad` no Brasil); o arquivo das UFs traz a região na coluna 1 e a UF em `no_cod`.
+  - 2017 a 2020: um `.xlsx` com Brasil, regiões e UFs (aba `BRASIL_REGIOES_UFS ` com espaço no fim), cabeçalho de códigos na linha 9, território na coluna sem rótulo, total em `tab_MED`.
+  - 2021 a 2025: um `.xlsx` (mesma aba), códigos novos (`NU_ANO_CENSO`, `UNIDGEO`, `NO_CATEGORIA`, `NO_DEPENDENCIA`), total em `3_CAT_MED`.
+- Conferência independente (leitura direta dos arquivos com pandas, fora do padronizador): Pernambuco 2012 = 7,4, Bahia 2008 = 19,8 e Nordeste 2019 = 5,2, iguais aos da base.
+- Obtido: 285 linhas = 19 anos (2007 a 2025) x 15 territórios (BR, 5 regiões e as 9 UFs), todas `observado`. Comparação com o Brasil (não há Brasil fora do Nordeste).
+
+| Ano | Zip (bytes) | sha256 | Brasil | Nordeste | Bahia | Pernambuco |
+|---|---|---|---|---|---|---|
+| 2007 | 161.927 | `cb482954` | 13,2 | 19,3 | 19,9 | 22,0 |
+| 2008 | 147.935 | `c98805d4` | 12,8 | 18,1 | 19,8 | 18,0 |
+| 2009 | 148.569 | `29d57dc2` | 11,5 | 16,4 | 18,5 | 14,0 |
+| 2010 | 146.826 | `fef00458` | 10,3 | 14,2 | 15,7 | 11,1 |
+| 2011 | 134.571 | `4cbdb787` | 9,5 | 13,3 | 12,5 | 10,1 |
+| 2012 | 229.990 | `8dc1092c` | 9,1 | 12,5 | 14,1 | 7,4 |
+| 2013 | 230.519 | `aff888ce` | 8,1 | 9,7 | 8,6 | 4,7 |
+| 2014 | 229.458 | `dbd866e5` | 7,6 | 9,3 | 10,0 | 3,2 |
+| 2015 | 482.450 | `56be48a4` | 6,8 | 8,0 | 7,5 | 2,3 |
+| 2016 | 526.989 | `32be97b4` | 6,6 | 7,8 | 7,4 | 1,6 |
+| 2017 | 403.520 | `d6a8f808` | 6,1 | 7,0 | 8,5 | 1,5 |
+| 2018 | 369.426 | `4a6d0f21` | 6,1 | 6,7 | 9,0 | 1,2 |
+| 2019 | 367.101 | `24a0b247` | 4,8 | 5,2 | 7,1 | 1,4 |
+| 2020 | 381.215 | `febf857b` | 2,3 | 2,2 | 1,0 | 0,3 |
+| 2021 | 400.223 | `f2a5cd3c` | 5,0 | 6,3 | 10,6 | 1,4 |
+| 2022 | 407.358 | `1ff22afb` | 5,7 | 6,7 | 11,7 | 1,5 |
+| 2023 | 389.928 | `544353af` | 3,4 | 3,4 | 4,8 | 0,9 |
+| 2024 | 388.235 | `669ee147` | 3,2 | 3,5 | 5,8 | 0,7 |
+| 2025 | 376.867 | `cb6ba9fc` | 2,2 | 1,9 | 2,7 | 0,6 |
+
+### matriculas_basica / censo_escolar_pre2007
+
+- Páginas oficiais: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-basica (sinopses de 1995 a 2025).
+- URLs de coleta (um zip por ano): `https://download.inep.gov.br/download/censo/2005/Censo2005.zip https://download.inep.gov.br/download/censo/2006/resultados_censo_escolar2006.zip`
+- Coleta de rede pelo coletor do projeto; `validar` saiu com código 0, sem regra bloqueante e com A01 em 6 casos (redes federal e estadual com poucas matrículas, como creche estadual
+  do RN, de 2005 para 2006).
+- Layout: um `.xls` por ano (`Censo2005/Censo Escolar 2005.xls`, `Resultados Censo Escolar 2006.xls`) com uma aba por tabela e uma linha por território (nomes "R. G. do Norte", "Centro-Oeste"; declarados
+  em `nomes_territorio`). Abas lidas: `1.1` (educação básica, infantil, fundamental e médio), `1.6` (creche, total e por rede), `1.12` (pré-escola), `1.18` (ensino fundamental por rede) e
+  `1.43` (ensino médio por rede); o cabeçalho é a linha em branco acima da linha do Brasil (linha 8 ou 9, conforme a aba e o ano). Redes: federal, estadual, municipal e privada.
+- Obtido: 704 linhas = 2 anos x 15 territórios x 22 grupos de etapa e rede (660 observadas e 44 do Brasil fora do Nordeste por soma). Brasil, educação básica, 55.942.047 (2006).
+- Pendência: 2000 a 2002 (arquivos `.xls` com abas de numeração própria, não lidos), 2003 e 2004 (só PDF). Uma série só é verificada se todos os anos declarados passaram, por isso a série declara 2005 e 2006.
+
+| Ano | Zip (bytes) | sha256 | Educação básica Brasil | Ensino médio Brasil | Ensino médio Nordeste |
+|---|---|---|---|---|---|
+| 2005 | 647.527 | `9b0ef400` | 56.471.622 | 9.031.302 | 2.669.335 |
+| 2006 | 609.162 | `5967a7a7` | 55.942.047 | 8.906.820 | 2.692.512 |
+
+### matriculas_basica / educacenso
+
+- URLs de coleta (um zip por ano, na ordem do pacote; 2007 a 2019 em `informacoes_estatisticas/.../sinopses_educacao_basica/`, 2020 e 2021 em `dados_abertos/sinopses_estatisticas/`): `https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2007.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2008.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2009.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2010.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2011.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2012.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2013.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2014.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2015.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2016.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2017.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_da_educacao_basica_2018.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_basica/sinopse_estatistica_educacao_basica_2019.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2020.zip https://download.inep.gov.br/dados_abertos/sinopses_estatisticas/sinopses_estatisticas_censo_escolar_2021.zip`
+- `validar` saiu com código 0, sem regra bloqueante e com A01 em 110 casos (redes federal e estadual com poucas matrículas, como os anos finais federais do Piauí, de 2008 para 2009).
+- Layout: um `.xlsx` por ano, de cerca de 83 a 105 MB, com as três tabelas lidas em abas de nome estável de 2007 a 2021 (`Educação Básica 1.1`, `Educação Infantil 1.5`, `Ensino Fundamental 1.14`; as 15 sinopses têm o cabeçalho
+  idêntico nas três). Cada aba traz uma linha por município, com as linhas de Brasil, de região (UF e município em branco) e de UF (município em branco) entre elas; por isso cada aba entra em duas partes:
+  Brasil e regiões (filtro: coluna da UF vazia) e UFs (filtro: coluna do município vazia). Células em branco vêm com espaços; o filtro compara sem espaços. Cabeçalho: linha 10, em branco (colunas por posição).
+- Colunas: `1.1` (rede total): educação básica, educação infantil, creche, pré-escola, ensino fundamental, anos iniciais, anos finais, ensino médio; `1.5`: creche e pré-escola por rede (federal, estadual, municipal,
+  privada); `1.14`: anos iniciais e anos finais por rede. O total de cada etapa vem só da 1.1 (as tabelas por rede repetem o total, que não entra duas vezes). O ensino médio por rede e o ensino fundamental por rede
+  não existem nessas tabelas (as de ensino médio por dependência vêm por série, sem total).
+- Obtido: 5.760 linhas = 15 anos x 15 territórios x 24 grupos de etapa e rede (5.400 observadas e 360 do Brasil fora do Nordeste por soma).
+- Pendência: 2022 a 2025. A sinopse de 2022 (309 MB) não terminou de baixar em 290 s; as de 2023 (152 MB), 2024 (145 MB) e 2025 (232 MB) baixaram, mas mudam o cabeçalho das abas 1.1, 1.5 e 1.14 (2023 e 2024) ou renumeram as tabelas
+  (2025, arquivo `..._2025_V2`), e a série precisa ser contínua. Ficam para uma nova tarefa.
+
+| Ano | Zip (bytes) | sha256 | Educação básica Brasil | Ensino médio Brasil | Ensino médio Nordeste |
+|---|---|---|---|---|---|
+| 2007 | 119.449.617 | `0efe1688` | 53.028.928 | 8.372.175 | 2.526.908 |
+| 2008 | 122.211.895 | `9510b4b6` | 53.232.868 | 8.368.868 | 2.537.971 |
+| 2009 | 120.740.810 | `82b62128` | 52.580.452 | 8.338.423 | 2.512.928 |
+| 2010 | 121.686.114 | `8cd07f99` | 51.549.889 | 8.358.647 | 2.425.022 |
+| 2011 | 129.226.183 | `b5da8f49` | 50.972.619 | 8.401.829 | 2.401.630 |
+| 2012 | 133.568.931 | `36501f31` | 50.545.050 | 8.377.942 | 2.354.470 |
+| 2013 | 124.080.071 | `1829eacb` | 50.042.448 | 8.314.048 | 2.311.536 |
+| 2014 | 124.053.690 | `98ebac1e` | 49.771.371 | 8.301.380 | 2.267.412 |
+| 2015 | 125.109.515 | `3c548144` | 48.796.512 | 8.076.150 | 2.214.168 |
+| 2016 | 124.172.601 | `334e8815` | 48.817.479 | 8.133.040 | 2.245.524 |
+| 2017 | 124.595.719 | `094278d0` | 48.608.093 | 7.930.384 | 2.220.128 |
+| 2018 | 124.244.538 | `19c3d786` | 48.455.867 | 7.709.929 | 2.183.818 |
+| 2019 | 120.447.577 | `fbdff686` | 47.874.246 | 7.465.891 | 2.112.466 |
+| 2020 | 120.550.648 | `a252b0e5` | 47.295.294 | 7.550.753 | 2.130.375 |
+| 2021 | 123.101.397 | `66861b1e` | 46.668.401 | 7.770.557 | 2.246.336 |
+
+### superior / censup_pre2009
+
+- Páginas oficiais: https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/sinopses-estatisticas/educacao-superior (sinopses de 1995 a 2024).
+- URLs de coleta (um zip por ano, na ordem do pacote): `https://download.inep.gov.br/download/censo/2001/Superior/Sinopse_Superior_2001.zip https://download.inep.gov.br/download/censo/2002/sinopse/Sinopse_2002_censosuperior.zip https://download.inep.gov.br/download/superior/2004/SES2003.zip https://download.inep.gov.br/download/superior/2004/Sinopse_2004_010206.zip https://download.inep.gov.br/download/superior/2005/Sinopse_2005a.zip https://download.inep.gov.br/download/superior/censo/2006/Sinopse_EducacaoSuperior_2006.zip https://download.inep.gov.br/download/superior/censo/2007/Sinopse2007.zip https://download.inep.gov.br/download/censo/2008/sinop_sup_2008_versao_preliminar.zip`
+- Coleta de rede pelo coletor do projeto; `validar` saiu com código 0, sem regra bloqueante e com A01 em um caso (universidades de Alagoas, de 1 para 2 entre 2004 e 2005).
+- Layout: um `.xls` por ano (um arquivo de 6 a 28 MB dentro do zip), com as abas `1.1` (instituições por organização acadêmica) e `5.1` (matrículas em cursos de graduação presenciais). Uma linha por território na
+  coluna 0, seguida de linhas de Pública e Privada (e das categorias) sem nome de território; por isso só se lê a linha do território, que traz o total geral (coluna 3) e o das universidades (coluna 6). Cabeçalho: a linha em
+  branco antes do Brasil (linha 8). A ficha lê `ies` (1.1, coluna 3), `universidades` (1.1, coluna 6) e `matriculas` rede `total` (5.1, coluna 3).
+- Obtido: 384 linhas = 8 anos x 15 territórios x 3 subindicadores (360 observadas e 24 do Brasil fora do Nordeste por soma). Valores do Brasil conferem com os da sinopse: 1.391 IES e 3.030.754 matrículas em 2001; 5.080.056 matrículas em 2008.
+- Pendência: 2000 só existe em PDF; matrículas por rede (pública e privada) não são lidas porque as linhas de Pública e Privada não trazem o nome do território.
+
+| Ano | Zip (bytes) | sha256 | IES Brasil | Universidades Brasil | Matrículas totais Brasil |
+|---|---|---|---|---|---|
+| 2001 | 1.362.455 | `ea7fea96` | 1.391 | 156 | 3.030.754 |
+| 2002 | 2.087.120 | `e84ee70a` | 1.637 | 162 | 3.479.913 |
+| 2003 | 7.663.258 | `bc951cd2` | 1.859 | 163 | 3.887.022 |
+| 2004 | 10.625.168 | `f70fbaa8` | 2.013 | 169 | 4.163.733 |
+| 2005 | 2.374.053 | `9e9b4509` | 2.165 | 176 | 4.453.156 |
+| 2006 | 2.511.415 | `8531aab3` | 2.270 | 178 | 4.676.646 |
+| 2007 | 2.277.774 | `3e595b02` | 2.281 | 183 | 4.880.381 |
+| 2008 | 3.024.499 | `5129e5cd` | 2.252 | 183 | 5.080.056 |
+
+### superior / censup
+
+- URLs de coleta (um zip por ano, na ordem do pacote): `https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2009.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2010.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2011.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2012.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2013.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2014.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2015.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2016.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2017.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2018.zip https://download.inep.gov.br/informacoes_estatisticas/sinopses_estatisticas/sinopses_educacao_superior/sinopse_educacao_superior_2019.zip`
+- `validar` saiu com código 0, sem regra bloqueante e com A01 em um caso (universidades do Maranhão, de 2 para 4 entre 2011 e 2012).
+- Layout: cada zip de 112 a 240 MB traz a sinopse por município (`Sinopse_Educação_Superior_Municipio_<ano>.xlsx`, 39 a 53 MB) e três anexos de dados por curso, que não entram. A sinopse tem as abas `1.1` (instituições por
+  organização acadêmica e dependência administrativa) e `5.1` (matrículas de graduação e sequenciais, presenciais e a distância), com cabeçalho idêntico em 2009 a 2019. Uma linha por município, com as linhas
+  "Total Brasil", "Total <região>" e "Total <UF>" entre elas; cada aba entra em duas partes (Brasil e regiões, filtro: UF vazia; UFs, filtro: município vazio) e `nomes_territorio` mapeia `Total Maranhão` e as demais.
+  Na `5.1`, só as linhas de nível acadêmico "Graduação" (a tabela traz também "Sequencial de Formação Específica"). Cabeçalho: linha 10, em branco (colunas por posição). Colunas: `1.1`, total de instituições (coluna 4) e total das universidades
+  (coluna 12); `5.1`, matrículas totais (coluna 5), de instituições públicas (coluna 6) e privadas (coluna 10).
+- Obtido: 880 linhas = 11 anos x 15 territórios x 5 grupos (825 observadas e 55 do Brasil fora do Nordeste por soma).
+- Pendência: 2020 a 2024 (284 a 397 MB; os cinco não terminaram em 280 s com 16 conexões e levam de 9 a 13 min a 0,5 MB/s) e 2025 (ainda não publicada: a página do INEP, atualizada em 14/07/2026, lista até 2024).
+
+| Ano | Zip (bytes) | sha256 | IES Brasil | Universidades Brasil | Matrículas totais Brasil | Matrículas públicas Brasil | Matrículas privadas Brasil |
+|---|---|---|---|---|---|---|---|
+| 2009 | 112.339.526 | `894e938e` | 2.314 | 186 | 5.954.021 | 1.523.864 | 4.430.157 |
+| 2010 | 144.991.282 | `e51d33ec` | 2.378 | 190 | 6.379.299 | 1.643.298 | 4.736.001 |
+| 2011 | 150.932.494 | `1b022fff` | 2.365 | 190 | 6.739.689 | 1.773.315 | 4.966.374 |
+| 2012 | 158.792.747 | `16d0ab56` | 2.416 | 193 | 7.037.688 | 1.897.376 | 5.140.312 |
+| 2013 | 160.038.569 | `244ffcea` | 2.391 | 195 | 7.305.977 | 1.932.527 | 5.373.450 |
+| 2014 | 175.031.945 | `0252f97f` | 2.368 | 195 | 7.828.013 | 1.961.002 | 5.867.011 |
+| 2015 | 177.238.126 | `d9021543` | 2.364 | 195 | 8.027.297 | 1.952.145 | 6.075.152 |
+| 2016 | 190.009.870 | `57752936` | 2.407 | 197 | 8.048.701 | 1.990.078 | 6.058.623 |
+| 2017 | 222.515.082 | `e20edd41` | 2.448 | 199 | 8.286.663 | 2.045.356 | 6.241.307 |
+| 2018 | 205.366.920 | `6bce5a85` | 2.537 | 199 | 8.450.755 | 2.077.481 | 6.373.274 |
+| 2019 | 239.663.783 | `18f8d16e` | 2.608 | 198 | 8.603.824 | 2.080.146 | 6.523.678 |
