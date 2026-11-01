@@ -14,6 +14,7 @@ from nordeste.padronizacao.erros import ErroLayout
 from nordeste.territorios import territorio_por_nome
 
 _AUSENTES = frozenset({"", "-", "--", "...", "…", "x", "n/d"})
+_MILHAR_BR = re.compile(r"-?\d{1,3}(\.\d{3})+(,\d+)?")
 _NOTA_NO_NOME = re.compile(r"\s*(\(\d+\)|\*+)$")
 
 
@@ -27,8 +28,12 @@ def numero_br(texto) -> float | None:
         limpo = texto.replace("\xa0", " ").strip()
         if limpo.casefold() in _AUSENTES:
             return None
+        if "." in limpo:  # ponto so vale como separador de milhar ("1.234,5"); "3.5" e ambiguo
+            if not _MILHAR_BR.fullmatch(limpo):
+                raise ValueError(f"número não reconhecido {texto!r}")
+            limpo = limpo.replace(".", "")
         try:
-            numero = float(limpo.replace(".", "").replace(",", "."))
+            numero = float(limpo.replace(",", "."))
         except ValueError:
             raise ValueError(f"número não reconhecido {texto!r}") from None
     elif texto is None or texto is pd.NA or texto is pd.NaT:
@@ -102,7 +107,7 @@ def padronizar_planilha(
     aba = parametros.get("aba", "-")
     coluna_territorio = str(parametros.get("coluna_territorio", ""))
     colunas = parametros.get("colunas") or []
-    for nome in [coluna_territorio, *(c["coluna"] for c in colunas)]:
+    for nome in [coluna_territorio, *(str(c["coluna"]) for c in colunas)]:
         if nome not in tabela.columns:
             raise ErroLayout(f"Planilha {onde}, aba {aba}: coluna {nome!r} não encontrada")
 
@@ -113,12 +118,13 @@ def padronizar_planilha(
         if territorio is None:
             continue
         for spec in colunas:
-            celula = linha[spec["coluna"]]
+            coluna = str(spec["coluna"])
+            celula = linha[coluna]
             try:
                 valor = numero_br(celula)
             except ValueError as erro:
                 raise ErroLayout(
-                    f"Planilha {onde}, aba {aba}, coluna {spec['coluna']!r}: {erro}") from erro
+                    f"Planilha {onde}, aba {aba}, coluna {coluna!r}: {erro}") from erro
             if valor is None:
                 bruto = celula.strip() if isinstance(celula, str) else ""
                 valor, tipo_dado, nota = float("nan"), "indisponivel", f"Planilha: {bruto or 'vazio'}"

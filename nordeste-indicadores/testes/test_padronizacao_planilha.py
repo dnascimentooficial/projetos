@@ -57,13 +57,14 @@ def com_parametros(ficha, **extra):
 @pytest.mark.parametrize("entrada,esperado", [
     ("1.234,5", 1234.5), ("12", 12.0), (3.5, 3.5), (7, 7.0), (" 1.000.000 ", 1000000.0),
     ("-", None), ("--", None), ("...", None), ("…", None), ("x", None), ("X", None),
+    ("1.234", 1234.0), ("12.345.678", 12345678.0), ("-1.234,5", -1234.5), ("3,5", 3.5),
     ("", None), ("  ", None), ("n/d", None), ("N/D", None), (float("nan"), None), (None, None),
 ])
 def test_numero_br(entrada, esperado):
     assert numero_br(entrada) == esperado
 
 
-@pytest.mark.parametrize("entrada", ["abc", "12a", float("inf"), "1,2,3", True])
+@pytest.mark.parametrize("entrada", ["abc", "12a", float("inf"), "1,2,3", True, "3.5", "1.23", "12.3456", "1.2345,6", ".5", "1.234.56"])
 def test_numero_br_irreconhecivel(entrada):
     with pytest.raises(ValueError):
         numero_br(entrada)
@@ -182,3 +183,15 @@ def test_padronizar_despacha_para_planilha(projeto, ficha_planilha, territorios)
     assert set(df.coleta_id) == {"c9"}
     assert set(df[(df.ano == 2021) & df.valor.notna()].tipo_dado) == {"estimativa_oficial"}
     assert set(df[df.valor.isna()].tipo_dado) == {"indisponivel"}
+
+
+def test_coluna_inteira_no_yaml_casa_cabecalho(ficha_planilha, territorios):
+    conteudo = montar_xlsx(ABA, [["Indicador sintético"], [], ["Território", 2019, 2021], ["Piauí", 99999, "x"]])
+    colunas = [{"coluna": 2019, "ano": 2019}, {"coluna": 2021, "ano": 2021}]
+    ficha, serie = com_parametros(ficha_planilha, colunas=colunas)
+    df = padronizar_planilha(conteudo, ficha, serie, "c1", territorios)
+    assert df.set_index("ano").valor.dropna().to_dict() == {2019: 99999.0}
+    assert df.query("ano == 2021").tipo_dado.tolist() == ["indisponivel"]
+    ficha, serie = com_parametros(ficha_planilha, colunas=[{"coluna": 2030, "ano": 2030}])
+    with pytest.raises(ErroLayout, match="'2030'"):
+        padronizar_planilha(conteudo, ficha, serie, "c1", territorios)
