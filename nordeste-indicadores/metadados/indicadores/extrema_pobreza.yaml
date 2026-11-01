@@ -21,6 +21,10 @@ metodologia: >-
   a linha da Síntese de Indicadores Sociais 2025 (planilha 2.18, ftp.ibge.gov.br),
   que usa US$ 2,15 PPC 2017 por dia e dá 4,4% para o Brasil em 2023, contra 5,8%
   desta tabela.
+  Quebra de consolidação (nota do Ipeadata): o IBGE consolida as primeiras
+  entrevistas em 2012 a 2019 e 2023 a 2024 e as quintas entrevistas em 2020 a
+  2022; a série não é homogênea nesse ponto. "Nacional" e "internacional" são
+  rótulos do ODS do IBGE (1.2.1 e 1.1.1): as duas linhas estão em dólares PPC.
 observacoes: >-
   Série não verificada: a linha da tabela 5817 (US$ 3,00 PPC 2021, segundo o
   Ipeadata) não está confirmada em publicação do IBGE. É o par da
@@ -49,6 +53,7 @@ series:
     compatibilidade: >-
       PNAD Contínua (2012 em diante), linha de pobreza internacional de US$ 3,00
       por dia (PPC 2021), segundo o Ipeadata (não confirmada em publicação do
-      IBGE). Não comparável com a série `pobreza` (outra linha), com a Síntese de
+      IBGE). Consolidação das primeiras entrevistas em 2012 a 2019 e 2023 a 2024 e das
+      quintas entrevistas em 2020 a 2022. Não comparável com a série `pobreza` (outra linha), com a Síntese de
       Indicadores Sociais 2025 (US$ 2,15 PPC 2017) nem com a PNAD antiga.
     verificado: false

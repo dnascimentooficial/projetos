@@ -452,15 +452,16 @@ tabela não está confirmada.
   (Brasil 36,8% em 2012, 29,8% em 2023 e 26,5% em 2024; Nordeste 58,8%, 50,2% e 44,7%).
 - Por que isso explica a divergência com a Síntese 2025: a Síntese de Indicadores Sociais 2025 (`ftp.ibge.gov.br`, `2_Distribuicao_Renda_xls.zip`, planilhas
   2.17, 2.18, 2.19 a 2.23) usa só linhas em PPC 2017 (US$ 2,15, US$ 3,65 e US$ 6,85, mais 50% da mediana e frações do salário mínimo); a linha em
-  PPC 2021 (US$ 8,30) não está nela. Conferência de ordem de grandeza (não é verificação): a Síntese dá a linha de US$ 6,85 como R$ 692 por mês em 2024
-  (23,1% das pessoas) e a de US$ 3,65 como R$ 370 (8,6%); 8,30 PPC 2021 equivale a cerca de R$ 775 por mês (valor citado pela FGV IBRE, não pelo IBGE), e
-  a taxa da Síntese sobe a cerca de 26,6% nesse patamar por interpolação linear entre as duas linhas, contra 26,5% da tabela 5877.
+  PPC 2021 (US$ 8,30) não está nela. Conferência de ordem de grandeza, sem valor de verificação: a conta direta de US$ 8,30 x R$ 2,4498362 x cerca de 30,4 dias dá cerca de R$ 619 por mês em reais de 2021 (ano da
+  paridade); a Síntese dá as linhas de 2024 já atualizadas pelo IPCA (US$ 6,85 = R$ 692 por mês, 23,1% das pessoas; US$ 3,65 = R$ 370, 8,6%), então a linha de 8,30 PPC 2021 em reais de 2024
+  fica acima de R$ 692. A FGV IBRE (não o IBGE) cita cerca de R$ 775 por mês para a linha de US$ 8,30, valor aqui não verificado e provavelmente em preços mais recentes que 2021. Extrapolando
+  linearmente a curva da Síntese (R$ 370 → 8,6%; R$ 692 → 23,1%) até R$ 775, a taxa vai a cerca de 26,8%, contra 26,5% da tabela 5877: mesma ordem de grandeza, nada além disso.
 - Por que continua `verificado: false`: o critério pede conferência de pelo menos 3 valores (Brasil e Nordeste de um mesmo ano) contra publicação do IBGE
   que declare a linha. O Ipeadata é do Ipea e republica a série do IBGE; não é publicação do IBGE. A publicação do IBGE que a declararia, "Rendimento de
   todas as fontes 2025" (`liv102275_informativo.pdf`, em `biblioteca.ibge.gov.br`), a nota da tabela e o portal de indicadores ODS
   (`indicadoresods.ibge.gov.br`) não são acessíveis deste ambiente (hosts bloqueados ou fora da lista de rede); `sidra.ibge.gov.br`, `www.ibge.gov.br` e a agência
   de notícias também não. A SIS 2025, que é acessível, usa outra linha. Para promover a `verificado: true`: ler a linha na nota da tabela 5877 (ou numa
-  publicação do IBGE com US$ 8,30 PPC 2021) e conferir 3 valores; a ficha já traz a linha na metodologia, e a série não muda de linha de 2012 a 2024 segundo o Ipeadata.
+  publicação do IBGE com US$ 8,30 PPC 2021) e conferir 3 valores; a ficha já traz a linha na metodologia. O metadado do Ipeadata declara uma só linha para a série de 2012 a 2025, sem afirmar expressamente que ela é constante no tempo; a nota da tabela deve confirmar isso antes de uma promoção.
 - A ficha `pobreza` é só a medida de pobreza; a extrema pobreza é a ficha `extrema_pobreza` (tabela 5817), porque cada série do projeto vem
   de uma única tabela e uma ficha não junta duas tabelas em subindicadores.
 - Brasil fora do Nordeste: não há (a tabela só traz a proporção e não foi achada contagem de pobres por UF em série anual); comparação com o

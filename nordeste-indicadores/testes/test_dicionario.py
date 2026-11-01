@@ -781,3 +781,4 @@ def test_fichas_de_pobreza_registram_a_linha_identificada_mas_seguem_nao_verific
         assert "Ipeadata" in f.metodologia and "não foi confirmada" in f.metodologia, ficha_id
         assert "PPC 2021" in serie.compatibilidade, ficha_id
         assert f"US$ {linha}" in texto, ficha_id
+        assert "quintas entrevistas" in f.metodologia and "quintas" in serie.compatibilidade, ficha_id
