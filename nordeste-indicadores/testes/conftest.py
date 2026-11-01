@@ -1,4 +1,5 @@
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,9 @@ from nordeste.fichas import carregar_fichas
 from nordeste.territorios import carregar_territorios
 
 RAIZ_REPOSITORIO = Path(__file__).resolve().parent.parent
+
+# Os testes usam os montadores de xlsx e JSON sinteticos do gerador de fixtures.
+sys.path.insert(0, str(RAIZ_REPOSITORIO / "testes" / "fixtures"))
 
 
 @pytest.fixture

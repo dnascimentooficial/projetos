@@ -6,11 +6,17 @@ from nordeste.caminhos import Caminhos
 from nordeste.coletores.registro import Coleta
 from nordeste.fichas import Ficha, Serie
 from nordeste.padronizacao.erros import ErroLayout
+from nordeste.padronizacao.ipeadata import padronizar_ipeadata
+from nordeste.padronizacao.planilha import padronizar_planilha
 from nordeste.padronizacao.sidra import padronizar_sidra
 
 __all__ = ["ErroLayout", "padronizar"]
 
-_PADRONIZADORES = {"sidra": padronizar_sidra}
+_PADRONIZADORES = {
+    "sidra": padronizar_sidra,
+    "planilha": padronizar_planilha,
+    "ipeadata": padronizar_ipeadata,
+}
 
 
 def padronizar(

@@ -4,8 +4,14 @@ Uso, a partir da raiz do projeto: python testes/fixtures/gerar_fixtures.py
 Os valores sao derivados de 99999 e nao representam dado oficial.
 """
 
+import io
 import json
+import re
+import zipfile
+from datetime import datetime
 from pathlib import Path
+
+from openpyxl import Workbook
 
 PASTA = Path(__file__).resolve().parent
 ANOS = range(2002, 2024)
@@ -46,6 +52,40 @@ def json_sidra(variavel: str, unidade_codigo: str, unidade: str, valor) -> list[
     return linhas
 
 
+def xlsx_sintetico(aba: str, linhas: list[list]) -> bytes:
+    """Monta um .xlsx com uma aba; `linhas` inclui titulos, cabecalho e dados, na ordem da planilha.
+
+    Datas fixas nas propriedades e no zip: a mesma entrada gera sempre os mesmos bytes.
+    """
+    pasta = Workbook()
+    planilha = pasta.active
+    planilha.title = aba
+    for linha in linhas:
+        planilha.append(linha)
+    pasta.properties.created = pasta.properties.modified = datetime(2026, 1, 1)
+    gravado = io.BytesIO()
+    pasta.save(gravado)
+    saida = io.BytesIO()
+    with zipfile.ZipFile(gravado) as origem, zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as destino:
+        for item in origem.infolist():
+            novo = zipfile.ZipInfo(item.filename, date_time=(2026, 1, 1, 0, 0, 0))
+            novo.compress_type = zipfile.ZIP_DEFLATED
+            conteudo = origem.read(item)
+            if item.filename == "docProps/core.xml":  # o openpyxl regrava `modified` ao salvar
+                conteudo = re.sub(rb"(<dcterms:modified[^>]*>)[^<]*", rb"\g<1>2026-01-01T00:00:00Z", conteudo)
+            destino.writestr(novo, conteudo)
+    return saida.getvalue()
+
+
+def json_ipeadata(registros: list[tuple]) -> dict:
+    """Monta a resposta OData do Ipeadata; cada registro e (NIVNOME, TERCODIGO, VALDATA, VALVALOR)."""
+    return {"value": [
+        {"SERCODIGO": "SINTETICO", "VALDATA": data, "VALVALOR": valor,
+         "NIVNOME": nivel, "TERCODIGO": codigo}
+        for nivel, codigo, data, valor in registros
+    ]}
+
+
 def _soma(nc, codigo, ano, multiplicador) -> str:
     return str(BASE * multiplicador)
 
@@ -69,11 +109,21 @@ def _serializar(linhas: list[dict]) -> str:
     return "[\n" + ",\n".join(json.dumps(l, ensure_ascii=False) for l in linhas) + "\n]\n"
 
 
+def _escrever(destino: Path, conteudo) -> None:
+    """Grava bytes (xlsx), lista (JSON SIDRA) ou dict (JSON Ipeadata)."""
+    if isinstance(conteudo, bytes):
+        destino.write_bytes(conteudo)
+    elif isinstance(conteudo, dict):
+        destino.write_text(json.dumps(conteudo, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    else:
+        destino.write_text(_serializar(conteudo), encoding="utf-8")
+
+
 def main() -> None:
     for relativo, gerar in GERADORES.items():
         destino = PASTA / relativo
         destino.parent.mkdir(parents=True, exist_ok=True)
-        destino.write_text(_serializar(gerar()), encoding="utf-8")
+        _escrever(destino, gerar())
         print(f"gerado: {destino.relative_to(PASTA.parent.parent)}")
 
 

@@ -11,6 +11,7 @@ from nordeste.caminhos import Caminhos
 from nordeste.coletores.arquivo import url_arquivo
 from nordeste.coletores.erros import ErroColeta
 from nordeste.coletores.http import baixar
+from nordeste.coletores.ipeadata import url_ipeadata
 from nordeste.coletores.registro import Coleta, ler_registro, registrar
 from nordeste.coletores.sidra import url_sidra
 from nordeste.fichas import Ficha, Serie
@@ -73,6 +74,8 @@ def _coletar_da_rede(
         raise ErroColeta(f"série não verificada: {ficha.id}/{serie.id}")
     if serie.coletor == "sidra":
         url, extensao = url_sidra(serie.parametros), "json"
+    elif serie.coletor == "ipeadata":
+        url, extensao = url_ipeadata(serie.parametros), "json"
     elif serie.coletor == "arquivo":
         url = url_arquivo(serie.parametros)
         extensao = PurePosixPath(urlparse(url).path).suffix.lstrip(".").lower() or "bin"
