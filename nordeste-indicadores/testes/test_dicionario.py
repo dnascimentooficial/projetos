@@ -814,8 +814,9 @@ def test_superior_2020_a_2024_seguem_o_layout_de_cada_sinopse(fichas):
         ano = p["colunas"][0]["ano"]
         if ano >= 2020 and p["territorios_esperados"][0] == "MA":  # as partes de UFs
             assert all("  " in nome for nome in p["nomes_territorio"]) == ((ano, p["aba"]) in com_dois_espacos), (ano, p["aba"])
-    # 3) 2024, aba 1.1: a linha de total do Acre esta rotulada "Total Rondonia" (erro da fonte); a ficha le so o Nordeste
-    assert "AC" not in {t for p in partes for t in p["territorios_esperados"]}
+    # 3) 2024, aba 1.1: a linha de total do Acre esta rotulada "Total Rondonia" (erro da fonte); a ficha le so o Nordeste,
+    #    e nenhum nome de territorio de nenhuma parte pode ser o de Rondonia, senao a linha errada do Acre seria lida
+    assert not any("Rondônia" in nome for p in partes for nome in p["nomes_territorio"])
 
 
 def test_superior_cobertura_efetiva_vai_ate_2024_e_2025_nao_foi_publicado(fichas):
