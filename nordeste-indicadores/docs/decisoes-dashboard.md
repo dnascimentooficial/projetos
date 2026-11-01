@@ -25,3 +25,15 @@ Registro das escolhas feitas no ponto de controle da etapa 1, a partir do rascun
 ## Celular
 
 - Gráfico redesenhado pela largura da tela; nomes das faixas viram iniciais em telas estreitas. Aprovado.
+
+## Brainstorming do site (pausado em 2026-11-01, a pedido do usuário, para concluir a base antes)
+
+Decidido:
+- Hospedagem: Hostinger compartilhada (hPanel), site 100% estático; o pipeline não roda na Hostinger.
+- Atualização automática por GitHub Actions (coletar → consolidar → validar → publicar → gerar site → enviar); primeira publicação real com revisão humana obrigatória; política para as seguintes a definir.
+- Repositório público novo, só para o projeto (nome sugerido: `nordeste-em-numeros`); criação só com confirmação do usuário.
+- Primeira versão: página inicial com 5 perguntas (1 PIB per capita × Brasil fora do NE; 2 volume do PIB e participação; 3 IDEB e abandono; 4 desocupação e renda; 5 IDHM), página "Estados" (mapa de calor + ranking), "Dados e método" (downloads, fichas, governos, regras) e "Sobre". Pobreza fora até a linha ser identificada. Exploração com filtros, mapa geográfico e demais indicadores na segunda leva.
+- Abordagem: o próprio pipeline gera o site (`python -m nordeste site`, Jinja2, gráficos em SVG com JavaScript simples); envio por branch `site-publicado` + Git do hPanel, sem senha da Hostinger no GitHub.
+- Seção 1 do design (arquitetura: módulo `nordeste.site`, `perguntas.yaml`, site só a partir de publicação aprovada) aprovada.
+
+Em aberto ao pausar: seção 2 (páginas e conteúdo) apresentada e não aprovada — pontos pendentes: detalhe editorial escrito pelo usuário; sem Google Analytics; imagem de compartilhamento fixa. Seções 3 a 5 (publicação/envio, erros/segurança, testes) não apresentadas. Domínio não definido.
