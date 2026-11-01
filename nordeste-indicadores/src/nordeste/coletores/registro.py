@@ -40,15 +40,14 @@ def ultima_coleta(registro: pd.DataFrame, indicador_id: str, serie_id: str) -> C
 
 
 def registrar(path: Path, coleta: Coleta) -> Coleta:
-    """Acrescenta a coleta; se ja ha linha com mesmo indicador, serie e sha256, devolve-a sem gravar."""
-    registro = ler_registro(path)
-    iguais = registro[
-        (registro["indicador_id"] == coleta.indicador_id)
-        & (registro["serie_id"] == coleta.serie_id)
-        & (registro["sha256"] == coleta.sha256)
-    ]
-    if not iguais.empty:
-        return _coleta(iguais.iloc[0])
+    """Acrescenta a coleta, salvo se a ultima linha gravada do par (indicador, serie) tem o mesmo sha256.
+
+    Nesse caso devolve a linha existente sem gravar. Um sha256 que ja apareceu antes, mas nao e o da
+    ultima linha (a fonte voltou a um conteudo anterior), grava nova linha: ultima_coleta segue a fonte.
+    """
+    ultima = ultima_coleta(ler_registro(path), coleta.indicador_id, coleta.serie_id)
+    if ultima is not None and ultima.sha256 == coleta.sha256:
+        return ultima
     novo = not path.exists()
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8", newline="") as saida:

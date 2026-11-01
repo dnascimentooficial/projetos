@@ -104,6 +104,20 @@ def test_registrar_conteudo_novo_acrescenta_linha(tmp_path):
     assert len(ler_registro(path)) == 2
 
 
+def test_reversao_de_conteudo_grava_de_novo(tmp_path):
+    path = tmp_path / "coletas.csv"
+    a, b = "aa" * 32, "bb" * 32
+    registrar(path, _coleta(sha=a, data_coleta="2026-11-01"))
+    registrar(path, _coleta(sha=b, data_coleta="2026-11-02"))
+    de_novo = registrar(path, _coleta(sha=a, data_coleta="2026-11-03",
+                                      coleta_id="i.s.2026-11-03.aaaaaaaa"))
+    registro = ler_registro(path)
+    assert len(registro) == 3
+    assert de_novo.data_coleta == "2026-11-03"
+    assert ultima_coleta(registro, "i", "s").sha256 == a
+    assert ultima_coleta(registro, "i", "s") == de_novo
+
+
 def test_ultima_coleta_e_a_ultima_gravada_nao_a_mais_recente_em_data(tmp_path):
     path = tmp_path / "coletas.csv"
     registrar(path, _coleta(sha="aa" * 32, data_coleta="2026-12-01"))
