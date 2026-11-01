@@ -177,3 +177,5 @@ curso. Indicadores `auxiliar` são insumos (denominadores e contagens) e não s�
 
 - `python -m pytest`: suíte padrão, offline, sem os testes de contrato.
 - `python -m pytest -m rede -v`: contrato com as fontes reais (precisa de rede).
+- `python -m pytest -m rede -k "per_capita or ancora" -v`: só a conferência do PIB per capita contra os pontos
+  de fonte primária do IBGE e os valores-âncora de três séries leves (rápida, poucos downloads).

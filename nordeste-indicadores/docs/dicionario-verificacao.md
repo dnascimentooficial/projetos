@@ -174,6 +174,13 @@ Nordeste 2023 = 63.536,91; 2010 = 24.427,86.
 Critério: diferença ≤ 0,5% em todos os pontos conferidos. Resultado: **32 pontos conferidos**, maior diferença
 absoluta 0,050% (Ceará, 2010); 2021 e 2023 batem ao centavo. Diferença = (calculado − publicado) ÷ publicado.
 
+Conferência repetível (revisão final, I7): `python -m pytest -m rede -k "per_capita or ancora"` coleta `pib_nominal` e
+`populacao` da rede, refaz o cálculo e compara com os 7 pontos de fonte primária do IBGE abaixo, a até 0,5%
+(`testes/contrato/test_ancoras.py`; na execução de 2026-11-01, os seis de 2023 bateram ao centavo e Maranhão 2016 deu
+12.267,70 contra 12.264,28, +0,028%). O mesmo arquivo confere valores-âncora de três séries leves (IDEB NE anos iniciais
+2023 = 5,6; desocupação NE `pnadc` 2012 = 9,6; participação do NE no PIB 2002 = 13,09), para pegar coluna, ano ou
+território deslocado.
+
 Natureza da evidência (ler antes da tabela):
 
 - **Nenhum valor publicado foi baixado.** Os sites de notícias e da biblioteca do IBGE
