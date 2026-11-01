@@ -1,3 +1,4 @@
+import dataclasses
 import inspect
 import warnings
 from datetime import date
@@ -23,6 +24,9 @@ _PIB_REG = {"N": 80.0, "SE": 800.0, "S": 250.0, "CO": 120.0}
 _POP_REG = {"N": 14.0, "SE": 75.0, "S": 26.0, "CO": 12.0}
 
 
+_DA_FICHA = object()  # `fim` nao informado: mantem o da ficha (None significa serie em curso)
+
+
 def _coleta_id(indicador):
     return f"sidra.{indicador}.{SERIE}.20261101"
 
@@ -35,10 +39,11 @@ def _valores(por_uf, por_regiao, fator):
     return v
 
 
-def _base_observada():
+def _base_observada(anos=ANOS, fator_pib=None):
+    """`fator_pib` (ano -> fator) multiplica o PIB nominal de todos os territorios, preservando as somas."""
     linhas = []
-    for ano in ANOS:
-        pib = _valores(_PIB_UF, _PIB_REG, 1.1 ** (ano - 2002))
+    for ano in anos:
+        pib = _valores(_PIB_UF, _PIB_REG, 1.1 ** (ano - 2002) * (fator_pib or {}).get(ano, 1.0))
         pop = _valores(_POP_UF, _POP_REG, 1.01 ** (ano - 2002))
         per_capita = {t: pib[t] / pop[t] * 1000 for t in pib}
         for indicador, valores in (
@@ -52,12 +57,27 @@ def _base_observada():
     return normalizar_base(pd.DataFrame(linhas))
 
 
-def cenario():
-    """Base pequena e coerente do PIB per capita (uma ficha razao e seus dois insumos soma)."""
+def cenario(fim=_DA_FICHA, ultimo_ano=None, hoje=date(2026, 11, 1), per_capita_ne=None):
+    """Base pequena e coerente do PIB per capita (uma ficha razao e seus dois insumos soma).
+
+    `fim` troca o fim da serie nas tres fichas (None = em curso). `ultimo_ano` desloca os dois anos da
+    base para (ultimo_ano - 1, ultimo_ano). `per_capita_ne` (ano -> valor) define o PIB per capita do NE
+    por ano, escalando o PIB nominal de todos os territorios para manter somas e razao coerentes.
+    """
     todas = carregar_fichas(METADADOS / "indicadores")
     fichas = {i: todas[i] for i in ("pib_nominal", "populacao_contas_regionais", "pib_per_capita")}
+    if fim is not _DA_FICHA:
+        fichas = {i: dataclasses.replace(f, series=tuple(dataclasses.replace(s, fim=fim) for s in f.series))
+                  for i, f in fichas.items()}
     territorios = carregar_territorios(METADADOS / "territorios.csv")
-    observada = _base_observada()
+    anos = ANOS if ultimo_ano is None else (ultimo_ano - 1, ultimo_ano)
+    fator_pib = None
+    if per_capita_ne is not None:
+        fator_pib = {
+            ano: valor * sum(_POP_UF.values()) * 1.01 ** (ano - 2002) / 1000 / (sum(_PIB_UF.values()) * 1.1 ** (ano - 2002))
+            for ano, valor in per_capita_ne.items()
+        }
+    observada = _base_observada(anos, fator_pib)
     fora_ne, derivacoes = brasil_fora_ne(observada, fichas)
     base = pd.concat([observada, fora_ne], ignore_index=True)
     coletas = pd.DataFrame([
@@ -68,8 +88,13 @@ def cenario():
     return {
         "base": base, "derivados": metricas_convergencia(base, fichas, territorios), "fichas": fichas,
         "falhas_fichas": [], "territorios": territorios, "coletas": coletas, "derivacoes": derivacoes,
-        "base_publicada": None, "hoje": date(2026, 11, 1),
+        "base_publicada": None, "hoje": hoje,
     }
+
+
+def cenario_com_valores_ne(valores):
+    """Cenario em que o PIB per capita do NE vale `valores[ano]` (ano -> valor), sem quebrar R07 nem R08."""
+    return cenario(per_capita_ne=valores)
 
 
 # ---------------------------------------------------------------------------

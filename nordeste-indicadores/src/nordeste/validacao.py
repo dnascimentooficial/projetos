@@ -1,11 +1,13 @@
 """Validacao bloqueante da base (regras R01 a R10): aponta problemas, nao corrige dados."""
 
+import calendar
 import math
 from dataclasses import dataclass
 from datetime import date
 
 import pandas as pd
 
+from nordeste.cobertura import proxima_publicacao
 from nordeste.derivados import TERRITORIO_DERIVADO, _cobre
 from nordeste.esquema import CHAVE_BASE, COLUNAS_BASE, COLUNAS_DERIVADOS, METRICAS, TIPOS_DADO
 from nordeste.fichas import Ficha
@@ -265,6 +267,78 @@ def _r10_fichas(falhas_fichas: list[str]) -> list[Falha]:
 
 
 # ---------------------------------------------------------------------------
+# Avisos (nao bloqueiam a publicacao)
+# ---------------------------------------------------------------------------
+
+def _a01_salto(base: pd.DataFrame, fichas: dict[str, Ficha]) -> list[Falha]:
+    """Variacao percentual absoluta acima do limiar entre observacoes validas consecutivas.
+
+    "Consecutivas" ignora anos sem valor: a comparacao vai de uma observacao valida a proxima da mesma
+    serie, territorio e grupo (subindicador, etapa, rede). Fichas auxiliares nao sao avaliadas.
+    """
+    elegiveis = [i for i, f in fichas.items() if not f.auxiliar]
+    validas = base[base.indicador_id.isin(elegiveis) & base.valor.notna() & (base.valor.abs() < math.inf)]
+    ordem = ["indicador_id", "serie_id", *_GRUPO, "territorio_id"]
+    validas = validas.sort_values([*ordem, "ano"])
+    anterior = validas.groupby(ordem, sort=False)[["valor", "ano"]].shift()
+    variacao = (validas.valor - anterior.valor).abs() / anterior.valor.abs() * 100
+    limiar = validas.indicador_id.map({i: fichas[i].limiar_salto_pct for i in elegiveis})
+    saltos = validas.assign(variacao=variacao, ano_anterior=anterior.ano)[variacao > limiar]
+    falhas = []
+    for (indicador_id, serie_id), grupo in saltos.groupby(["indicador_id", "serie_id"], sort=True):
+        exemplos = ", ".join(
+            f"{'/'.join(filter(None, (r.subindicador, r.etapa, r.rede, r.territorio_id)))} "
+            f"{int(r.ano_anterior)}->{r.ano} ({r.variacao:.1f}%)"
+            for r in grupo.head(MAX_EXEMPLOS).itertuples()
+        )
+        if len(grupo) > MAX_EXEMPLOS:
+            exemplos += ", ..."
+        falhas.append(Falha("A01", (
+            f"{_rotulo(indicador_id, serie_id)}: variacao acima de {fichas[indicador_id].limiar_salto_pct:g}% "
+            f"entre observacoes consecutivas em {len(grupo)} caso(s); exemplos: {exemplos}"
+        )))
+    return falhas
+
+
+def _a02_alteracoes(base: pd.DataFrame, base_publicada: pd.DataFrame | None) -> list[Falha]:
+    """Valores das linhas presentes nas duas bases (mesma chave) que mudaram desde a ultima publicacao."""
+    if base_publicada is None:
+        return []
+    atual = base.drop_duplicates(CHAVE_BASE)[[*CHAVE_BASE, "valor"]]
+    anterior = base_publicada.drop_duplicates(CHAVE_BASE)[[*CHAVE_BASE, "valor"]]
+    junto = atual.merge(anterior, on=CHAVE_BASE, suffixes=("", "_publicado"))
+    iguais = (junto.valor == junto.valor_publicado) | (junto.valor.isna() & junto.valor_publicado.isna())
+    alterados = junto[~iguais]
+    if alterados.empty:
+        return []
+    indicadores = ", ".join(sorted(alterados.indicador_id.unique()))
+    return [Falha("A02", f"{len(alterados)} valores alterados em relacao a base publicada ({indicadores})")]
+
+
+def _a03_atraso(base: pd.DataFrame, fichas: dict[str, Ficha], hoje: date) -> list[Falha]:
+    """Serie em curso cuja proxima publicacao prevista ja passou, a partir do ultimo ano com valor do NE."""
+    ne = base[(base.territorio_id == "NE") & base.valor.notna()]
+    falhas = []
+    for indicador_id in sorted(fichas):
+        ficha = fichas[indicador_id]
+        for serie in ficha.series:
+            if serie.fim is not None:
+                continue
+            anos = ne.loc[(ne.indicador_id == indicador_id) & (ne.serie_id == serie.id), "ano"]
+            if anos.empty:
+                continue
+            ultimo = int(anos.max())
+            previsto = proxima_publicacao(ultimo, ficha.defasagem_meses)
+            ano, mes = map(int, previsto.split("-"))
+            if hoje > date(ano, mes, calendar.monthrange(ano, mes)[1]):
+                falhas.append(Falha("A03", (
+                    f"{_rotulo(indicador_id, serie.id)}: ultimo ano com valor do NE e {ultimo}; "
+                    f"a proxima publicacao, prevista para {previsto}, ja passou (hoje {hoje.isoformat()})"
+                )))
+    return falhas
+
+
+# ---------------------------------------------------------------------------
 # Entrada
 # ---------------------------------------------------------------------------
 
@@ -281,15 +355,17 @@ def validar(
 ) -> ResultadoValidacao:
     """Aplica as regras bloqueantes R01 a R10 aos DataFrames ja carregados.
 
-    `base_publicada` e `hoje` alimentam os avisos (ainda nao calculados: `avisos` sai vazia).
-    A regra R01 (dado de fixture) nao tem como ser desligada.
+    `base_publicada` e `hoje` alimentam os avisos A01 a A03, que nao afetam `aprovado` e so sao
+    calculados quando a estrutura e os tipos da base permitem. A regra R01 (dado de fixture) nao tem como ser desligada.
     """
     erros = _r02_estrutura(base)
+    avisos: list[Falha] = []
     if not erros:
         erros = _r01_fixture(base, coletas, derivacoes)
         tipos = _r02_tipos(base)
         erros += tipos
         if not tipos:
+            avisos = _a01_salto(base, fichas) + _a02_alteracoes(base, base_publicada) + _a03_atraso(base, fichas, hoje)
             conhecidos = set(territorios.territorio_id)
             erros += (
                 _r02_linhas(base, fichas, conhecidos)
@@ -303,4 +379,4 @@ def validar(
                 + _r09_registro(base, coletas, derivacoes)
             )
     erros += _r10_fichas(falhas_fichas)
-    return ResultadoValidacao(erros=erros, avisos=[])
+    return ResultadoValidacao(erros=erros, avisos=avisos)
