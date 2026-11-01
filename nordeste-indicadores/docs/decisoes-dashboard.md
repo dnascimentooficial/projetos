@@ -51,7 +51,7 @@ Decidido pelo usuário:
 - Imagens: uma imagem gráfica para o OpenGraph (contorno do Nordeste em laranja sobre preto, título e número) e uma foto contemporânea com licença livre e crédito para a abertura. Evitar o estereótipo da seca.
 - Sem Google Analytics; imagem de compartilhamento fixa por página.
 
-Subdomínio criado pelo usuário no hPanel (2026-11-01). Pasta do subdomínio: `/home/u411523977/domains/dnascimento.com.br/public_html/nordeste` (dentro do `public_html` do site principal). Consequências para o design: (1) o mesmo conteúdo também responderia em `dnascimento.com.br/nordeste`; o site gerado leva um `.htaccess` que redireciona (301) esse endereço para `https://nordeste.dnascimento.com.br/` e páginas com `<link rel="canonical">` no subdomínio; (2) a publicação do site principal não pode limpar arquivos não rastreados de `public_html` (se ele usar Git, `nordeste/` vai no `.gitignore` dele); (3) o Git do hPanel exige a pasta vazia na primeira implantação.
+Subdomínio criado pelo usuário no hPanel (2026-11-01), com SSL ativo. Pasta do subdomínio: `/home/u411523977/domains/dnascimento.com.br/public_html/nordeste` (dentro do `public_html` do site principal). Consequências para o design: (1) o mesmo conteúdo também responderia em `dnascimento.com.br/nordeste`; o site gerado leva um `.htaccess` que redireciona (301) esse endereço para `https://nordeste.dnascimento.com.br/` e páginas com `<link rel="canonical">` no subdomínio; (2) a publicação do site principal não pode limpar arquivos não rastreados de `public_html` (se ele usar Git, `nordeste/` vai no `.gitignore` dele); (3) o Git do hPanel exige a pasta vazia na primeira implantação.
 
-Em aberto: repositório do site; seções 3 a 5 do design (publicação/envio, erros/segurança, testes).
+Repositório: novo, público, `nordeste-em-numeros`. Seções 3 a 5 aprovadas. Spec: `docs/specs/2026-11-01-site-design.md`.
 
