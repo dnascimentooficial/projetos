@@ -5,9 +5,34 @@ UFs do Nordeste, padroniza tudo numa base longa única, valida e publica em `dad
 está em `docs/specs/2026-10-31-base-historica-design.md`; as conferências feitas fonte a fonte, em
 `docs/dicionario-verificacao.md`.
 
-> **A base publicada ainda não existe.** `dados/base/` fica vazio até a primeira publicação real, que só sai
-> depois da primeira coleta com rede liberada (roteiro abaixo). Nada no repositório é dado publicado: as
-> fixtures de `testes/fixtures/` são sintéticas (valores derivados de 99999) e nunca chegam à base.
+> **Primeira publicação real em 2026-11-01** (ver "Situação da publicação", abaixo). As fixtures de
+> `testes/fixtures/` continuam sintéticas (valores derivados de 99999) e nunca chegam à base: a regra R01 barra.
+
+## Situação da publicação
+
+| Item | Valor |
+|---|---|
+| Data | 2026-11-01, aprovada pelo usuário depois do resumo do ensaio (`publicar --ensaio`) |
+| Conteúdo | 23 indicadores, 32 séries, todas `verificado: true`; 17.057 linhas na base e 43.430 de métricas derivadas |
+| Validação | nenhum erro; 6 avisos A01 (variação acima de 50%), explicados em `docs/dicionario-verificacao.md` |
+| Base publicada | `dados/base/base_nordeste.csv`, sha256 `f572acb05c16193b788e78433abaea3ad481a2f36ec8b2ced64537fe50913b9d` (idêntica à base de trabalho validada no ensaio) |
+| Métricas | `dados/base/derivados.csv`, sha256 `6a305a42a81128b6b3c910fae40faacd7819cb0f3b92622f1acff19d0503455c` |
+| Rastro | `dados/relatorios/coletas.csv` (uma linha por coleta, com URL, data e sha256 do arquivo bruto) |
+
+Versionados: `dados/base/` e `dados/relatorios/`. Fora do Git: `dados/brutos/` e `dados/trabalho/`.
+
+**Divergência desta publicação (decisão do usuário, 2026-11-01):** os pacotes das cinco séries do INEP
+(`matriculas_basica`: `educacenso`, `censo_escolar_pre2007`, `censo_escolar_2000_2002`; `superior`: `censup`,
+`censup_pre2009`) não foram baixados de novo na raiz da publicação. São os pacotes coletados com rede no mesmo
+dia, nas Tarefas C4 e C5, reaproveitados depois de conferir que as fichas não mudaram e que o sha256 de cada
+pacote é o do registro de coletas. As demais séries foram coletadas de novo, com rede, na raiz da publicação.
+O ganho foi evitar cerca de duas horas de download com resultado idêntico.
+
+**O que falta e está declarado:** PIB per capita de 2007 (sem valor publicado para conferir o cálculo);
+matrículas de 2003 e 2004 (sinopses só em PDF); renda e pobreza antes de 2012 (PNAD antiga não incorporada);
+PIB de 2024 (Contas Regionais 2024 ainda não divulgadas em 2026-11-01); PNAD de 2010 (ano sem pesquisa).
+Ressalvas: a queda do abandono no ensino médio em 2022→2023 e 2024→2025 está na fonte do INEP, com causa não
+documentada; a linha de pobreza foi confirmada pelo Ipeadata, não por publicação do IBGE (decisão do usuário).
 
 ## Requisitos
 

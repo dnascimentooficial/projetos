@@ -74,7 +74,7 @@ def test_readme_documenta_comandos_regra_r01_e_roteiro():
     assert "coletar --indicador" in texto
 
 
-def test_readme_explica_ca_extra_recursos_e_que_a_base_publicada_ainda_nao_existe():
+def test_readme_explica_ca_extra_recursos_e_a_situacao_da_publicacao():
     texto = _texto()
     assert "ca_extra" in texto and "cadeia" in texto and "nunca" in texto and "verify=False" in texto
     assert "~2,7 GB" in texto and "~3,7 GB" in texto and "Python 3.12" in texto
@@ -84,6 +84,7 @@ def test_readme_explica_ca_extra_recursos_e_que_a_base_publicada_ainda_nao_exist
     for dependencia in ("pandas", "pyarrow", "pyyaml", "requests", "openpyxl", "xlrd", "certifi", "numpy"):
         assert dependencia in texto, dependencia
     assert "primeira publicação real" in texto
+    assert "## Situação da publicação" in texto and "f572acb05c16193b788e78433abaea3ad481a2f36ec8b2ced64537fe50913b9d" in texto
 
 
 def test_tabela_do_readme_e_a_gerada_das_fichas():
