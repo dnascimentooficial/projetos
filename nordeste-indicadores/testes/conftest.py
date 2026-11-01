@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from nordeste.caminhos import Caminhos
+from nordeste.fichas import carregar_fichas
 from nordeste.territorios import carregar_territorios
 
 RAIZ_REPOSITORIO = Path(__file__).resolve().parent.parent
@@ -23,3 +24,8 @@ def projeto(tmp_path) -> Caminhos:
 @pytest.fixture
 def territorios(projeto):
     return carregar_territorios(projeto.territorios_csv)
+
+
+@pytest.fixture
+def fichas(projeto):
+    return carregar_fichas(projeto.fichas)

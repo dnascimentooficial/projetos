@@ -1,0 +1,37 @@
+id: populacao_contas_regionais
+nome: População das Contas Regionais
+descricao: >-
+  População residente usada pelo IBGE como denominador dos indicadores per
+  capita do Sistema de Contas Regionais. Insumo do PIB per capita, não
+  exibido por si.
+eixo: economia
+categoria: demografia
+unidade: pessoas
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  População residente por ano, conforme a série do Sistema de Contas
+  Regionais do IBGE, referência 2010, a partir de 2002. O agregado Brasil fora do Nordeste é a soma dos demais territórios.
+observacoes: >-
+  Série própria das Contas Regionais; pode diferir de outras projeções
+  populacionais do IBGE. Serve apenas de denominador do PIB per capita.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 23
+auxiliar: true
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: scr_ref2010
+    inicio: 2002
+    fim: 2023
+    fonte: IBGE, Sistema de Contas Regionais (referência 2010)
+    base_origem: SIDRA, Contas Regionais do Brasil
+    url: https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9054-contas-regionais-do-brasil.html
+    coletor: sidra
+    parametros: {}
+    compatibilidade: >-
+      Não comparável com a série de referência 2002 (anos 2000 a 2001):
+      mudança de base metodológica e de classificações.
+    verificado: false

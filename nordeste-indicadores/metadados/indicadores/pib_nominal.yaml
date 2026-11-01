@@ -1,0 +1,39 @@
+id: pib_nominal
+nome: PIB a preços correntes
+descricao: >-
+  Produto Interno Bruto a preços correntes, em R$ mil, por Brasil, região e
+  unidade da federação. Insumo do PIB per capita, não exibido por si.
+eixo: economia
+categoria: renda
+unidade: R$ mil
+orgao: IBGE
+periodicidade: anual
+metodologia: >-
+  Valor adicionado bruto mais impostos, líquidos de subsídios, a preços
+  correntes de cada ano, conforme o Sistema de Contas Regionais do IBGE,
+  referência 2010, série a partir de 2002. O agregado Brasil fora do Nordeste
+  é a soma dos demais territórios.
+observacoes: >-
+  Valores nominais, sem deflação; servem apenas de numerador do PIB per
+  capita. Os dados mais recentes costumam ser revisados na divulgação seguinte.
+sentido: maior_melhor
+limites: {min: 0}
+defasagem_meses: 23
+auxiliar: true
+tratamento_monetario: {modo: razao}
+comparacao:
+  referencia: brasil_fora_ne
+  metodo: soma
+series:
+  - id: scr_ref2010
+    inicio: 2002
+    fim: 2023
+    fonte: IBGE, Sistema de Contas Regionais (referência 2010)
+    base_origem: SIDRA, Contas Regionais do Brasil
+    url: https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9054-contas-regionais-do-brasil.html
+    coletor: sidra
+    parametros: {}
+    compatibilidade: >-
+      Não comparável com a série de referência 2002 (anos 2000 a 2001):
+      mudança de base metodológica e de classificações.
+    verificado: false
