@@ -103,7 +103,7 @@ def _ler_pendencias(path: Path) -> list[Pendencia]:
     return [Pendencia(r.indicador_id, r.serie_id, r.motivo) for r in tabela.itertuples(index=False)]
 
 
-def _ler_derivacoes(path: Path) -> pd.DataFrame:
+def ler_derivacoes(path: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=COLUNAS_REGISTRO)
     return pd.read_csv(path, dtype=str, keep_default_na=False)
@@ -128,7 +128,7 @@ def _ordenar(df: pd.DataFrame, chave: list[str]) -> pd.DataFrame:
     return df.sort_values(chave, kind="stable").reset_index(drop=True)
 
 
-def _gravar_csv(df: pd.DataFrame, path: Path, **opcoes) -> None:
+def gravar_csv(df: pd.DataFrame, path: Path, **opcoes) -> None:
     df.to_csv(path, index=False, lineterminator="\n", **opcoes)
 
 
@@ -150,7 +150,7 @@ def _substituir_todos(destino: Path, gravacoes: dict[str, Callable[[Path], None]
             temporario.unlink(missing_ok=True)
 
 
-def _mensagem_de_reprovacao(resultado: ResultadoValidacao) -> str:
+def mensagem_de_reprovacao(resultado: ResultadoValidacao) -> str:
     regras = sorted({f.regra for f in resultado.erros})
     linhas = [f"{f.regra}: {f.mensagem}" for f in resultado.erros]
     return f"publicacao reprovada na validacao ({', '.join(regras)}):\n" + "\n".join(linhas)
@@ -179,7 +179,7 @@ def publicar(caminhos: Caminhos, hoje: date, ensaio: bool = False) -> ResultadoV
     falhas_fichas = verificar_fichas(caminhos.fichas)
     fichas = {} if falhas_fichas else carregar_fichas(caminhos.fichas)  # com falha, R10 explica; as demais regras seguem
     territorios = carregar_territorios(caminhos.territorios_csv)
-    coletas, derivacoes = ler_registro(caminhos.registro_coletas), _ler_derivacoes(caminhos.registro_derivacoes)
+    coletas, derivacoes = ler_registro(caminhos.registro_coletas), ler_derivacoes(caminhos.registro_derivacoes)
 
     sem_derivados = pd.DataFrame(columns=COLUNAS_DERIVADOS)
     resultado = validar(base, sem_derivados, fichas, falhas_fichas, territorios, coletas, derivacoes, publicada, hoje)
@@ -190,22 +190,22 @@ def publicar(caminhos: Caminhos, hoje: date, ensaio: bool = False) -> ResultadoV
         resultado = validar(base, derivados, fichas, falhas_fichas, territorios, coletas, derivacoes, publicada, hoje)
 
     caminhos.relatorios.mkdir(parents=True, exist_ok=True)
-    _gravar_csv(resultado.para_dataframe(), caminhos.relatorios / "validacao.csv")
-    _gravar_csv(mudancas(base, publicada), caminhos.relatorios / "mudancas.csv")
+    gravar_csv(resultado.para_dataframe(), caminhos.relatorios / "validacao.csv")
+    gravar_csv(mudancas(base, publicada), caminhos.relatorios / "mudancas.csv")
 
     if not resultado.aprovado:
         if ensaio:
             return resultado
-        raise ErroPublicacao(_mensagem_de_reprovacao(resultado))
+        raise ErroPublicacao(mensagem_de_reprovacao(resultado))
     completa = versao_completa(base, fichas, territorios, carregar_governos(caminhos.governos_csv))
     if ensaio:
         return resultado
 
     _substituir_todos(caminhos.base, {
-        "base_nordeste.csv": lambda destino: _gravar_csv(base, destino),
+        "base_nordeste.csv": lambda destino: gravar_csv(base, destino),
         "base_nordeste.parquet": lambda destino: _gravar_parquet(base, destino),
-        "derivados.csv": lambda destino: _gravar_csv(derivados, destino),
-        "base_nordeste_completa.csv": lambda destino: _gravar_csv(
+        "derivados.csv": lambda destino: gravar_csv(derivados, destino),
+        "base_nordeste_completa.csv": lambda destino: gravar_csv(
             completa, destino, encoding="utf-8-sig", sep=";", decimal=","),
     })
     return resultado
