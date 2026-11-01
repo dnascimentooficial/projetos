@@ -1,0 +1,17 @@
+territorio_id,nome,tipo,codigo_ibge,regiao_id
+BR,Brasil,pais,1,
+N,Norte,regiao,1,N
+NE,Nordeste,regiao,2,NE
+SE,Sudeste,regiao,3,SE
+S,Sul,regiao,4,S
+CO,Centro-Oeste,regiao,5,CO
+MA,Maranhão,uf,21,NE
+PI,Piauí,uf,22,NE
+CE,Ceará,uf,23,NE
+RN,Rio Grande do Norte,uf,24,NE
+PB,Paraíba,uf,25,NE
+PE,Pernambuco,uf,26,NE
+AL,Alagoas,uf,27,NE
+SE_UF,Sergipe,uf,28,NE
+BA,Bahia,uf,29,NE
+BR_FORA_NE,Brasil fora do Nordeste,agregado_derivado,,
