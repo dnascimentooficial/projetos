@@ -55,8 +55,17 @@ def _xlsx_grande() -> bytes:
     livro["Municípios 1.15"].print_area = "A1:B10"  # nome definido local (localSheetId = 4)
     livro["Municípios 1.2"].add_image(ImagemXlsx(io.BytesIO(_png())), "D2")
     livro.active = 4
+    gravado = io.BytesIO()
+    livro.save(gravado)
+    # O openpyxl grava "agora" no core.xml (created/modified) e na data de cada entrada do zip: sem fixar, os bytes
+    # (e o ponto do deflate onde cai um byte invertido) mudam a cada execucao.
     saida = io.BytesIO()
-    livro.save(saida)
+    with zipfile.ZipFile(gravado) as origem, zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as destino:
+        for info in origem.infolist():
+            conteudo = re.sub(rb"(<dcterms:(?:created|modified)\b[^>]*>)[^<]*", rb"\g<1>2019-10-25T20:49:36Z",
+                              origem.read(info)) if info.filename == "docProps/core.xml" else origem.read(info)
+            destino.writestr(zipfile.ZipInfo(info.filename, date_time=(2019, 10, 25, 20, 49, 36)), conteudo,
+                             compress_type=zipfile.ZIP_DEFLATED)
     return saida.getvalue()
 
 
@@ -217,9 +226,13 @@ def test_arquivo_baixado_sem_o_membro_declarado_e_erro_de_coleta(caso):
         empacotar_partes({URL: fonte}, PARAMETROS)
 
 
-@pytest.mark.parametrize("deslocamento", [10, 254])
+@pytest.mark.parametrize("deslocamento", [10, 254, 1000], ids=["zlib.error cedo", "zlib.error", "CRC invalido"])
 def test_deflate_corrompido_no_membro_xlsx_e_erro_de_coleta_e_nao_zlib_error(deslocamento):
-    """Byte invertido nos dados deflate do membro lido com aba (poda): ErroColeta, nunca zlib.error."""
+    """Byte invertido nos dados deflate do membro lido com aba (poda): ErroColeta, nunca zlib.error nem ValueError.
+
+    Com a fixture fixa, 10 e 254 caem em dados que o inflate rejeita (zlib.error); 1000, num trecho que ainda
+    descomprime e so falha no CRC.
+    """
     fonte = bytearray(_zip_da_fonte())
     fonte[30 + len(MEMBRO.encode("utf-8")) + deslocamento] ^= 0xFF
     with pytest.raises(ErroColeta, match=re.escape(URL)):

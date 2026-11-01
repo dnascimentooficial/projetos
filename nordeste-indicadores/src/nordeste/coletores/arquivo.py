@@ -335,7 +335,8 @@ def _reduzir_zip(original: Path, membros: dict[str, tuple[str, ...] | None], des
                  pasta: Path) -> list[dict] | None:
     """Grava em `destino` o zip so com `membros` (xlsx podados quando menores); None se for preciso o inteiro.
 
-    zipfile.BadZipFile se `original` nao for um zip legivel ou nao tiver algum dos `membros`.
+    zipfile.BadZipFile se `original` nao for um zip legivel, nao tiver algum dos `membros` ou trouxer algum com CRC
+    invalido.
     """
     with zipfile.ZipFile(original) as zip_, original.open("rb") as bruto:
         infos = {info.filename: info for info in zip_.infolist()}
@@ -362,7 +363,8 @@ def _reduzir_zip(original: Path, membros: dict[str, tuple[str, ...] | None], des
             return None
     with zipfile.ZipFile(destino) as conferido:
         if conferido.testzip() is not None:
-            raise ValueError(f"zip reduzido com CRC invalido a partir de {original.name}")
+            # membro copiado cru de um original corrompido (deflate valido, CRC errado): original ilegivel
+            raise zipfile.BadZipFile(f"zip reduzido com CRC invalido a partir de {original.name}")
     return manifesto
 
 
