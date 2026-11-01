@@ -1,0 +1,4 @@
+dados/brutos/
+dados/trabalho/
+__pycache__/
+*.egg-info/
