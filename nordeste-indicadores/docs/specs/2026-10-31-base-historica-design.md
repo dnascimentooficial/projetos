@@ -250,7 +250,7 @@ Regras:
 
 ### 7.3 Relatório de cobertura — `dados/relatorios/cobertura.csv`
 
-Por indicador, série e território: primeiro ano, último ano, anos faltantes, próxima publicação esperada (fim do ano de referência + `defasagem_meses`).
+Por indicador, série e território: primeiro ano, último ano, anos faltantes, próxima publicação esperada, isto é, a do ano seguinte ao último disponível (dezembro de último ano + 1, mais `defasagem_meses`).
 
 ## 8. Validação e erros
 

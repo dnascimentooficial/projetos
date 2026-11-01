@@ -445,7 +445,7 @@ def test_registro_lista_insumos():
 - Produz:
   - `metricas_convergencia(base: pd.DataFrame, fichas: dict[str, Ficha], territorios: pd.DataFrame) -> pd.DataFrame` (`COLUNAS_DERIVADOS`). Ignora fichas `auxiliar` e linhas `indisponivel`.
   - Funções públicas, cada uma recebendo as linhas de **uma** série e levantando `ErroSerie` se `serie_id.nunique() > 1`: `variacao_acumulada(df) -> pd.Series`, `crescimento_relativo(df_territorio, df_referencia) -> pd.Series`.
-  - `cobertura.proxima_publicacao(ultimo_ano: int, defasagem_meses: int) -> str` (`"AAAA-MM"`, contando a partir de dezembro do último ano).
+  - `cobertura.proxima_publicacao(ultimo_ano: int, defasagem_meses: int) -> str` (`"AAAA-MM"`, estimativa da publicação do ano seguinte: dezembro de `ultimo_ano + 1` mais a defasagem).
   - `cobertura.relatorio_cobertura(base: pd.DataFrame, fichas: dict[str, Ficha]) -> pd.DataFrame`, colunas `indicador_id, serie_id, territorio_id, primeiro_ano, ultimo_ano, anos_faltantes, proxima_publicacao`. `anos_faltantes` são os anos entre `inicio` e `fim` (ou o último ano disponível, se `fim` for nulo) sem valor, separados por `;`.
 
 Definições: `razao` = território ÷ referência × 100; `diferenca` = território − referência; `variacao_acumulada` = (v ÷ v_primeiro − 1) × 100; `crescimento_relativo` = diferença, em pontos percentuais, entre as variações de observações consecutivas; `posicao_regioes` = posição do NE entre as 5 regiões (1 = melhor, conforme `sentido`), só nos anos com as 5 presentes; `dispersao_ufs` = desvio padrão populacional ÷ média × 100 das 9 UFs, só nos anos com as 9 presentes, com `territorio_id="NE"`. `referencia` = `"BR"` ou `"BR_FORA_NE"` segundo a ficha; com `nenhuma`, só saem `variacao_acumulada`, `posicao_regioes` e `dispersao_ufs`. `razao`, `diferenca` e `crescimento_relativo` saem para NE e para as 9 UFs.
@@ -483,7 +483,7 @@ def test_dispersao_exige_as_nove_ufs():
     assert metricas_convergencia(base_de({"x": oito}), {"x": ficha("x")}, territorios).query("metrica == 'dispersao_ufs'").empty
 
 def test_proxima_publicacao():
-    assert proxima_publicacao(2023, 23) == "2025-11"
+    assert proxima_publicacao(2023, 23) == "2026-11"
 
 def test_anos_faltantes():
     c = relatorio_cobertura(base_anos_ne({2002: 1, 2004: 1}, indisponivel=[2003]), {"x": ficha("x", inicio=2002, fim=2004)})
