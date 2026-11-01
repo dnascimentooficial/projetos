@@ -90,6 +90,10 @@
 - [ ] **Passo 3:** PIB 2024: conferir se as Contas Regionais 2024 já saíram (SIDRA 5938 com 2024; FTP `Contas_Regionais/2024/`). Se sim: ampliar `fim` das fichas do PIB (nominal, participação, volume) com verificação, mapear 2024 no per capita com a população adequada e conferir contra valor publicado; atualizar o teste de contrato do per capita. Se não: nada a fazer.
 - [ ] **Passo 4:** testes, ensaio offline, suíte; commit.
 
+**Fechamento (2026-11-01):** tarefa interrompida no meio e fechada de forma enxuta por decisão do usuário (opção A): PIB 2024 ainda não publicado (SIDRA 5938 até 2023); PIB per capita 2007 sem valor publicado para conferir; Contagem 2007 descartada; PNAD antiga adiada para o próximo ciclo. Registro em `docs/dicionario-verificacao.md`, seção "Tarefa C6 (enxuta)".
+
+**Decisão do usuário para a C7 (2026-11-01):** os pacotes das séries do INEP baixados com rede no mesmo dia (Tarefas C4 e C5) são reaproveitados, desde que as fichas do INEP não tenham mudado e o sha256 de cada pacote confira com o registro de coletas; as demais séries são coletadas de novo na raiz real. Registrar como divergência.
+
 ### Tarefa C7: Primeira publicação real
 
 **Arquivos:** `dados/base/*`, `dados/relatorios/*` (passam a ser versionados), README (seção "Situação da publicação").
