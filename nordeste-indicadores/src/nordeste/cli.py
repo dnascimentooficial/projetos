@@ -35,6 +35,8 @@ def _parser() -> argparse.ArgumentParser:
     coletar = comandos.add_parser("coletar", help="coleta os arquivos brutos de todas as series")
     coletar.add_argument("--indicador", help="coleta so as series deste indicador")
     coletar.add_argument("--offline", action="store_true", help="usa as fixtures em vez da rede")
+    coletar.add_argument("--pular-indicador", action="append", default=[], metavar="ID",
+                         help="nao coleta este indicador (repetivel)")
     comandos.add_parser("consolidar", help="monta a base de trabalho e seus relatorios")
     comandos.add_parser("validar", help="valida a base de trabalho sem publicar")
     publicar_ = comandos.add_parser("publicar", help="valida e publica a base")
@@ -42,6 +44,8 @@ def _parser() -> argparse.ArgumentParser:
     site = comandos.add_parser("site", help="gera o site estatico a partir da base publicada")
     site.add_argument("--saida", type=Path, required=True, help="pasta do site (apagada e recriada)")
     site.add_argument("--sem-imagens", action="store_true", help="nao gera as imagens OpenGraph e dos cards")
+    site.add_argument("--anterior", type=Path,
+                      help="saida da geracao anterior: dela se copiam os PNG cuja entrada nao mudou (fora de --saida)")
     site.add_argument("--relatorio", type=Path, help="grava em JSON o que foi suprimido (fechos e cards)")
     return parser
 
@@ -56,7 +60,7 @@ def _fichas(caminhos: Caminhos) -> dict:
 COLUNAS_FALHAS_COLETA: list[str] = ["indicador_id", "serie_id", "motivo"]
 
 
-def _coletar(caminhos: Caminhos, hoje: date, indicador: str | None, offline: bool) -> int:
+def _coletar(caminhos: Caminhos, hoje: date, indicador: str | None, offline: bool, pular: list[str]) -> int:
     """Coleta as series e grava relatorios/falhas_coleta.csv (cabecalho sempre; uma linha por serie que falhou).
 
     Com rede, series `verificado: false` sao puladas com aviso, sem contar como falha. A serie que falha mantem a
@@ -66,9 +70,13 @@ def _coletar(caminhos: Caminhos, hoje: date, indicador: str | None, offline: boo
     if indicador is not None and indicador not in fichas:
         print(f"indicador desconhecido: {indicador}", file=sys.stderr)
         return 1
+    desconhecidos = [id_ for id_ in pular if id_ not in fichas]  # erro de digitacao nao pode coletar o que era para pular
+    if desconhecidos:
+        print(f"indicador desconhecido em --pular-indicador: {', '.join(desconhecidos)}", file=sys.stderr)
+        return 1
     falhas: list[tuple[str, str, str]] = []
     for ficha in fichas.values():
-        if (indicador is not None and ficha.id != indicador) or ficha.calculo is not None:
+        if (indicador is not None and ficha.id != indicador) or ficha.id in pular or ficha.calculo is not None:
             continue  # indicador calculado nao tem arquivo bruto: sai do consolidar
         for serie in ficha.series:
             if not offline and not serie.verificado:
@@ -124,11 +132,11 @@ def _publicar(caminhos: Caminhos, hoje: date, ensaio: bool) -> int:
     return 0
 
 
-def _site(caminhos: Caminhos, saida: Path, imagens: bool, relatorio: Path | None) -> int:
+def _site(caminhos: Caminhos, saida: Path, imagens: bool, relatorio: Path | None, anterior: Path | None) -> int:
     from nordeste.site.gerar import gerar_site, relatorio_em_json  # o pipeline nao precisa do gerador
 
     try:
-        resultado = gerar_site(caminhos, saida, imagens=imagens)
+        resultado = gerar_site(caminhos, saida, imagens=imagens, anterior=anterior)
     except (ValueError, OSError) as erro:  # inclui ErroConteudo; base ou metadados ilegiveis nao viram traceback
         print(f"site: {erro}", file=sys.stderr)
         return 1
@@ -147,11 +155,11 @@ def main(argv: list[str] | None = None) -> int:
     hoje = args.hoje or date.today()
     try:
         if args.comando == "coletar":
-            return _coletar(caminhos, hoje, args.indicador, args.offline)
+            return _coletar(caminhos, hoje, args.indicador, args.offline, args.pular_indicador)
         if args.comando == "consolidar":
             return _consolidar(caminhos)
         if args.comando == "site":
-            return _site(caminhos, args.saida, not args.sem_imagens, args.relatorio)
+            return _site(caminhos, args.saida, not args.sem_imagens, args.relatorio, args.anterior)
         # validar e o ensaio de publicacao: mesmos insumos, grava validacao.csv e nunca toca dados/base/.
         return _publicar(caminhos, hoje, ensaio=args.comando == "validar" or args.ensaio)
     except (ErroColeta, ErroFicha, ErroPublicacao) as erro:

@@ -13,6 +13,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 VARIAVEL_DO_NAVEGADOR = "PLAYWRIGHT_CHROMIUM"
+# Entra no hash de cada imagem (manifesto do site): aumente-o sempre que mudar o procedimento de `renderizar`
+# (tamanho da janela, tema, movimento, espera), para as imagens serem refeitas mesmo com o HTML igual.
+VERSAO_DO_RENDER = 1
 
 
 class ErroImagens(OSError):

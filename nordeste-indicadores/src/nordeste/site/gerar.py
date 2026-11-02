@@ -30,7 +30,7 @@ from nordeste.site.explorar import (
 )
 from nordeste.site.formatacao import numero
 from nordeste.site.graficos import ConfigGrafico, Linha, faixas_em_json, grafico_linhas, minigrafico
-from nordeste.site.imagens import AlvoImagem, renderizar
+from nordeste.site.imagens import VERSAO_DO_RENDER, AlvoImagem, renderizar
 
 NOME_DO_SITE = "Nordeste em Números"
 URL_DO_SITE = "https://nordeste.dnascimento.com.br"
@@ -47,6 +47,7 @@ FOTO_ARQUIVO = "foto-abertura.webp"  # em estaticos/; o estilo.css aponta para e
 LARGO = {"largura": 720}  # os dois tamanhos de cada grafico (Ruling S-O): o CSS mostra um conforme a largura da tela
 ESTREITO = {"largura": 360, "altura": 240}
 AMPLIADO = {"largura": 1100, "altura": 520}  # o terceiro, do modal "Ampliar" (Ruling S-W): guardado num <template>
+MANIFESTO_DE_IMAGENS = "_imagens.json"  # na raiz do site: sha256 das entradas de cada PNG (Ruling S-X); sem dado sensivel
 ARQUIVOS_DE_DADOS = ("base_nordeste.csv", "derivados.csv")
 EXPLORAR_INICIAL = ("pib_pc", "NE")  # a vista que ja vem desenhada no HTML: indicador e territorio
 TEXTOS_EXIGIDOS = {  # seção de textos.yaml: chaves lidas pelo gerador e pelos modelos
@@ -411,11 +412,47 @@ def _texto_og(chave: str, textos: dict) -> dict:
     return {"linhas": [textos["paginas"][chave]["titulo"].split(" · ")[0]], "destaque": None}
 
 
-def _gerar_imagens(saida: Path, ambiente: Environment, comum: dict, cards: list[dict], contorno: dict) -> None:
+def _hash_dos_recursos(saida: Path) -> str:
+    """Resumo do estilo, das fontes e da foto que as paginas de apoio carregam: o que, alem do HTML, entra na imagem."""
+    resumo = hashlib.sha256()
+    recursos = [saida / "estilo.css", *sorted(p for p in (saida / "fontes").rglob("*") if p.is_file())]
+    foto = saida / FOTO_ARQUIVO
+    if foto.is_file():
+        recursos.append(foto)
+    for recurso in recursos:
+        resumo.update(recurso.relative_to(saida).as_posix().encode("utf-8") + b"\0")
+        resumo.update(hashlib.sha256(recurso.read_bytes()).digest())
+    return resumo.hexdigest()
+
+
+def _entrada_da_imagem(alvo: AlvoImagem, recursos: str) -> str:
+    """sha256 do que produz o PNG: tamanho, versao do procedimento de render, recursos e o HTML de apoio."""
+    cabeca = f"{alvo.largura}x{alvo.altura}\0{VERSAO_DO_RENDER}\0{recursos}\0"
+    return hashlib.sha256(cabeca.encode("utf-8") + alvo.html.read_bytes()).hexdigest()
+
+
+def _ler_manifesto(pasta: Path | None) -> dict[str, str]:
+    """O manifesto de imagens de uma saida anterior; ausente ou ilegivel vale como vazio (tudo e renderizado de novo)."""
+    if pasta is None:
+        return {}
+    try:
+        manifesto = json.loads((pasta / MANIFESTO_DE_IMAGENS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return manifesto if isinstance(manifesto, dict) else {}
+
+
+def _gerar_imagens(
+    saida: Path, ambiente: Environment, comum: dict, cards: list[dict], contorno: dict, anterior: Path | None,
+) -> None:
     """og/<pagina>.png (1200x630) para cada pagina que nao e de card e cards/<id>.png (1080x1350) para cada card.
 
     As paginas de card ja apontam o og:image para o PNG do proprio card. O Chromium fotografa paginas de apoio
     (modelos/og.html) escritas em `_imagens/`, que somem ao fim, com o estilo e as fontes locais do site.
+
+    O PNG de uma imagem so e refeito se a entrada mudou em relacao a `anterior` (o manifesto dela guarda o sha256 da
+    entrada de cada imagem): o Chromium nao gera os mesmos bytes entre versoes, e a publicacao semanal nao pode
+    mudar so por isso (Ruling S-X). O manifesto desta saida e gravado ao fim.
     """
     apoio = saida / "_imagens"
     apoio.mkdir()
@@ -432,15 +469,32 @@ def _gerar_imagens(saida: Path, ambiente: Environment, comum: dict, cards: list[
             nome = f"card-{card['id']}.html"
             _escrever(ambiente, apoio, "og.html", nome, titulo=card["frase_feita"], card=card, contorno=None, og=None, **comum)
             alvos.append(AlvoImagem(apoio / nome, saida / "cards" / f"{card['id']}.png", *CARD))
-        renderizar(alvos, raiz=saida)
+        recursos = _hash_dos_recursos(saida)
+        manifesto = {a.png.relative_to(saida).as_posix(): _entrada_da_imagem(a, recursos) for a in alvos}
+        anteriores = _ler_manifesto(anterior)
+        pendentes = []
+        for alvo in alvos:
+            chave = alvo.png.relative_to(saida).as_posix()
+            velho = None if anterior is None else anterior / chave
+            if anteriores.get(chave) == manifesto[chave] and velho is not None and velho.is_file():
+                alvo.png.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(velho, alvo.png)
+            else:
+                pendentes.append(alvo)
+        if pendentes:
+            renderizar(pendentes, raiz=saida)
+        texto = json.dumps(manifesto, indent=2, sort_keys=True) + "\n"
+        (saida / MANIFESTO_DE_IMAGENS).write_bytes(texto.encode("utf-8"))
     finally:
         shutil.rmtree(apoio)
 
 
-def _validar_saida(caminhos: Caminhos, saida: Path) -> None:
+def _validar_saida(caminhos: Caminhos, saida: Path, anterior: Path | None = None) -> None:
     """A saida e apagada: nunca a base publicada, os relatorios ou os metadados, nem uma pasta que os contenha ou
-    que esteja dentro deles."""
+    que esteja dentro deles. A saida anterior (de onde se copiam os PNG) tambem nao pode ser apagada por isso."""
     destino = saida.resolve()
+    if anterior is not None and (anterior.resolve() == destino or destino in anterior.resolve().parents):
+        raise ValueError(f"A saída anterior {anterior} é a própria saída {saida} (ou está dentro dela): ela seria apagada antes de ser lida.")
     for protegida in (caminhos.base, caminhos.relatorios, caminhos.metadados):
         protegida = protegida.resolve()
         if destino == protegida or destino in protegida.parents or protegida in destino.parents:
@@ -546,9 +600,15 @@ def _pagina(chave: str, rota: str, titulo: str, descricao: str, imagem: str, jso
     }
 
 
-def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> RelatorioSite:
-    """Apaga e recria `saida` com as paginas do site e as copias dos CSVs; devolve o que foi suprimido."""
-    _validar_saida(caminhos, saida)
+def gerar_site(
+    caminhos: Caminhos, saida: Path, *, imagens: bool = True, anterior: Path | None = None,
+) -> RelatorioSite:
+    """Apaga e recria `saida` com as paginas do site e as copias dos CSVs; devolve o que foi suprimido.
+
+    `anterior` e a saida da geracao anterior (uma pasta de fora de `saida`): os PNG cuja entrada nao mudou sao
+    copiados dela em vez de renderizados de novo.
+    """
+    _validar_saida(caminhos, saida, anterior)
     dados = DadosSite.carregar(caminhos)
     conteudo = carregar_conteudo(caminhos.metadados / "site")
     _validar_textos(conteudo.textos)
@@ -604,7 +664,7 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
 
     paginas = [p.arquivo for p in PAGINAS] + [f"cards/{c['id']}/index.html" for c in cards]
     if imagens:
-        _gerar_imagens(saida, ambiente, comum, cards, _contorno(caminhos))
+        _gerar_imagens(saida, ambiente, comum, cards, _contorno(caminhos), anterior)
     return RelatorioSite(paginas, [*paragrafos_suprimidos, *faixa_suprimida, *fechos_suprimidos], cards_fora)
 
 
