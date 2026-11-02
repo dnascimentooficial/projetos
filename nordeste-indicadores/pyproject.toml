@@ -26,7 +26,7 @@ dev = ["pytest"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"nordeste.site" = ["modelos/*.html", "estaticos/*", "estaticos/**/*"]
+"nordeste.site" = ["modelos/*.html", "estaticos/*", "estaticos/.htaccess", "estaticos/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["testes"]

@@ -129,6 +129,14 @@ def _faixas(governos: pd.DataFrame) -> list[_Faixa]:
     return faixas
 
 
+def faixas_em_json(governos: pd.DataFrame) -> str:
+    """As faixas de governo como `[[nome, inicio, fim, interino], ...]` (anos fracionarios), para o site.js redesenhar
+    o grafico do Explorar com as mesmas faixas do Python."""
+    return json.dumps(
+        [[f.nome, f.inicio, f.fim, f.interino] for f in _faixas(governos)], separators=(",", ":"), ensure_ascii=False
+    )
+
+
 # --- linhas -----------------------------------------------------------------------------------------------------
 
 

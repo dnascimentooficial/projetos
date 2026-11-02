@@ -17,7 +17,7 @@
     <label for="sel-expl-terr">Território
       <select id="sel-expl-terr" class="nn-sel-expl-terr">
 {% for x in e.territorios %}
-        <option value="{{ x.id }}"{% if x.id == e.inicial.territorio %} selected{% endif %}>{{ x.nome }}</option>
+        <option value="{{ x.id }}" data-etiqueta="{{ x.etiqueta }}"{% if x.id == e.inicial.territorio %} selected{% endif %}>{{ x.nome }}</option>
 {% endfor %}
       </select>
     </label>
@@ -25,15 +25,18 @@
       <select id="sel-expl-terr2" class="nn-sel-expl-terr2">
         <option value="" selected>nenhum</option>
 {% for x in e.territorios %}
-        <option value="{{ x.id }}">{{ x.nome }}</option>
+        <option value="{{ x.id }}" data-etiqueta="{{ x.etiqueta }}">{{ x.nome }}</option>
 {% endfor %}
       </select>
     </label>
   </div>
-  <article class="nn-card" id="explorar-grafico" data-dados="/explorar/dados/" data-sem-dados="{{ t.sem_dados }}">
+  <article class="nn-card" id="explorar-grafico" data-dados="/explorar/dados/" data-sem-dados="{{ t.sem_dados }}" data-sem-periodo="{{ t.sem_periodo }}" data-erro="{{ t.erro }}" data-tabela="{{ t.tabela }}" data-governos="{{ e.governos }}">
     <p class="nn-eyebrow">Explorar</p>
-    <h2 id="explorar-titulo">{{ e.vista.titulo }}</h2>
+    <h2 id="explorar-titulo" aria-live="polite">{{ e.vista.titulo }}</h2>
     <p class="nn-muted">{{ t.nota }}</p>
+    <div class="nn-zoom" id="explorar-zoom" role="group" aria-label="{{ t.zoom.grupo }}" data-de="{{ t.zoom.de }}" data-ate="{{ t.zoom.ate }}" data-inicio="{{ t.zoom.inicio }}" data-fim="{{ t.zoom.fim }}" data-ampliar="{{ t.zoom.ampliar }}" data-todo="{{ t.zoom.todo }}" hidden>
+      <p class="nn-muted">{{ t.zoom.ajuda }}</p>
+    </div>
     <div id="explorar-vista">
 {{ vista(e.vista, t) }}
     </div>

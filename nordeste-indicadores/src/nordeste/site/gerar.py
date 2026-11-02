@@ -28,13 +28,14 @@ from nordeste.site.explorar import (
     IndicadorExplorar, dados_explorar, pontos, pontos_do_indicador, referencias, tabela_do_territorio, vistas_estados,
 )
 from nordeste.site.formatacao import numero
-from nordeste.site.graficos import ConfigGrafico, Linha, grafico_linhas, minigrafico
+from nordeste.site.graficos import ConfigGrafico, Linha, faixas_em_json, grafico_linhas, minigrafico
 
 NOME_DO_SITE = "Nordeste em Números"
 URL_DO_SITE = "https://nordeste.dnascimento.com.br"
 URL_DO_AUTOR = "https://dnascimento.com.br"
 LICENCA = "https://creativecommons.org/licenses/by/4.0/"
 PASTA_MODELOS = Path(__file__).parent / "modelos"
+PASTA_ESTATICOS = Path(__file__).parent / "estaticos"  # estilo, script, fontes e .htaccess, copiados na raiz do site
 LARGO = {"largura": 720}  # os dois tamanhos de cada grafico (Ruling S-O): o CSS mostra um conforme a largura da tela
 ESTREITO = {"largura": 360, "altura": 240}
 ARQUIVOS_DE_DADOS = ("base_nordeste.csv", "derivados.csv")
@@ -48,7 +49,10 @@ TEXTOS_EXIGIDOS = {  # seção de textos.yaml: chaves lidas pelo gerador e pelos
         "titulo", "intro", "titulo_mapa", "titulo_ranking", "escala_pior", "escala_melhor", "nota_do_mapa", "tabela",
         "fonte", "sem_dados",
     },
-    "explorar": {"titulo", "intro", "nota", "tabela", "fonte", "sem_dados"},
+    "explorar": {
+        **dict.fromkeys(("titulo", "intro", "nota", "tabela", "fonte", "sem_dados", "sem_periodo", "erro")),
+        "zoom": {"grupo", "de", "ate", "inicio", "fim", "ampliar", "todo", "ajuda"},
+    },
     "cards": {"titulo", "intro", "sera", "baixar", "voltar"},
 }
 FRASE_DA_DATA = "na data desta publicação"
@@ -293,9 +297,10 @@ def _contexto_do_explorar(dados: DadosSite, por_indicador: dict[str, dict[str, l
     return {
         "explorar": {
             "indicadores": INDICADORES_EXPLORAR,
-            "territorios": [{"id": id_, "nome": nome} for id_, nome, _ in TERRITORIOS],
+            "territorios": [{"id": id_, "nome": nome, "etiqueta": etiqueta} for id_, nome, etiqueta in TERRITORIOS],
             "inicial": {"indicador": chave, "territorio": territorio},
             "vista": vista,
+            "governos": faixas_em_json(dados.governos),
         }
     }
 
@@ -430,6 +435,11 @@ def _paragrafos_da_abertura(itens: list, destaques: dict[str, Destaque]) -> tupl
     return textos, suprimidos
 
 
+def _copiar_estaticos(saida: Path) -> None:
+    """Estilo, script, fontes (com a licenca OFL) e .htaccess, na raiz do site; cache do Python fica de fora."""
+    shutil.copytree(PASTA_ESTATICOS, saida, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+
+
 def _escrever(ambiente: Environment, saida: Path, modelo: str, arquivo: str, **contexto: object) -> None:
     destino = saida / arquivo
     destino.parent.mkdir(parents=True, exist_ok=True)
@@ -474,6 +484,7 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
         shutil.rmtree(saida)
     (saida / "dados").mkdir(parents=True)
     (saida / "explorar" / "dados").mkdir(parents=True)
+    _copiar_estaticos(saida)
     ambiente = _ambiente()
     for p in PAGINAS:
         pagina = _pagina(

@@ -133,6 +133,18 @@ explorar:
   tabela: "Ver os números do território escolhido"
   fonte: "Valores como publicados pela fonte, sem interpolação. As fontes e os métodos de cada indicador estão em Sobre os dados."
   sem_dados: "Este indicador não tem dados para este território."
+  sem_periodo: "Não há dados deste território no período escolhido."
+  erro: "Não consegui carregar os dados deste indicador. Tente de novo em instantes."
+  # Painel de zoom: só aparece com JavaScript (o gráfico redesenha no navegador).
+  zoom:
+    grupo: "Ajustes do gráfico"
+    de: "De"
+    ate: "Até"
+    inicio: "início"
+    fim: "fim"
+    ampliar: "Ampliar a variação"
+    todo: "Ver todo o período"
+    ajuda: "Para ver só um período, arraste o mouse ou o dedo sobre o gráfico, ou escolha os anos. Com um período escolhido, \"Ampliar a variação\" ajusta a escala vertical aos dados dele; sem isso, a escala continua a do período completo, para a mudança não parecer maior do que é."
 
 cards:
   titulo: "Cards para compartilhar"
