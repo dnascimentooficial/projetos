@@ -186,10 +186,21 @@ def test_peso_da_inicial(abrir):
     assert sum(r["bytes"] for r in sem_a_foto) <= LIMITE_DA_INICIAL, sorted(sem_a_foto, key=lambda r: -r["bytes"])[:3]
 
 
-# --- abertura com foto: a foto aparece e o texto segue legivel sobre os pixels reais do fundo ---
+# --- abertura dividida com foto: texto sobre preto sólido, foto ao lado ou acima, sem sobreposição (Ruling S-AC) ---
 
-_TEXTOS_DA_ABERTURA = """() => {
+_ABERTURA = """() => {
   const hero = document.querySelector('#topo');
+  const caixa = hero.getBoundingClientRect();
+  const pseudo = getComputedStyle(hero, '::before');
+  const px = (v) => parseFloat(v);
+  // a foto e o ::before, posicionado no padding box da abertura
+  const foto = {
+    x: caixa.left + hero.clientLeft + hero.clientWidth - px(pseudo.right) - px(pseudo.width),
+    y: caixa.top + hero.clientTop + px(pseudo.top),
+    w: px(pseudo.width),
+    h: px(pseudo.height),
+    imagem: pseudo.backgroundImage,
+  };
   const alvos = [];
   for (const el of hero.querySelectorAll('.nn-eyebrow, .nn-hero-titulo > span, .nn-hero-intro')) {
     const intervalo = document.createRange();
@@ -200,10 +211,10 @@ _TEXTOS_DA_ABERTURA = """() => {
       caixas: [...intervalo.getClientRects()].map((c) => ({ x: c.left, y: c.top, w: c.width, h: c.height })),
     });
   }
-  const c = hero.getBoundingClientRect();
-  return { hero: { x: c.left, y: c.top, w: c.width, h: c.height }, alvos };
+  return { hero: { x: caixa.left, y: caixa.top, w: caixa.width, h: caixa.height }, foto, alvos };
 }"""
 _LIMITE_DO_CONTRASTE = 4.5
+_LARGURAS_DA_ABERTURA = [CELULAR, 560, 561, 768, 900, 901, DESKTOP]  # os dois lados dos pontos de quebra (560 e 900 px)
 
 
 def _luminancia_relativa(rgb: np.ndarray) -> np.ndarray:
@@ -217,39 +228,51 @@ def _contrastes(texto: np.ndarray, fundo: np.ndarray) -> np.ndarray:
     return (np.maximum(a, b) + 0.05) / (np.minimum(a, b) + 0.05)
 
 
-@pytest.mark.parametrize("largura", [CELULAR, 560, 561, 768, 900, 901, DESKTOP])  # os dois lados dos pontos de quebra do degradê (560 e 900 px)
-def test_abertura_com_foto_aparece_e_o_texto_passa_de_4_5_sobre_os_pixels_do_fundo(abrir, largura):
+@pytest.mark.parametrize("largura", _LARGURAS_DA_ABERTURA)
+def test_abertura_com_foto_texto_fora_da_foto_e_com_contraste_nos_pixels_reais(abrir, largura):
     with abrir("/", largura=largura, altura=900, reduced_motion="reduce") as pagina:
         assert "nn-hero-com-foto" in pagina.locator("#topo").get_attribute("class").split()
-        foto = pagina.evaluate(
-            """async () => {
-              const url = getComputedStyle(document.querySelector('#topo')).backgroundImage.match(/url\\("?([^")]+)"?\\)/)[1];
-              const imagem = new Image();
-              imagem.src = url;
-              await imagem.decode();
-              return { url, largura: imagem.naturalWidth, altura: imagem.naturalHeight };
-            }"""
+        medidas = pagina.evaluate(_ABERTURA)
+        foto = medidas["foto"]
+        url = re.search(r'url\("?([^")]+)"?\)', foto["imagem"])
+        assert url and url[1].endswith("/foto-abertura.webp"), foto["imagem"]
+        carregada = pagina.evaluate(
+            "async (u) => { const i = new Image(); i.src = u; await i.decode(); return [i.naturalWidth, i.naturalHeight]; }", url[1]
         )
-        assert foto["url"].endswith("/foto-abertura.webp") and (foto["largura"], foto["altura"]) == (1024, 768)
-        medidas = pagina.evaluate(_TEXTOS_DA_ABERTURA)
+        assert carregada == [1024, 768]
         pagina.evaluate("() => document.querySelectorAll('#topo > *').forEach((e) => { e.style.visibility = 'hidden'; })")
         caixa = medidas["hero"]
         recorte = {"x": 0, "y": caixa["y"], "width": largura, "height": caixa["h"]}
         fundo = np.array(Image.open(io.BytesIO(pagina.screenshot(clip=recorte))).convert("RGB"), dtype=float)
 
-    # a foto esta la, sob a camada: bem mais variada que o preto liso (#080808) que a abertura tem sem foto
-    x0, x1 = int(caixa["x"]) + 24, int(caixa["x"] + caixa["w"]) - 24
-    miolo = fundo[24:-24, x0:x1].reshape(-1, 3)
-    assert (np.abs(miolo - 8).max(axis=1) > 3).mean() > 0.5, "o fundo da abertura esta liso: a foto nao aparece"
-    assert miolo.max() > 40  # a parte clara da foto (a espuma, o mar) atravessa o degradê
+    # a foto: do lado do texto (desktop) ou acima dele (ate 900 px), sempre dentro da abertura e inteira na caixa
+    lado_a_lado = foto["w"] < caixa["w"] * 0.9
+    assert (largura > 900) == lado_a_lado
+    assert 0.45 <= foto["w"] / caixa["w"] <= 0.55 if lado_a_lado else foto["h"] / largura >= 0.3, foto
+    assert foto["x"] >= caixa["x"] and foto["x"] + foto["w"] <= caixa["x"] + caixa["w"] + 1
+    assert foto["y"] >= caixa["y"] and foto["y"] + foto["h"] <= caixa["y"] + caixa["h"] + 1
+    # ela aparece, sem camada pesada: a metade longe da emenda (a direita, ou a de cima) e bem mais clara que o #080808
+    fx, fy = int(foto["x"]), int(foto["y"] - caixa["y"])
+    longe = fundo[fy:fy + int(foto["h"]), fx + int(foto["w"] / 2):fx + int(foto["w"])] if lado_a_lado \
+        else fundo[fy:fy + int(foto["h"] / 2), fx:fx + int(foto["w"])]
+    assert _luminancia_relativa(longe.reshape(-1, 3)).mean() > 0.1  # o preto liso tem 0,0024; a foto, uns 0,2
+    # e a emenda funde no preto: a borda do lado do texto e preto liso
+    emenda = fundo[fy:fy + int(foto["h"]), fx:fx + 2] if lado_a_lado else fundo[fy + int(foto["h"]) - 2:fy + int(foto["h"]), fx:fx + int(foto["w"])]
+    assert np.abs(emenda - 8).max() <= 8, "a foto nao funde no preto na emenda"  # os 2 px da borda: preto, a menos de 3% da foto
 
     reprovados, piores = [], {}
     for n, alvo in enumerate(medidas["alvos"]):
         canais = [float(v) for v in re.findall(r"[\d.]+", alvo["cor"])]
         cor, alfa = np.array(canais[:3]), canais[3] if len(canais) > 3 else 1.0
         assert alvo["caixas"], alvo["nome"]
+        if "nn-destaque" in alvo["nome"]:
+            assert alvo["cor"] == "rgb(234, 46, 0)"  # sobre preto solido o laranja da identidade passa
         pior = 99.0
-        for c in alvo["caixas"]:  # cada linha de texto, sobre os pixels que de fato ficam atras dela
+        for c in alvo["caixas"]:  # cada linha de texto
+            # nenhum texto toca a foto
+            assert c["x"] + c["w"] <= foto["x"] + 1 or c["x"] >= foto["x"] + foto["w"] - 1 \
+                or c["y"] + c["h"] <= foto["y"] + 1 or c["y"] >= foto["y"] + foto["h"] - 1, (alvo["nome"], c, foto)
+            # e o contraste vale o dos pixels de fato atras da linha
             xa, xb = max(0, int(c["x"])), min(largura, int(np.ceil(c["x"] + c["w"])))
             ya, yb = max(0, int(c["y"] - caixa["y"])), min(fundo.shape[0], int(np.ceil(c["y"] + c["h"] - caixa["y"])))
             atras = fundo[ya:yb, xa:xb].reshape(-1, 3)

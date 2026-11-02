@@ -216,38 +216,47 @@ def _declaracoes(css: str, seletor: str) -> dict[str, str]:
     return achadas
 
 
-def test_css_da_foto_e_da_camada(saida):
+def _regra_em(css: str, cabecalho: tuple[str, ...], seletor: str) -> dict[str, str]:
+    """propriedade -> valor do `seletor` dentro das at-rules `cabecalho` (por exemplo, o @media dele)."""
+    achadas = {}
+    for cabecalhos, declaracao in _regras(css):
+        if cabecalhos == (*cabecalho, seletor) and ":" in declaracao:
+            propriedade, valor = declaracao.split(":", 1)
+            achadas[propriedade.strip()] = " ".join(valor.split())
+    return achadas
+
+
+def test_css_da_foto_abertura_dividida(saida):
     css = (saida / "estilo.css").read_text(encoding="utf-8")
-    foto = _declaracoes(css, ".nn-hero-com-foto")
-    assert foto["background-image"] == 'url("/foto-abertura.webp")'  # local: a CSP e default-src 'self'
-    assert foto["background-size"] == "cover"
-    # a camada e um degradê preto (#080808), forte onde esta o texto e leve onde a foto aparece (Ruling S-AB); o contraste
-    # do texto vale o que testes/navegador mede nos pixels reais, aqui so o desenho do degradê e o pior caso do lado do texto
-    camada = _declaracoes(css, ".nn-hero-com-foto::before")["background"]
-    celular = next(
-        " ".join(d.split()).split(":", 1)[1].strip() for c, d in _regras(css)
-        if c == ("@media (max-width: 560px)", ".nn-hero-com-foto::before") and d.startswith("background:")
-    )
-    for fundo_css, direcao, minimo_no_texto in ((camada, "90deg", 0.9), (celular, "180deg", 0.9)):
-        assert f"linear-gradient({direcao}, " in fundo_css, fundo_css
-        paradas = [(int(r), int(g), int(b), float(a)) for r, g, b, a in re.findall(r"rgba\((\d+), (\d+), (\d+), ([0-9.]+)\)", fundo_css.split("), linear-gradient")[0])]
-        assert {p[:3] for p in paradas} == {(8, 8, 8)}  # o #080808 da identidade
-        alfas = [p[3] for p in paradas]
-        assert alfas[0] >= minimo_no_texto and alfas == sorted(alfas, reverse=True) and alfas[-1] <= 0.8  # a foto aparece no fim
-        # pior caso do lado do texto: a foto toda branca sob a primeira parada; o texto branco segue com >= 4,5:1
-        fundo = tuple(255 * (1 - alfas[0]) + 8 * alfas[0] for _ in range(3))
-        assert _contraste((255, 255, 255), fundo) >= 4.5
-        texto_translucido = 255 * 0.66 + fundo[0] * (1 - 0.66)
-        assert _contraste((texto_translucido,) * 3, fundo) >= 4.5  # o selo (branco a 66%) tambem
-    # o laranja puro (#ea2e00) nao passa nos pixels claros da foto (medido em testes/navegador): com foto o destaque do
-    # titulo e um laranja claro, mais claro que a identidade e menos que o branco
-    destaque = _declaracoes(css, ".nn-hero-com-foto .nn-hero-titulo .nn-destaque").get("color", "")
-    assert re.fullmatch(r"#[0-9a-f]{6}", destaque), destaque
-    r, g, b = (int(destaque[i:i + 2], 16) for i in (1, 3, 5))
-    assert (r, g, b) != (0xEA, 0x2E, 0x00) and r >= 0xEA and g > 0x2E and b > 0x00 and g < 0xFF and b < 0xFF
-    assert _declaracoes(css, ".nn-hero-titulo .nn-destaque")["color"] == "var(--nn-laranja)"  # sem foto segue laranja
+    # a foto e o ::before (local: a CSP e default-src 'self'), com so uma camada leve e o degradê da emenda; nada de <img>
+    foto = _declaracoes(css, ".nn-hero-com-foto::before")
+    assert 'url("/foto-abertura.webp")' in foto["background-image"] and foto["background-size"].endswith("cover")
+    assert "background-image" not in _declaracoes(css, ".nn-hero-com-foto")  # o fundo da abertura segue o preto liso
+    camada = re.search(r"linear-gradient\(rgba\(8, 8, 8, ([0-9.]+)\), rgba\(8, 8, 8, ([0-9.]+)\)\)", foto["background-image"])
+    assert camada and camada[1] == camada[2] and float(camada[1]) <= 0.25  # a camada leve da foto (<= 25%)
+    # desktop: a foto e a metade direita; a coluna do texto termina antes dela
+    desktop = _regra_em(css, ("@media (min-width: 901px)",), ".nn-hero-com-foto::before")
+    largura = float(re.fullmatch(r"(\d+)%", desktop["width"])[1])
+    assert 45 <= largura <= 55
+    assert desktop["--nn-foto-fusao"].startswith("linear-gradient(90deg, #080808 0%, rgba(8, 8, 8, 0)")  # emenda: preto liso
+    assert _regra_em(css, ("@media (min-width: 901px)",), ".nn-hero-com-foto")["padding-right"].startswith(f"calc({largura:g}% + ")
+    # ate 900 px: faixa no topo que funde no preto embaixo, e o texto desce abaixo dela
+    faixa = _regra_em(css, ("@media (max-width: 900px)",), ".nn-hero-com-foto::before")
+    assert faixa["--nn-foto-fusao"].endswith("#080808 100%)") and faixa["--nn-foto-fusao"].startswith("linear-gradient(180deg, ")
+    assert faixa["height"] == "var(--nn-foto-alt)"
+    assert _regra_em(css, ("@media (max-width: 900px)",), ".nn-hero-com-foto")["padding-top"].startswith("calc(var(--nn-foto-alt)")
+    assert re.fullmatch(r"clamp\((\d+)px, (\d+)vw, (\d+)px\)", _declaracoes(css, ".nn-hero-com-foto")["--nn-foto-alt"])
+    # o texto fica sempre sobre #080808 e o destaque do titulo segue #ea2e00 (4,7:1), sem regra propria com foto
+    assert _contraste((234, 46, 0), (8, 8, 8)) >= 4.5
+    assert _declaracoes(css, ".nn-hero-titulo .nn-destaque")["color"] == "var(--nn-laranja)"
+    assert not any("nn-destaque" in c for cabecalhos, _ in _regras(css) for c in cabecalhos if "nn-hero-com-foto" in c)
+    for seletor in (".nn-hero-intro", ".nn-hero .nn-eyebrow"):
+        texto = _declaracoes(css, seletor).get("color")
+        if texto and texto.startswith("rgba(255, 255, 255,"):
+            a = float(texto.rsplit(",", 1)[1].strip(" )"))
+            assert _contraste(tuple(255 * a + 8 * (1 - a) for _ in range(3)), (8, 8, 8)) >= 4.5, seletor
     # a foto so existe por CSS: nem <img> nem style= nas paginas (test_sem_style_ou_script_inline) e movimento so sem reducao
-    assert not any(c == (".nn-hero-com-foto",) and "animation" in d for c, d in _regras(css))
+    assert not any("nn-hero-com-foto" in cabecalhos[-1] and "animation" in d for cabecalhos, d in _regras(css) if cabecalhos)
 
 
 def test_modal_do_css_e_as_cores_da_faixa(saida):

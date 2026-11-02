@@ -369,49 +369,60 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* com foto (textos.yaml: foto): a foto é o fundo da abertura, sob um degradê preto como o do hero do dnascimento.com.br:
-   forte onde está o texto (esquerda; no celular, em cima) e leve onde a foto aparece (direita; no celular, embaixo).
-   O contraste do texto é medido nos pixels reais, atrás de cada linha, por testes/navegador. A camada toma o lugar do
-   círculo grande do ::before; o círculo pequeno do ::after continua por cima. */
+/* com foto (textos.yaml: foto): abertura dividida. O texto fica sempre sobre preto sólido (#080808) e a foto ocupa o
+   ::before, sem passar por baixo de nenhum texto: no desktop (> 900 px) é a metade direita da abertura e o título cede
+   a coluna da esquerda; até 900 px é uma faixa no topo e o texto vem abaixo. A foto leva só uma camada leve (15%) e um
+   degradê que a funde no preto na emenda. O destaque do título segue #ea2e00 (4,7:1 sobre #080808). O círculo grande do
+   ::before dá lugar à foto; o círculo pequeno do ::after continua, por cima da foto. */
 
 .nn-hero-com-foto {
-  background-image: url("/foto-abertura.webp");
-  background-size: cover;
-  background-position: 70% 75%; /* o sol da foto fica no canto superior direito, longe do texto, que é à esquerda */
+  --nn-foto-alt: clamp(170px, 42vw, 340px); /* altura da faixa de foto até 900 px */
 }
 
 .nn-hero-com-foto::before {
-  inset: 0;
-  width: auto;
-  aspect-ratio: auto;
   border: 0;
   border-radius: 0;
-  background:
-    linear-gradient(90deg, rgba(8, 8, 8, 0.94) 0%, rgba(8, 8, 8, 0.9) 40%, rgba(8, 8, 8, 0.8) 70%, rgba(8, 8, 8, 0.72) 100%),
-    linear-gradient(180deg, rgba(8, 8, 8, 0.08) 0%, rgba(8, 8, 8, 0.2) 100%);
+  aspect-ratio: auto;
+  background-image: var(--nn-foto-fusao), linear-gradient(rgba(8, 8, 8, 0.15), rgba(8, 8, 8, 0.15)), url("/foto-abertura.webp");
+  background-size: auto, auto, cover;
+  background-repeat: no-repeat;
 }
 
-@media (max-width: 900px) { /* o título chega mais perto da borda direita: degradê um pouco mais fechado */
+@media (min-width: 901px) {
+  .nn-hero-com-foto {
+    padding-right: calc(52% + 24px); /* a coluna do texto termina antes da foto */
+  }
+
   .nn-hero-com-foto::before {
-    background:
-      linear-gradient(90deg, rgba(8, 8, 8, 0.94) 0%, rgba(8, 8, 8, 0.9) 40%, rgba(8, 8, 8, 0.84) 70%, rgba(8, 8, 8, 0.76) 100%),
-      linear-gradient(180deg, rgba(8, 8, 8, 0.08) 0%, rgba(8, 8, 8, 0.2) 100%);
+    --nn-foto-fusao: linear-gradient(90deg, #080808 0%, rgba(8, 8, 8, 0) 36%);
+    inset: 0 0 0 auto;
+    width: 52%;
+    background-position: 0 0, 0 0, 62% 50%; /* enquadra o Farol da Barra */
+  }
+
+  .nn .nn-hero-com-foto .nn-hero-titulo {
+    font-size: clamp(36px, 4.7vw, 64px); /* "do mesmo jeito?" cabe na coluna do texto */
   }
 }
 
-@media (max-width: 560px) {
-  .nn-hero-com-foto::before {
-    background: linear-gradient(180deg, rgba(8, 8, 8, 0.92) 0%, rgba(8, 8, 8, 0.88) 50%, rgba(8, 8, 8, 0.5) 100%);
+@media (max-width: 900px) {
+  .nn-hero-com-foto {
+    padding-top: calc(var(--nn-foto-alt) + clamp(18px, 3vw, 28px));
   }
-}
 
-/* o destaque do título com foto: o laranja puro (#ea2e00) não passa de 4,5:1 nos pixels mais claros da foto (1,9:1 a
-   1280 px e 3,3:1 a 390 px no pior pixel medido, mesmo sob o degradê). #f4927a é #ea2e00 misturado com 48% de branco: a
-   menor mistura que passa nas larguras testadas é 44% (a 768 px, onde o título mais se aproxima da borda direita) e a
-   48% sobra margem; sem foto o destaque segue #ea2e00. */
+  .nn-hero-com-foto::before {
+    --nn-foto-fusao: linear-gradient(180deg, rgba(8, 8, 8, 0) 55%, #080808 100%);
+    inset: 0 0 auto 0;
+    width: auto;
+    height: var(--nn-foto-alt);
+    background-position: 0 0, 0 0, 50% 48%; /* enquadra o Farol da Barra */
+  }
 
-.nn-hero-com-foto .nn-hero-titulo .nn-destaque {
-  color: #f4927a;
+  .nn-hero-com-foto::after {
+    top: calc(var(--nn-foto-alt) * -0.25); /* o círculo pequeno vai para a faixa da foto, longe do texto */
+    bottom: auto;
+    right: 8%;
+  }
 }
 
 /* --- faixa de números, logo abaixo da abertura: fundo papel nos dois temas --- */
