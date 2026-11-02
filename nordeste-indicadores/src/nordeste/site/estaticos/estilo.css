@@ -370,13 +370,20 @@ body {
 }
 
 /* com foto (textos.yaml: foto): a foto é o fundo da abertura, esmaecida por uma camada preta de 88%. O texto branco
-   sobre ela passa de 4,5:1 mesmo com a foto toda branca por baixo (a camada sobre branco puro é o pior caso). A camada
+   sobre ela passa de 4,5:1 mesmo com a foto toda branca por baixo (a camada sobre branco puro é o pior caso). O laranja
+   do destaque não passa (ver abaixo). A camada
    toma o lugar do círculo grande do ::before; o círculo pequeno do ::after continua por cima. */
 
 .nn-hero-com-foto {
   background-image: url("/foto-abertura.webp");
   background-size: cover;
-  background-position: center;
+  background-position: 70% 12%; /* o sol da foto fica no canto superior direito, longe do texto, que é à esquerda */
+}
+
+/* o laranja puro (#ea2e00) dá 4,7:1 sobre a camada sem foto nenhuma e menos de 3,6:1 sobre o sol: com foto, o destaque
+   do título vira branco translúcido, como o selo (7,7:1 no pior caso medido) */
+.nn-hero-com-foto .nn-hero-titulo .nn-destaque {
+  color: rgba(255, 255, 255, 0.66);
 }
 
 .nn-hero-com-foto::before {

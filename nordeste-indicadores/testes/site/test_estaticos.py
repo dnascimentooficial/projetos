@@ -230,12 +230,17 @@ def test_css_da_foto_e_da_camada(saida):
     # pior caso: a foto toda branca por baixo; o texto branco da abertura segue com >= 4,5:1 sobre a camada
     fundo = tuple(255 * (1 - alfa) + c * alfa for c in (r, g, b))
     assert _contraste((255, 255, 255), fundo) >= 4.5
-    for seletor in (".nn-hero-intro", ".nn-hero .nn-eyebrow"):
+    for seletor in (".nn-hero-intro", ".nn-hero .nn-eyebrow", ".nn-hero-com-foto .nn-hero-titulo .nn-destaque"):
         texto = _declaracoes(css, seletor).get("color")
         if texto and texto.startswith("rgba(255, 255, 255,"):
             a = float(texto.rsplit(",", 1)[1].strip(" )"))
             sobre = tuple(255 * a + c * (1 - a) for c in fundo)
             assert _contraste(sobre, fundo) >= 4.5, seletor
+    # o laranja puro (#ea2e00) nao chega a 4,5:1 nem sobre a camada sem foto nenhuma por baixo: com foto, o destaque
+    # do titulo da abertura e branco translúcido (medido nos pixels reais em testes/navegador)
+    assert _contraste((234, 46, 0), fundo) < 4.5
+    destaque = _declaracoes(css, ".nn-hero-com-foto .nn-hero-titulo .nn-destaque").get("color", "")
+    assert destaque.startswith("rgba(255, 255, 255,"), destaque
     # a foto so existe por CSS: nem <img> nem style= nas paginas (test_sem_style_ou_script_inline) e movimento so sem reducao
     assert not any(c == (".nn-hero-com-foto",) and "animation" in d for c, d in _regras(css))
 
