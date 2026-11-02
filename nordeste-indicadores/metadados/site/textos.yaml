@@ -2,11 +2,10 @@
 # O recorte de anos do selo ("2000 a ..."), a data da base e o sha256 saem da base publicada, no gerador.
 
 # Foto da abertura (opcional, descomente quando houver): vira o fundo esmaecido da abertura, sob uma camada preta de 88%.
-# O arquivo tem de se chamar foto-abertura.webp (o estilo.css aponta para ele), ficar em src/nordeste/site/estaticos/,
-# ter até 200 KB e ser webp; credito é o texto do rodapé e de Sobre (autor e licença); url é a página da foto com a
-# licença. Sem a chave, a abertura segue preta e não há crédito.
+# A foto é o arquivo src/nordeste/site/estaticos/foto-abertura.webp (o nome que o estilo.css usa; webp de até 200 KB) e só
+# vai para o site com esta chave. credito é o texto do rodapé e de Sobre (autor e licença); url é a página da foto com a
+# licença. Sem a chave, a abertura segue preta, não há crédito e a foto não é copiada.
 # foto:
-#   arquivo: "foto-abertura.webp"
 #   credito: "Autora ou autor, licença"
 #   url: "https://..."
 
@@ -155,6 +154,7 @@ estados:
   escala_pior: "pior"
   escala_melhor: "melhor"
   nota_do_mapa: "Quanto mais escura a célula, melhor a situação naquele indicador. Célula hachurada: ano sem dado. Os valores aparecem ao passar o mouse e na tabela abaixo."
+  rolagem: "Arraste o mapa para o lado para ver todos os anos."
   tabela: "Ver todos os números dos estados"
   fonte: "Fontes: IBGE (Contas Regionais, PNAD Contínua), INEP (IDEB, Indicadores de Fluxo Escolar) e Atlas Brasil (IDHM). As razões com o Brasil fora do Nordeste eu calculo a partir das contagens publicadas."
   sem_dados: "Este indicador não tem dados para os estados."

@@ -23,6 +23,7 @@
 {% if v.anos %}
       <p class="nn-muted">{{ t.nota_do_mapa }}</p>
       <div class="nn-escala" aria-hidden="true"><span>{{ t.escala_pior }}</span>{% for f in faixas %}<i class="{{ f }}"></i>{% endfor %}<span>{{ t.escala_melhor }}</span></div>
+      <p class="nn-muted nn-rolagem" aria-hidden="true">{{ t.rolagem }}</p>
       <div class="nn-mapa-caixa">
         <table class="nn-mapa" aria-hidden="true">
           <thead><tr><td></td>{% for ano in v.anos %}<th scope="col" class="nn-ano">{{ ano }}</th>{% endfor %}</tr></thead>

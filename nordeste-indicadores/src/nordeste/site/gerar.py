@@ -42,8 +42,8 @@ CONTORNO = ("site", "nordeste-contorno.svg")  # em metadados/; ferramentas/gerar
 OG = (1200, 630)  # imagem de compartilhamento das paginas
 CARD = (1080, 1350)  # PNG de cada card
 FOTO_TAMANHO_MAXIMO = 200_000  # bytes: a foto pesa na primeira tela
-FOTO_EXIGIDA = ("arquivo", "credito", "url")  # `foto` e opcional em textos.yaml; se existir, traz tudo isso
-FOTO_ARQUIVO = "foto-abertura.webp"  # o estilo.css aponta para este nome (fundo da abertura, Ruling S-U)
+FOTO_EXIGIDA = ("credito", "url")  # `foto` e opcional em textos.yaml; se existir, traz tudo isso (Ruling S-Z)
+FOTO_ARQUIVO = "foto-abertura.webp"  # em estaticos/; o estilo.css aponta para este nome (fundo da abertura, Ruling S-U)
 LARGO = {"largura": 720}  # os dois tamanhos de cada grafico (Ruling S-O): o CSS mostra um conforme a largura da tela
 ESTREITO = {"largura": 360, "altura": 240}
 AMPLIADO = {"largura": 1100, "altura": 520}  # o terceiro, do modal "Ampliar" (Ruling S-W): guardado num <template>
@@ -57,8 +57,8 @@ TEXTOS_EXIGIDOS = {  # seção de textos.yaml: chaves lidas pelo gerador e pelos
     "dataset": {"nome", "descricao"}, "fontes": {"titulo", "intro"}, "formulas": {"titulo", "intro", "blocos"},
     "arquivos": {"titulo", "intro"}, "dados": {"titulo", "intro", "conferir", "arquivos"},
     "estados": {
-        "titulo", "intro", "titulo_mapa", "titulo_ranking", "escala_pior", "escala_melhor", "nota_do_mapa", "tabela",
-        "fonte", "sem_dados",
+        "titulo", "intro", "titulo_mapa", "titulo_ranking", "escala_pior", "escala_melhor", "nota_do_mapa", "rolagem",
+        "tabela", "fonte", "sem_dados",
     },
     "explorar": {
         **dict.fromkeys(("titulo", "intro", "nota", "tabela", "fonte", "sem_dados", "sem_periodo", "erro")),
@@ -471,16 +471,16 @@ def _validar_textos(textos: object) -> None:
 
 
 def _validar_foto(foto: object) -> None:
-    """`foto: {arquivo, credito, url}` (Ruling S-Q): o arquivo esta em estaticos/ e o credito aponta para a pagina da licenca."""
+    """`foto: {credito, url}` (Rulings S-Q e S-Z): o credito aponta para a pagina da licenca, e a foto e o
+    estaticos/foto-abertura.webp do pacote, o nome que o estilo.css usa."""
     _exigir(foto, set(FOTO_EXIGIDA), "textos.foto")
     if not all(isinstance(foto[chave], str) and foto[chave].strip() for chave in FOTO_EXIGIDA):
-        raise ErroConteudo("textos.yaml: foto.arquivo, foto.credito e foto.url são textos, não vazios.")
-    if foto["arquivo"] != FOTO_ARQUIVO:
-        raise ErroConteudo(f"textos.yaml: foto.arquivo é {FOTO_ARQUIVO!r}, o nome que o estilo.css usa; veio {foto['arquivo']!r}.")
-    if not (PASTA_ESTATICOS / foto["arquivo"]).is_file():
-        raise ErroConteudo(f"textos.yaml: foto.arquivo {foto['arquivo']!r} não está em estaticos/ do pacote.")
-    if (PASTA_ESTATICOS / foto["arquivo"]).stat().st_size > FOTO_TAMANHO_MAXIMO:
-        raise ErroConteudo(f"textos.yaml: foto.arquivo {foto['arquivo']!r} passa de {FOTO_TAMANHO_MAXIMO // 1000} KB.")
+        raise ErroConteudo("textos.yaml: foto.credito e foto.url são textos, não vazios.")
+    arquivo = PASTA_ESTATICOS / FOTO_ARQUIVO
+    if not arquivo.is_file():
+        raise ErroConteudo(f"textos.yaml tem foto, mas {FOTO_ARQUIVO} não está em estaticos/ do pacote.")
+    if arquivo.stat().st_size > FOTO_TAMANHO_MAXIMO:
+        raise ErroConteudo(f"{FOTO_ARQUIVO} passa de {FOTO_TAMANHO_MAXIMO // 1000} KB.")
 
 
 def _paragrafos_da_abertura(itens: list, destaques: dict[str, Destaque]) -> tuple[list[str], list[str]]:
@@ -524,9 +524,13 @@ def _faixa(faixa: dict, destaques: dict[str, Destaque]) -> tuple[dict, list[str]
     return {**pronta, "texto": faixa["texto"], "numeros": numeros}, []
 
 
-def _copiar_estaticos(saida: Path) -> None:
-    """Estilo, script, fontes (com a licenca OFL) e .htaccess, na raiz do site; cache do Python fica de fora."""
-    shutil.copytree(PASTA_ESTATICOS, saida, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+def _copiar_estaticos(saida: Path, com_foto: bool) -> None:
+    """Estilo, script, fontes (com a licenca OFL) e .htaccess, na raiz do site; cache do Python fica de fora.
+
+    A foto da abertura so vai quando textos.yaml tem a chave `foto` (e o credito): foto no site sem credito nao sai.
+    """
+    ignorar = ["__pycache__", "*.pyc"] + ([] if com_foto else [FOTO_ARQUIVO])
+    shutil.copytree(PASTA_ESTATICOS, saida, dirs_exist_ok=True, ignore=shutil.ignore_patterns(*ignorar))
 
 
 def _escrever(ambiente: Environment, saida: Path, modelo: str, arquivo: str, **contexto: object) -> None:
@@ -576,7 +580,7 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
         shutil.rmtree(saida)
     (saida / "dados").mkdir(parents=True)
     (saida / "explorar" / "dados").mkdir(parents=True)
-    _copiar_estaticos(saida)
+    _copiar_estaticos(saida, com_foto=comum["foto"] is not None)
     ambiente = _ambiente()
     for p in PAGINAS:
         pagina = _pagina(

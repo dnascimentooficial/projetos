@@ -20,13 +20,13 @@ from nordeste.site.conteudo import ErroConteudo, carregar_conteudo
 from nordeste.site.gerar import gerar_site
 from nordeste.site.imagens import AlvoImagem, renderizar
 
-from auxiliares import RAIZ, Arvore, copiar_base, definir_foto, estaticos_com_foto
+from auxiliares import RAIZ, Arvore, copiar_base, definir_foto, estaticos_com_foto, estaticos_sem_foto
 
 CONTORNO = RAIZ / "metadados" / "site" / "nordeste-contorno.svg"
 FERRAMENTA = RAIZ / "ferramentas" / "gerar_contorno.py"
 CHROMIUM_DO_AMBIENTE = Path("/opt/pw-browsers/chromium")
 PAGINAS_COM_OG = ("index", "estados", "explorar", "cards", "sobre", "dados")
-FOTO = {"arquivo": "foto-abertura.webp", "credito": "Fulana de Tal, CC BY-SA 4.0", "url": "https://commons.wikimedia.org/wiki/File:Exemplo.jpg"}
+FOTO = {"credito": "Fulana de Tal, CC BY-SA 4.0", "url": "https://commons.wikimedia.org/wiki/File:Exemplo.jpg"}
 
 
 def _tamanho_do_png(arquivo: Path) -> tuple[int, int]:
@@ -107,11 +107,12 @@ def test_ferramenta_dissolve_as_partes_num_unico_contorno(tmp_path):
 def base_com_foto(tmp_path, monkeypatch):
     """Copia da base com `foto` em textos.yaml e uma pasta de estaticos que tem o arquivo da foto."""
     raiz = copiar_base(tmp_path / "repo")
-    estaticos_com_foto(tmp_path, monkeypatch, FOTO["arquivo"])
+    estaticos_com_foto(tmp_path, monkeypatch)
     return raiz
 
 
-def test_sem_foto_nao_ha_imagem_nem_credito(tmp_path):
+def test_sem_foto_nao_ha_imagem_nem_credito(tmp_path, monkeypatch):
+    estaticos_sem_foto(tmp_path, monkeypatch)
     raiz = copiar_base(tmp_path / "repo")
     definir_foto(raiz, None)
     saida = tmp_path / "saida"
@@ -119,7 +120,15 @@ def test_sem_foto_nao_ha_imagem_nem_credito(tmp_path):
     for pagina in ("index.html", "sobre/index.html"):
         html = (saida / pagina).read_text(encoding="utf-8")
         assert Arvore(html).achar("img") == [] and "Foto" not in Arvore(html).texto_visivel(), pagina
-    assert not (saida / FOTO["arquivo"]).exists()
+    assert not (saida / gerar.FOTO_ARQUIVO).exists()
+
+
+def test_a_foto_do_pacote_so_vai_para_o_site_com_a_chave_foto(tmp_path, base_com_foto):
+    definir_foto(base_com_foto, None)  # o pacote tem a foto, mas textos.yaml nao tem o credito dela
+    saida = tmp_path / "saida"
+    gerar_site(Caminhos(raiz=base_com_foto), saida, imagens=False)
+    assert (gerar.PASTA_ESTATICOS / gerar.FOTO_ARQUIVO).is_file() and not (saida / gerar.FOTO_ARQUIVO).exists()
+    assert "nn-hero-com-foto" not in (saida / "index.html").read_text(encoding="utf-8")
 
 
 def test_foto_aparece_na_abertura_e_o_credito_no_rodape_e_em_sobre(tmp_path, base_com_foto):
@@ -129,38 +138,31 @@ def test_foto_aparece_na_abertura_e_o_credito_no_rodape_e_em_sobre(tmp_path, bas
     inicio = Arvore((saida / "index.html").read_text(encoding="utf-8"))
     assert inicio.achar("img") == []  # a foto e o fundo da abertura, por CSS: nao ha <img> (Ruling S-U)
     assert "nn-hero-com-foto" in inicio.achar("section", id="topo")[0]["attrs"]["class"].split()
-    assert (saida / "foto-abertura.webp").is_file()
+    assert (saida / gerar.FOTO_ARQUIVO).is_file()
     for pagina in ("index.html", "sobre/index.html", "dados/index.html"):
         arvore = Arvore((saida / pagina).read_text(encoding="utf-8"))
         links = [e for e in arvore.achar("a") if e["attrs"].get("href") == FOTO["url"]]
         assert [Arvore.texto(e) for e in links] == [FOTO["credito"]] * (2 if pagina == "sobre/index.html" else 1), pagina
 
 
-@pytest.mark.parametrize("faltando", ["arquivo", "credito", "url"])
+@pytest.mark.parametrize("faltando", ["credito", "url"])
 def test_foto_incompleta_e_erro_de_conteudo(tmp_path, base_com_foto, faltando):
     definir_foto(base_com_foto, {k: v for k, v in FOTO.items() if k != faltando})
     with pytest.raises(ErroConteudo, match=f"foto.{faltando}"):
         gerar_site(Caminhos(raiz=base_com_foto), tmp_path / "saida", imagens=False)
 
 
-def test_foto_cujo_arquivo_nao_existe_e_erro_de_conteudo(tmp_path):
+def test_foto_cujo_arquivo_nao_existe_e_erro_de_conteudo(tmp_path, monkeypatch):
+    estaticos_sem_foto(tmp_path, monkeypatch)
     raiz = copiar_base(tmp_path / "repo")
     definir_foto(raiz, FOTO)
     with pytest.raises(ErroConteudo, match="foto-abertura.webp"):
         gerar_site(Caminhos(raiz=raiz), tmp_path / "saida", imagens=False)
 
 
-def test_foto_com_outro_nome_de_arquivo_e_erro_de_conteudo(tmp_path, base_com_foto):
-    # o estilo.css aponta para /foto-abertura.webp: outro nome deixaria a abertura sem foto, sem aviso
-    (gerar.PASTA_ESTATICOS / "outra.webp").write_bytes(b"RIFFxxxxWEBP")
-    definir_foto(base_com_foto, {**FOTO, "arquivo": "outra.webp"})
-    with pytest.raises(ErroConteudo, match="foto-abertura.webp"):
-        gerar_site(Caminhos(raiz=base_com_foto), tmp_path / "saida", imagens=False)
-
-
 def test_foto_acima_de_200_kb_e_erro_de_conteudo(tmp_path, base_com_foto):
     definir_foto(base_com_foto, FOTO)
-    (gerar.PASTA_ESTATICOS / FOTO["arquivo"]).write_bytes(b"x" * 200_001)
+    (gerar.PASTA_ESTATICOS / gerar.FOTO_ARQUIVO).write_bytes(b"x" * 200_001)
     with pytest.raises(ErroConteudo, match="200 KB"):
         gerar_site(Caminhos(raiz=base_com_foto), tmp_path / "saida", imagens=False)
 

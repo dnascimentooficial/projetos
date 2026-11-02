@@ -258,7 +258,7 @@ body {
 }
 
 .nn .nn-menu a[aria-current="page"] {
-  background: var(--nn-laranja);
+  background: var(--nn-laranja-escuro); /* texto branco pequeno: #ea2e00 dá 4,3:1, #c42600 passa de 4,5:1 */
   color: var(--nn-branco);
 }
 
@@ -576,8 +576,10 @@ div.nn-grade {
   border-color: var(--nn-laranja);
 }
 
-.nn-clicavel {
-  cursor: zoom-in;
+@media (pointer: fine) {
+  .nn-clicavel {
+    cursor: zoom-in; /* com o dedo não há cursor, e o gráfico não promete um zoom que o toque não mostra */
+  }
 }
 
 .nn-legenda {
@@ -783,6 +785,7 @@ line.nn-grade {
 
 html:has(.nn-modal[open]) {
   overflow: hidden;
+  scrollbar-gutter: stable; /* a barra some com o modal aberto: o espaço dela fica, e a página atrás não dá um salto */
 }
 
 .nn-modal-caixa {
@@ -913,8 +916,8 @@ html:has(.nn-modal[open]) {
 }
 
 .nn-botao[aria-pressed="true"] {
-  background: var(--nn-laranja);
-  border-color: var(--nn-laranja);
+  background: var(--nn-laranja-escuro);
+  border-color: var(--nn-laranja-escuro);
   color: var(--nn-branco);
 }
 
@@ -933,7 +936,7 @@ html:has(.nn-modal[open]) {
   min-height: 44px;
   padding: 0 20px;
   border-radius: 999px;
-  background: var(--nn-laranja);
+  background: var(--nn-laranja-escuro);
   color: var(--nn-branco);
   font-weight: 700;
   text-decoration: none;
@@ -1061,6 +1064,30 @@ html:has(.nn-modal[open]) {
 
 .nn-mapa-caixa {
   overflow-x: auto;
+}
+
+.nn-rolagem {
+  display: none;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+/* o mapa tem 560 px no mínimo e rola de lado abaixo de ~640 px: a frase e o esmaecimento da borda direita avisam, e o
+   script tira o esmaecimento (nn-no-fim) quando a rolagem chega ao fim, para não apagar o último ano */
+@media (max-width: 640px) {
+  .nn-rolagem {
+    display: block;
+  }
+
+  .nn-mapa-caixa {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  }
+
+  .nn-mapa-caixa.nn-no-fim {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 .nn-mapa {

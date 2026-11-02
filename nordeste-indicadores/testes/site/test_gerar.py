@@ -12,10 +12,11 @@ import yaml
 from nordeste.caminhos import Caminhos
 from nordeste.cli import main
 from nordeste.site.conteudo import ErroConteudo, calcular_destaques, carregar_conteudo, preencher
+from nordeste.site import gerar
 from nordeste.site.dados import DadosSite
 from nordeste.site.gerar import RelatorioSite, gerar_site
 
-from auxiliares import RAIZ, Arvore, alterar_base, copiar_base, definir_foto, estaticos_com_foto
+from auxiliares import RAIZ, Arvore, alterar_base, copiar_base, definir_foto, estaticos_com_foto, estaticos_sem_foto
 
 SITE = "https://nordeste.dnascimento.com.br"
 PAGINAS = {
@@ -543,23 +544,24 @@ def test_faixa_some_com_a_condicao_da_abertura(tmp_path, alterar):
 
 
 def test_hero_sem_foto_nao_tem_classe_e_com_foto_tem(tmp_path, monkeypatch):
-    foto = {"arquivo": "foto-abertura.webp", "credito": "Fulana de Tal, CC BY-SA 4.0", "url": "https://exemplo.org/foto"}
+    foto = {"credito": "Fulana de Tal, CC BY-SA 4.0", "url": "https://exemplo.org/foto"}
+    estaticos_sem_foto(tmp_path / "a", monkeypatch)
     sem = copiar_base(tmp_path / "sem")
     definir_foto(sem, None)
     gerar_site(Caminhos(raiz=sem), tmp_path / "saida-sem", imagens=False)
     hero = Arvore(_ler(tmp_path / "saida-sem", "index.html")).achar("section", id="topo")[0]
     assert hero["attrs"]["class"] == "nn-hero"
-    assert not (tmp_path / "saida-sem" / foto["arquivo"]).exists()
+    assert not (tmp_path / "saida-sem" / gerar.FOTO_ARQUIVO).exists()
 
     com = copiar_base(tmp_path / "com")
-    estaticos_com_foto(tmp_path, monkeypatch, foto["arquivo"])  # um webp de poucos bytes: bem abaixo de 200 KB
+    estaticos_com_foto(tmp_path / "b", monkeypatch)  # um webp de poucos bytes: bem abaixo de 200 KB
     definir_foto(com, foto)
     gerar_site(Caminhos(raiz=com), tmp_path / "saida-com", imagens=False)
     _, arvore = _inicio(tmp_path / "saida-com")
     assert arvore.achar("section", id="topo")[0]["attrs"]["class"] == "nn-hero nn-hero-com-foto"
     assert not arvore.achar("img")  # nada de <img> nem de style=: a foto entra por CSS (estilo.css)
     assert not any("style" in e["attrs"] for e in arvore.elementos)
-    assert (tmp_path / "saida-com" / foto["arquivo"]).read_bytes() == b"RIFFxxxxWEBP"
+    assert (tmp_path / "saida-com" / gerar.FOTO_ARQUIVO).read_bytes() == b"RIFFxxxxWEBP"
 
 
 # --- proximo dado, com cobertura sintetica (Ruling S-P) ---

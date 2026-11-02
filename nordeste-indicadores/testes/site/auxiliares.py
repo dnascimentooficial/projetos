@@ -87,9 +87,19 @@ def definir_foto(raiz: Path, foto: dict | None) -> None:
     arquivo.write_text(yaml.safe_dump(textos, allow_unicode=True), encoding="utf-8")
 
 
-def estaticos_com_foto(tmp_path: Path, monkeypatch, arquivo: str) -> None:
-    """Aponta o gerador para uma copia dos estaticos que tem a foto (um webp de mentira): a do pacote nao existe."""
+def _estaticos_temporarios(tmp_path: Path, monkeypatch) -> Path:
     estaticos = tmp_path / "estaticos"
     shutil.copytree(gerar.PASTA_ESTATICOS, estaticos)
-    (estaticos / arquivo).write_bytes(b"RIFFxxxxWEBP")
     monkeypatch.setattr(gerar, "PASTA_ESTATICOS", estaticos)
+    return estaticos
+
+
+def estaticos_com_foto(tmp_path: Path, monkeypatch) -> None:
+    """Aponta o gerador para uma copia dos estaticos que tem a foto (um webp de mentira), haja ou nao a do pacote."""
+    (_estaticos_temporarios(tmp_path, monkeypatch) / gerar.FOTO_ARQUIVO).write_bytes(b"RIFFxxxxWEBP")
+
+
+def estaticos_sem_foto(tmp_path: Path, monkeypatch) -> None:
+    """Aponta o gerador para uma copia dos estaticos sem a foto, para o teste de 'sem foto' nao depender de a do pacote
+    existir (Ruling S-Z)."""
+    (_estaticos_temporarios(tmp_path, monkeypatch) / gerar.FOTO_ARQUIVO).unlink(missing_ok=True)

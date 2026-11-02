@@ -438,11 +438,26 @@
 
   /* --- Estados: o seletor só mostra e esconde as vistas que já estão no HTML ---------------------------------- */
 
+  /* O mapa de calor rola de lado no celular e, enquanto há mais para a direita, a borda direita esmaece (CSS). No fim
+     da rolagem a classe nn-no-fim tira o esmaecimento, para não apagar o último ano. */
+  function marcarFimDosMapas() {
+    document.querySelectorAll('.nn-mapa-caixa').forEach((caixa) => {
+      caixa.classList.toggle('nn-no-fim', caixa.scrollLeft + caixa.clientWidth >= caixa.scrollWidth - 1);
+    });
+  }
+
   function ligarEstados() {
     const seletor = document.getElementById('sel-estado-ind');
     if (!seletor) return;
     const vistas = document.querySelectorAll('.nn-vista[data-vista]');
-    const mostrar = () => vistas.forEach((v) => { v.hidden = v.getAttribute('data-vista') !== seletor.value; });
+    const mostrar = () => {
+      vistas.forEach((v) => { v.hidden = v.getAttribute('data-vista') !== seletor.value; });
+      marcarFimDosMapas();
+    };
+    document.querySelectorAll('.nn-mapa-caixa').forEach((caixa) => {
+      caixa.addEventListener('scroll', marcarFimDosMapas, { passive: true });
+    });
+    window.addEventListener('resize', marcarFimDosMapas);
     const pedido = lerEndereco().get('indicador');
     if (pedido && temOpcao(seletor, pedido)) seletor.value = pedido;
     mostrar();

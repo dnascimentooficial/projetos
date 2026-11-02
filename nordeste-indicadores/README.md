@@ -273,9 +273,9 @@ redistribuída em CC0 pelo repositório `tbrugz/geodata-br` (`geojson/geojs-21-m
 O contorno é só desenho: baías e frestas estreitas (falhas da malha) são fechadas e a ilha de Fernando de Noronha
 não aparece. A origem e a data também estão no comentário no topo do SVG.
 
-**Foto da abertura** (opcional): a chave `foto: {arquivo, credito, url}` de `metadados/site/textos.yaml` põe a
-imagem `src/nordeste/site/estaticos/<arquivo>` (até 200 KB, em `webp`) na abertura e o crédito, com link para a página
-da licença, no rodapé e em Sobre os dados. Sem a chave, não há foto nem crédito.
+**Foto da abertura** (opcional): a chave `foto: {credito, url}` de `metadados/site/textos.yaml` põe a imagem
+`src/nordeste/site/estaticos/foto-abertura.webp` (até 200 KB) na abertura e o crédito, com link para a página da
+licença, no rodapé e em Sobre os dados. Sem a chave, não há foto nem crédito, e o arquivo não vai para o site.
 
 ## Testes
 
@@ -283,3 +283,7 @@ da licença, no rodapé e em Sobre os dados. Sem a chave, não há foto nem cré
 - `python -m pytest -m rede -v`: contrato com as fontes reais (precisa de rede).
 - `python -m pytest -m rede -k "per_capita or ancora" -v`: só a conferência do PIB per capita contra os pontos
   de fonte primária do IBGE e os valores-âncora de três séries leves (rápida, poucos downloads).
+- `python -m pytest -m navegador`: o site gerado aberto no Chromium (precisa do extra `site`; leva uns 3 minutos).
+  `testes/navegador/` confere acessibilidade com o axe-core (cópia fixa em `testes/navegador/axe.min.js`, licença MPL 2.0
+  ao lado), largura a 390 e 1280 px, o site sem JavaScript, movimento reduzido, o peso da página inicial e o Explorar,
+  inclusive que o gráfico redesenhado pelo `site.js` é igual ao do Python; `testes/site/` tem os de imagens e do modal.

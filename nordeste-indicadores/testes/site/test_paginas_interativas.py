@@ -180,7 +180,7 @@ def _vistas(html: str) -> list[Arvore]:
     return [Arvore(trecho) for trecho in html.split('<div class="nn-vista"')[1:]]
 
 
-def test_estados_tem_os_7_indicadores_e_9_ufs(gerado):
+def test_estados_tem_os_7_indicadores_e_9_ufs(gerado, conteudo):
     saida, _ = gerado
     html = _ler(saida, "estados/index.html")
     arvore = Arvore(html)
@@ -197,6 +197,8 @@ def test_estados_tem_os_7_indicadores_e_9_ufs(gerado):
             re.fullmatch(r"nn-cel (nn-f\d|nn-vazia)", c["attrs"]["class"]) for c in celulas
         )
         assert len(celulas) % 9 == 0
+        pista = trecho.achar("p", classe="nn-rolagem")  # pista de rolagem do celular: a frase do textos.yaml, fora da leitura
+        assert [Arvore.texto(p) for p in pista] == [conteudo.textos["estados"]["rolagem"]] and pista[0]["attrs"]["aria-hidden"] == "true"
         assert trecho.achar("div", classe="nn-ranking") and len(trecho.achar("div", classe="nn-rk")) <= 9
         assert trecho.achar("details")
 

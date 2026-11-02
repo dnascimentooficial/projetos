@@ -252,6 +252,41 @@ def test_modal_do_css_e_as_cores_da_faixa(saida):
     assert any(SEM_REDUCAO in c and c[-1].startswith(".nn-modal") and d.startswith("animation") for c, d in _regras(css))
 
 
+def test_texto_branco_pequeno_so_sobre_o_laranja_escuro(saida):
+    """Ruling S-S: #ea2e00 com texto branco da 4,3:1; aba ativa, botao pressionado e Baixar usam #c42600 (>= 4,5:1)."""
+    css = (saida / "estilo.css").read_text(encoding="utf-8")
+    assert _contraste((255, 255, 255), (0xEA, 0x2E, 0x00)) < 4.5 <= _contraste((255, 255, 255), (0xC4, 0x26, 0x00))
+    assert re.search(r"--nn-laranja-escuro:\s*#c42600", css)
+    for seletor in ('.nn .nn-menu a[aria-current="page"]', '.nn-botao[aria-pressed="true"]', ".nn .nn-baixar"):
+        assert _declaracoes(css, seletor)["background"] == "var(--nn-laranja-escuro)", seletor
+    grupos: dict[tuple, dict[str, str]] = {}
+    for cabecalhos, declaracao in _regras(css):
+        if ":" in declaracao:
+            propriedade, valor = declaracao.split(":", 1)
+            grupos.setdefault(cabecalhos, {})[propriedade.strip()] = " ".join(valor.split())
+    vivos = ("var(--nn-laranja)", "#ea2e00")
+    assert [c[-1] for c, g in grupos.items() if g.get("background") in vivos and g.get("color") == "var(--nn-branco)"] == []
+
+
+def test_modal_reserva_o_espaco_da_barra_e_o_zoom_so_com_ponteiro_fino(saida):
+    """Ruling S-Z: com o modal aberto a barra de rolagem some e o espaco dela fica; cursor zoom-in so com mouse."""
+    css = (saida / "estilo.css").read_text(encoding="utf-8")
+    aberto = _declaracoes(css, "html:has(.nn-modal[open])")
+    assert aberto["overflow"] == "hidden" and aberto["scrollbar-gutter"] == "stable"
+    cursores = [c for c, d in _regras(css) if d.startswith("cursor: zoom-in")]
+    assert cursores and all("@media (pointer: fine)" in c[0] and c[-1] == ".nn-clicavel" for c in cursores)
+
+
+def test_mapa_de_calor_avisa_a_rolagem_so_onde_ele_rola(saida):
+    css = (saida / "estilo.css").read_text(encoding="utf-8")
+    assert _declaracoes(css, ".nn-rolagem")["display"] == "none"
+    estreito = [(c, d) for c, d in _regras(css) if c[0] == "@media (max-width: 640px)"]
+    assert (("@media (max-width: 640px)", ".nn-rolagem"), "display: block") in estreito
+    assert any(c[-1] == ".nn-mapa-caixa" and d.startswith("mask-image: linear-gradient(to right") for c, d in estreito)
+    assert any(c[-1] == ".nn-mapa-caixa.nn-no-fim" and d == "mask-image: none" for c, d in estreito)
+    assert _declaracoes(css, ".nn-mapa")["min-width"] == "560px"  # abaixo de ~640 px ele rola
+
+
 # --- o desenho do site.js segue o do Python ---
 
 
