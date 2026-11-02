@@ -1,0 +1,14 @@
+<title>{{ pagina.titulo }}</title>
+<meta name="description" content="{{ pagina.descricao }}">
+<link rel="canonical" href="{{ pagina.url }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nordeste em Números">
+<meta property="og:title" content="{{ pagina.titulo }}">
+<meta property="og:description" content="{{ pagina.descricao }}">
+<meta property="og:url" content="{{ pagina.url }}">
+<meta property="og:image" content="{{ pagina.imagem }}">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+{% if pagina.json_ld %}
+<script type="application/ld+json">{{ pagina.json_ld|safe }}</script>
+{% endif %}

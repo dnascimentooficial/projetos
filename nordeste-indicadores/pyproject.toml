@@ -16,6 +16,7 @@ dependencies = [
     "certifi",
     "openpyxl",
     "xlrd",
+    "jinja2",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,9 @@ dev = ["pytest"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"nordeste.site" = ["modelos/*.html", "estaticos/*", "estaticos/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["testes"]

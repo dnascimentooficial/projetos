@@ -39,6 +39,10 @@ def _parser() -> argparse.ArgumentParser:
     comandos.add_parser("validar", help="valida a base de trabalho sem publicar")
     publicar_ = comandos.add_parser("publicar", help="valida e publica a base")
     publicar_.add_argument("--ensaio", action="store_true", help="valida sem gravar dados/base/")
+    site = comandos.add_parser("site", help="gera o site estatico a partir da base publicada")
+    site.add_argument("--saida", type=Path, required=True, help="pasta do site (apagada e recriada)")
+    site.add_argument("--sem-imagens", action="store_true", help="nao gera as imagens OpenGraph e dos cards")
+    site.add_argument("--relatorio", type=Path, help="grava em JSON o que foi suprimido (fechos e cards)")
     return parser
 
 
@@ -120,6 +124,23 @@ def _publicar(caminhos: Caminhos, hoje: date, ensaio: bool) -> int:
     return 0
 
 
+def _site(caminhos: Caminhos, saida: Path, imagens: bool, relatorio: Path | None) -> int:
+    from nordeste.site.gerar import gerar_site, relatorio_em_json  # o pipeline nao precisa do gerador
+
+    try:
+        resultado = gerar_site(caminhos, saida, imagens=imagens)
+    except (ValueError, OSError) as erro:  # inclui ErroConteudo; base ou metadados ilegiveis nao viram traceback
+        print(f"site: {erro}", file=sys.stderr)
+        return 1
+    if relatorio is not None:
+        relatorio.write_text(relatorio_em_json(resultado), encoding="utf-8")
+    for id_ in resultado.fechos_suprimidos:
+        print(f"fecho suprimido: {id_}")
+    for id_ in resultado.cards_suprimidos:
+        print(f"card suprimido: {id_}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     caminhos = Caminhos(args.raiz)
@@ -129,6 +150,8 @@ def main(argv: list[str] | None = None) -> int:
             return _coletar(caminhos, hoje, args.indicador, args.offline)
         if args.comando == "consolidar":
             return _consolidar(caminhos)
+        if args.comando == "site":
+            return _site(caminhos, args.saida, not args.sem_imagens, args.relatorio)
         # validar e o ensaio de publicacao: mesmos insumos, grava validacao.csv e nunca toca dados/base/.
         return _publicar(caminhos, hoje, ensaio=args.comando == "validar" or args.ensaio)
     except (ErroColeta, ErroFicha, ErroPublicacao) as erro:

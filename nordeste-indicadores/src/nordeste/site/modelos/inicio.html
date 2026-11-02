@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% macro grafico(g) %}
+<div class="nn-grafico">
+{% if g.titulo %}
+  <h3>{{ g.titulo }}</h3>
+{% endif %}
+{% if g.subtitulo %}
+  <p class="nn-muted">{{ g.subtitulo }}</p>
+{% endif %}
+  <div class="nn-graf" id="{{ g.id }}">
+    <div class="nn-graf-largo">{{ g.largo|safe }}</div>
+    <div class="nn-graf-estreito">{{ g.estreito|safe }}</div>
+  </div>
+</div>
+{% endmacro %}
+{% block conteudo %}
+{% set abertura = textos.abertura %}
+<section class="nn-hero" id="topo" aria-labelledby="titulo-principal">
+  <p class="nn-eyebrow">{{ selo }}</p>
+  <h1 class="nn-hero-titulo" id="titulo-principal">{% for linha in abertura.titulo %}<span>{{ linha }}</span>{% endfor %}<span class="nn-destaque">{{ abertura.destaque }}</span></h1>
+{% for paragrafo in abertura.intro %}
+  <p class="nn-hero-intro">{{ paragrafo }}</p>
+{% endfor %}
+  <p class="nn-hero-nota">{{ abertura.nota }}</p>
+</section>
+
+<section class="nn-pagina" id="resumo" aria-label="As perguntas">
+  <div class="nn-legenda" role="group" aria-label="Legenda dos gráficos">
+    <span><i class="nn-amostra nn-ne"></i>Nordeste</span>
+    <span><i class="nn-amostra nn-ref"></i>Referência (Brasil ou Brasil fora do Nordeste)</span>
+    <span><i class="nn-amostra nn-faixa"></i>Faixas de governo</span>
+    <span><i class="nn-amostra nn-hach"></i>Interinidade e anos ainda não publicados</span>
+  </div>
+{% for p in perguntas %}
+
+  <article class="nn-card" id="q-{{ p.id }}">
+    <p class="nn-eyebrow">{{ p.rotulo }}</p>
+    <h2>{{ p.frase_feita }}</h2>
+{% if p.explicacao %}
+    <p class="nn-muted">{{ p.explicacao }}</p>
+{% endif %}
+    <p class="nn-frase">{{ p.lide }}</p>
+{% if p.graficos|length > 1 %}
+    <div class="nn-grade">
+{% for g in p.graficos %}
+{{ grafico(g) }}
+{% endfor %}
+    </div>
+{% elif p.graficos %}
+{{ grafico(p.graficos[0]) }}
+{% endif %}
+{% if p.fecho %}
+    <p class="nn-fecho"><b>No frigir dos ovos:</b> {{ p.fecho }}</p>
+{% endif %}
+{% if p.alerta %}
+    <p class="nn-muted nn-alerta">{{ p.alerta }}</p>
+{% endif %}
+{% if p.tabela %}
+{% set varios = p.graficos|length > 1 %}
+    <details>
+      <summary>Ver os números {{ "destes gráficos" if varios else "deste gráfico" }}</summary>
+      <div class="nn-tabela">
+        <table>
+          <thead><tr>{% if varios %}<th scope="col">Gráfico</th>{% endif %}<th scope="col">Ano</th><th scope="col">Série</th><th scope="col" class="nn-num">Valor</th></tr></thead>
+          <tbody>
+{% for linha in p.tabela %}
+            <tr>{% if varios %}<td>{{ linha.grafico }}</td>{% endif %}<td>{{ linha.ano }}</td><td>{{ linha.serie }}</td><td class="nn-num">{{ linha.valor }}</td></tr>
+{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+{% endif %}
+    <div class="nn-fonte">
+{% for linha in p.fonte %}
+      <span>{{ linha }}</span>
+{% endfor %}
+{% for a in p.atualizacoes %}
+      <span class="nn-atualizacao"><b>{{ a.nome }}.</b> Atualizado em {{ a.atualizado }}.{% if a.proximo %} Próximo dado esperado: {{ a.proximo }}.{% endif %}</span>
+{% endfor %}
+    </div>
+  </article>
+{% endfor %}
+</section>
+{% endblock %}

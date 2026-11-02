@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<section class="nn-pagina" id="dados" aria-labelledby="titulo-principal">
+  <h1 id="titulo-principal">{{ textos.dados.titulo }}</h1>
+  <article class="nn-card">
+    <p>{{ textos.dados.intro }}</p>
+    <p class="nn-muted">Publicados em {{ data_base }}. {{ textos.dados.conferir }}</p>
+    <ul class="nn-lista nn-arquivos">
+{% for a in arquivos %}
+      <li><a class="nn-baixar" href="{{ a.rota }}" download>{{ a.nome }}</a>: {{ a.descricao }} <span class="nn-tamanho">{{ a.tamanho }}.</span> sha256 <code class="nn-sha-arquivo">{{ a.sha256 }}</code></li>
+{% endfor %}
+    </ul>
+  </article>
+</section>
+{% endblock %}

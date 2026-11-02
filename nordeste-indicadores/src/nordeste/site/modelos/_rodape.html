@@ -1,0 +1,10 @@
+<footer class="nn-rodape">
+  <span><strong>Júlio Diógenes · Nordeste em Números</strong></span>
+  <span>Dados oficiais publicados em {{ data_base }}. Fontes e fórmulas em <a href="/sobre/">Sobre os dados</a>.</span>
+  <span>sha256 da base: <code class="nn-sha-base">{{ sha256_base }}</code></span>
+  <span>Compilação sob licença <a href="{{ licenca }}">CC BY 4.0</a>.</span>
+{% if foto %}
+  <span class="nn-credito">Foto: {% if foto.url %}<a href="{{ foto.url }}">{{ foto.credito }}</a>{% else %}{{ foto.credito }}{% endif %}</span>
+{% endif %}
+  <a href="{{ autor_url }}">dnascimento.com.br</a>
+</footer>

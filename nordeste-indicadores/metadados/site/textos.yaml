@@ -34,3 +34,67 @@ o_que_falta:
     - "Matrículas de 2003 e 2004: existem, mas o INEP só publicou em PDF. Em 2026."
     - "IDHM do Nordeste em 2000 e 2010: não publicado para a região."
     - "Linha de pobreza: confirmada pelos metadados do Ipeadata, não por publicação do IBGE."
+
+# Metadados de página (título, descrição das prévias de compartilhamento) e conjunto de dados descrito no JSON-LD.
+paginas:
+  index:
+    titulo: "O Nordeste está do mesmo jeito? · Nordeste em Números"
+    descricao: "Conferi nos números oficiais do IBGE, do INEP, do Ipea e do Atlas Brasil se o Nordeste está do mesmo jeito. Cada resposta traz o gráfico e a fonte, para você conferir."
+  sobre:
+    titulo: "Sobre os dados · Nordeste em Números"
+    descricao: "Por que eu fiz este site, como ler os gráficos, todas as fontes, as fórmulas que eu uso e o que ainda falta na base."
+  dados:
+    titulo: "Dados para baixar · Nordeste em Números"
+    descricao: "Os arquivos CSV da base histórica do Nordeste, com a data de publicação e o sha256 de cada um, para conferir a integridade."
+
+dataset:
+  nome: "Nordeste em Números: base histórica de indicadores do Nordeste"
+  descricao: "Indicadores oficiais do Nordeste, dos estados nordestinos, do Brasil e do Brasil fora do Nordeste, de economia, educação, trabalho, renda, pobreza e desenvolvimento humano, a partir do IBGE, do INEP, do Ipea e do Atlas Brasil. Compilação de Júlio Diógenes."
+
+fontes:
+  titulo: "Todas as fontes de dados"
+  intro: "Uma linha por série. Quando a fonte muda de pesquisa no meio do período, o indicador tem mais de uma série, e elas nunca são emendadas. Os links levam à página oficial de cada fonte."
+
+formulas:
+  titulo: "Fórmulas que eu uso"
+  intro: "A maior parte dos números é publicada pronta pela fonte. Eu só faço as contas abaixo, todas declaradas e conferidas."
+  blocos:
+    - titulo: "PIB per capita"
+      itens:
+        - "PIB per capita = PIB a preços correntes (em mil reais) ÷ população residente, multiplicado por mil para chegar a reais."
+        - "A população de cada ano é a que o IBGE usa no PIB per capita que divulga: a estimativa anual, o Censo de 2010 em 2010 e o Censo de 2022 em 2022 e 2023."
+        - "O IBGE não publica o PIB per capita por região e estado em formato legível por máquina. Conferi o cálculo contra os valores que ele divulga, e o resultado da conferência está no dicionário de verificação do projeto."
+    - titulo: "Brasil fora do Nordeste"
+      itens:
+        - "Contagens (população, PIB, matrículas, desocupados, ocupados, informais, força de trabalho, massa de renda): Brasil − Nordeste."
+        - "PIB per capita: (PIB do Brasil − PIB do Nordeste) ÷ (população do Brasil − população do Nordeste), multiplicado por mil. É a razão das diferenças, não a média dos estados."
+        - "Taxa de desocupação: (desocupados do Brasil − do Nordeste) ÷ (força de trabalho do Brasil − do Nordeste), em porcentagem."
+        - "Taxa de informalidade: (informais do Brasil − do Nordeste) ÷ (ocupados do Brasil − do Nordeste), em porcentagem."
+        - "Renda domiciliar por pessoa: (massa de renda do Brasil − do Nordeste) ÷ (população da PNAD Contínua do Brasil − do Nordeste), multiplicado por mil."
+        - "Quando não existe contagem publicada para refazer a conta (pobreza, Gini, IDEB, IDHM, abandono escolar, rendimento do trabalho, volume do PIB), a comparação é com o Brasil inteiro."
+    - titulo: "Comparação entre territórios"
+      itens:
+        - "Razão = valor do Nordeste (ou do estado) ÷ valor da referência, em porcentagem. 100% significa igualdade; 50%, metade."
+        - "Nas frases do site, diferença no período é o valor do último ano com dado menos o do primeiro ano com dado, em pontos percentuais."
+    - titulo: "Valores em reais"
+      itens:
+        - "Renda domiciliar por pessoa e rendimento do trabalho: reais constantes, pelo deflator da PNAD Contínua do IBGE, a preços médios do último ano da série."
+        - "PIB e PIB per capita: valores correntes de cada ano. As comparações usam a razão entre territórios no mesmo ano, que dispensa deflator."
+        - "Volume do PIB: índice encadeado publicado pelo IBGE (primeiro ano = 100), sem cálculo meu."
+    - titulo: "O que eu não faço"
+      itens:
+        - "Não interpolo anos sem dado, não projeto anos futuros e não estimo valores ausentes."
+        - "Não emendo pesquisas diferentes (PNAD e PNAD Contínua, Censo e estimativas)."
+        - "Não tiro média de taxas entre estados: os agregados saem sempre das contagens."
+
+arquivos:
+  titulo: "Os arquivos por trás dos números"
+  intro: "O site lê só a base publicada, exatamente como está nos arquivos da página Dados, com a data e o sha256 de cada um."
+
+dados:
+  titulo: "Dados para baixar"
+  intro: "Estes são os arquivos que o site lê, do jeito que foram publicados. Pode baixar, conferir e usar, com crédito a mim e à fonte oficial de cada série. Os dados de origem são públicos: IBGE, INEP, Ipea e Atlas Brasil."
+  conferir: "Para conferir, calcule o sha256 do arquivo baixado e compare com o código ao lado. Se for diferente, o arquivo não é o publicado."
+  arquivos:
+    base_nordeste.csv: "Uma linha por indicador, território e ano."
+    derivados.csv: "Razões e outras métricas de comparação entre territórios."

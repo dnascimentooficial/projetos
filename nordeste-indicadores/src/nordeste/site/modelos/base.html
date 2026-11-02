@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "_metas.html" %}
+<link rel="stylesheet" href="/estilo.css">
+<script src="/site.js" defer></script>
+</head>
+<body>
+<a class="nn-pular" href="#conteudo">Ir para o conteúdo</a>
+<div class="nn">
+{% include "_cabecalho.html" %}
+<main id="conteudo">
+{% block conteudo %}{% endblock %}
+</main>
+{% include "_rodape.html" %}
+</div>
+</body>
+</html>

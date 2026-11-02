@@ -1,0 +1,11 @@
+<header class="nn-topo">
+  <div class="nn-hero-topo">
+    <a class="nn-marca" href="/">Júlio Diógenes · Nordeste em Números</a>
+    <nav class="nn-menu" aria-label="Páginas do site">
+{% for item in menu %}
+      <a href="{{ item.rota }}"{% if item.chave == pagina.chave %} aria-current="page"{% endif %}>{{ item.rotulo }}</a>
+{% endfor %}
+    </nav>
+    <a class="nn-hero-site" href="{{ autor_url }}">dnascimento.com.br</a>
+  </div>
+</header>

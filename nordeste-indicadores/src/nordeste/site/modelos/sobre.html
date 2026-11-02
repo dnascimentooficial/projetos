@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<section class="nn-pagina" id="sobre" aria-labelledby="titulo-principal">
+  <h1 id="titulo-principal">Sobre os dados</h1>
+
+  <article class="nn-card" id="sobre-o-que">
+    <h2>{{ textos.por_que.titulo }}</h2>
+{% for paragrafo in textos.por_que.paragrafos %}
+    <p>{{ paragrafo }}</p>
+{% endfor %}
+    <h3>{{ textos.como_ler.titulo }}</h3>
+    <ul class="nn-lista">
+{% for item in textos.como_ler.itens %}
+      <li>{{ item }}</li>
+{% endfor %}
+    </ul>
+  </article>
+
+  <article class="nn-card" id="sobre-lacunas">
+    <h2>{{ textos.o_que_falta.titulo }}</h2>
+    <ul class="nn-lista">
+{% for item in textos.o_que_falta.itens %}
+      <li class="nn-lacuna">{{ item }}</li>
+{% endfor %}
+    </ul>
+  </article>
+
+  <article class="nn-card" id="sobre-fontes">
+    <h2>{{ textos.fontes.titulo }}</h2>
+    <p>{{ textos.fontes.intro }}</p>
+    <div class="nn-tabela nn-tabela-alta">
+      <table>
+        <thead><tr><th scope="col">Indicador</th><th scope="col">Órgão</th><th scope="col">Fonte</th><th scope="col">Tabela ou arquivo usado</th></tr></thead>
+        <tbody>
+{% for f in fontes %}
+{% for s in f.series %}
+          <tr>{% if loop.first %}<td rowspan="{{ f.series|length }}">{{ f.nome }}</td><td rowspan="{{ f.series|length }}">{{ f.orgao }}</td>{% endif %}<td><a href="{{ s.url }}">{{ s.fonte }}</a></td><td>{{ s.base_origem }}</td></tr>
+{% endfor %}
+{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="nn-card" id="sobre-formulas">
+    <h2>{{ textos.formulas.titulo }}</h2>
+    <p>{{ textos.formulas.intro }}</p>
+{% for bloco in textos.formulas.blocos %}
+    <h3>{{ bloco.titulo }}</h3>
+    <ul class="nn-lista">
+{% for item in bloco.itens %}
+      <li>{{ item }}</li>
+{% endfor %}
+    </ul>
+{% endfor %}
+  </article>
+
+  <article class="nn-card" id="sobre-arquivos">
+    <h2>{{ textos.arquivos.titulo }}</h2>
+    <p>{{ textos.arquivos.intro }} <a href="/dados/">Ir para Dados</a>.</p>
+  </article>
+</section>
+{% endblock %}
