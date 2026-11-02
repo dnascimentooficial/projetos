@@ -32,12 +32,16 @@ Base: a base histórica publicada (`dados/base/`, primeira publicação real em 
 
 | Página | Endereço | Conteúdo |
 |---|---|---|
-| Início | `/` | Abertura (título, texto em primeira pessoa, números principais), as 6 perguntas com lide, gráfico, fecho e fonte |
+| Início | `/` | Abertura (título e texto em primeira pessoa), faixa de números logo abaixo (três números grandes e os parágrafos de números e de fontes), as 6 perguntas com lide, gráfico, fecho e fonte; cada gráfico tem o botão "Ampliar", que abre o gráfico grande num modal |
 | Estados | `/estados/` | Mapa de calor ano a ano e ranking do último ano, com escolha entre 7 indicadores |
 | Explorar | `/explorar/` | 18 indicadores × 16 territórios, comparação lado a lado, zoom de período e de escala |
 | Cards | `/cards/` e `/cards/<id>/` | Os 17 cards; cada um com página própria, imagem PNG para baixar e OpenGraph próprio |
 | Sobre os dados | `/sobre/` | Por que o site existe, como ler, todas as fontes (uma linha por série), fórmulas, o que falta, arquivos para baixar |
 | Dados | `/dados/` | Os CSVs publicados (`base_nordeste.csv`, `derivados.csv`), com sha256 e data |
+
+**Faixa de números (Início).** Os parágrafos de números e de fontes saem da abertura e vão para uma faixa em fundo papel logo abaixo dela: três números grandes lado a lado (riqueza por pessoa do Nordeste como % do resto do país, pobreza no Nordeste, pobreza no Brasil), cada um com rótulo curto e o ano, seguidos do texto completo. Os números vêm de marcadores preenchidos pela base. Os números e o parágrafo de números obedecem à condição do parágrafo (`abertura_numeros`): se ela falha ou um destaque some da base, saem juntos e o id vai para o relatório; a nota de fontes e de faixas de governo, que não tem número, fica sempre. No celular os três números empilham.
+
+**Modal "Ampliar" (Início).** Cada gráfico das perguntas tem um botão "Ampliar" (e o próprio gráfico, com o mouse, é clicável) que abre um `<dialog>` com o gráfico grande, pronto do Python (terceira largura, 1100×520, guardado num `<template>` por gráfico: cerca de 100 KB a mais na página, abaixo do orçamento de 500 KB). O modal mostra o título da pergunta, o título e o subtítulo do gráfico, a legenda, a fonte, "Atualizado em" e "Próximo dado esperado" dos indicadores do gráfico, as notas de quebra de série e o alerta da pergunta, e liga a mesma dica de valor dos gráficos da página. Fecha pelo botão, por Esc e por clique fora; o foco volta ao botão que abriu. No celular (até 560 px) ocupa a tela toda e, em retrato, pede para girar o aparelho. No toque, tocar no gráfico mostra o valor e só o botão abre o modal. Sem JavaScript os botões ficam escondidos e o gráfico da página segue completo.
 
 Fora da primeira versão: segunda leva de indicadores, PNAD antiga (próximo ciclo de dados), mapa geográfico interativo, busca, versão em inglês, newsletter.
 
@@ -61,7 +65,7 @@ Fora da primeira versão: segunda leva de indicadores, PNAD antiga (próximo cic
 - Cores: laranja `#ea2e00`; laranja para texto pequeno em fundo claro `#c42600`; preto `#080808`; papel `#f5f4ef`; branco.
 - Fontes: Manrope (títulos, 700–800, espaçamento negativo) e DM Sans (texto), em arquivos `woff2` servidos pelo próprio site.
 - Formas: cantos de 24 e 34 px, botões e abas em pílula, rótulos em caixa alta laranja.
-- Abertura e cards em preto com círculos finos de contorno; o restante em papel e branco.
+- Abertura e cards em preto com círculos finos de contorno; o restante em papel e branco. Quando houver foto (`foto` em `textos.yaml`), ela é o fundo da abertura por CSS, sob uma camada preta de 88% (o texto branco mantém contraste acima de 4,5:1 mesmo com a foto toda branca por baixo); sem foto, a abertura segue preta. A faixa de números logo abaixo da abertura é em papel nos dois temas.
 - Laranja só no que importa: a linha do Nordeste, o destaque do título, a aba ativa, o número novo nos cards.
 - Movimento: transições entre páginas (View Transitions do navegador), entrada suave das seções ao rolar, linha do gráfico desenhada ao aparecer, números contando até o valor na abertura. Tudo desligado com `prefers-reduced-motion`. Nenhum conteúdo depende da animação para aparecer.
 
