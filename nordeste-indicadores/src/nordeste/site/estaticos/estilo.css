@@ -369,28 +369,101 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.nn-hero-foto {
-  display: block;
-  width: 100%;
-  aspect-ratio: 21 / 9;
-  object-fit: cover;
-  border-radius: var(--nn-raio);
-  margin-top: 6px;
+/* com foto (textos.yaml: foto): a foto é o fundo da abertura, esmaecida por uma camada preta de 88%. O texto branco
+   sobre ela passa de 4,5:1 mesmo com a foto toda branca por baixo (a camada sobre branco puro é o pior caso). A camada
+   toma o lugar do círculo grande do ::before; o círculo pequeno do ::after continua por cima. */
+
+.nn-hero-com-foto {
+  background-image: url("/foto-abertura.webp");
+  background-size: cover;
+  background-position: center;
 }
 
-@media (max-width: 560px) {
-  .nn-hero-foto {
-    aspect-ratio: 4 / 3;
-  }
+.nn-hero-com-foto::before {
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  background: rgba(8, 8, 8, 0.88);
 }
 
-.nn-hero-nota {
-  color: rgba(255, 255, 255, 0.58);
+/* --- faixa de números, logo abaixo da abertura: fundo papel nos dois temas --- */
+
+.nn-faixa-abertura {
+  background: var(--nn-papel);
+  color: var(--nn-preto);
+  border: 1px solid rgba(8, 8, 8, 0.12);
+  border-radius: var(--nn-raio-g);
+  padding: clamp(22px, 4vw, 44px) clamp(22px, 5vw, 64px);
+  display: grid;
+  gap: 22px;
+}
+
+.nn-numeros {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px clamp(18px, 3vw, 40px);
+}
+
+.nn-numero {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-width: 0;
+  border-top: 2px solid var(--nn-laranja);
+  padding-top: 12px;
+}
+
+.nn-numero-valor {
+  font-family: var(--nn-display);
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+  color: var(--nn-laranja-escuro);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.nn-numero-rotulo {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.nn-numero-ano {
+  color: rgba(8, 8, 8, 0.64);
   font-size: 13px;
 }
 
-.nn .nn-hero-nota {
+.nn-faixa-abertura .nn-conta {
+  color: inherit;
+}
+
+.nn-faixa-texto {
+  font-size: 17px;
+}
+
+.nn .nn-faixa-texto {
+  max-width: 64ch;
+}
+
+.nn-faixa-nota {
+  color: rgba(8, 8, 8, 0.64);
+  font-size: 13px;
+}
+
+.nn .nn-faixa-nota {
   max-width: 70ch;
+}
+
+@media (max-width: 560px) {
+  .nn-numeros {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* --- páginas e cards --- */
@@ -466,6 +539,47 @@ div.nn-grade {
   min-width: 0;
 }
 
+.nn-grafico-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nn-grafico-titulos {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* botão "Ampliar" e "Fechar": pílulas como as dos controles; o site.js tira o hidden dos botões Ampliar */
+
+.nn-ampliar,
+.nn-modal-fechar {
+  font: 700 14px/1.2 var(--nn-texto);
+  color: var(--nn-tinta);
+  background: transparent;
+  border: 1px solid var(--nn-linha);
+  border-radius: 999px;
+  padding: 10px 18px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.nn-ampliar {
+  margin-left: auto;
+  flex: none;
+}
+
+.nn-ampliar:hover,
+.nn-modal-fechar:hover {
+  border-color: var(--nn-laranja);
+}
+
+.nn-clicavel {
+  cursor: zoom-in;
+}
+
 .nn-legenda {
   display: flex;
   flex-wrap: wrap;
@@ -528,7 +642,8 @@ div.nn-grade {
   max-width: 880px; /* o SVG escala com a largura: acima disso, o texto do gráfico ficaria grande demais */
 }
 
-.nn-graf svg {
+.nn-graf svg,
+.nn-graf-grande svg {
   display: block;
   width: 100%;
   height: auto;
@@ -552,7 +667,8 @@ div.nn-grade {
   }
 }
 
-.nn-graf text {
+.nn-graf text,
+.nn-graf-grande text {
   font-family: var(--nn-texto);
 }
 
@@ -644,6 +760,86 @@ line.nn-grade {
 
 .nn-arrastando {
   cursor: ew-resize;
+}
+
+/* --- modal "Ampliar": um <dialog> por página, com o gráfico grande clonado do <template> --- */
+
+.nn-modal {
+  padding: 0;
+  border: 1px solid var(--nn-linha);
+  border-radius: var(--nn-raio-g);
+  background: var(--nn-painel);
+  color: var(--nn-tinta);
+  width: min(1180px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.nn-modal::backdrop {
+  background: rgba(8, 8, 8, 0.72);
+}
+
+html:has(.nn-modal[open]) {
+  overflow: hidden;
+}
+
+.nn-modal-caixa {
+  padding: clamp(16px, 3vw, 32px);
+  display: grid;
+  gap: 14px;
+}
+
+.nn-modal-topo {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.nn-modal-gire {
+  display: none;
+  border-left: 3px solid var(--nn-laranja);
+  padding-left: 12px;
+  color: var(--nn-suave);
+  font-size: 14px;
+}
+
+.nn-ampliado-conteudo {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.nn-graf-grande {
+  width: 100%;
+}
+
+/* no celular o modal é a tela toda, e em retrato pede para girar: o gráfico grande é feito para a tela deitada */
+@media (max-width: 560px), (orientation: landscape) and (max-height: 520px) {
+  .nn-modal {
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .nn-modal-caixa {
+    min-height: 100%;
+    align-content: start;
+  }
+}
+
+@media (max-width: 560px) and (orientation: portrait) {
+  .nn-modal-gire {
+    display: block;
+  }
+}
+
+@media print {
+  .nn-ampliar {
+    display: none;
+  }
 }
 
 /* --- controles: seletores e botões em pílula --- */
@@ -1223,6 +1419,14 @@ line.nn-grade {
     animation-delay: 0.16s;
   }
 
+  .nn-modal[open] {
+    animation: nn-modal-entra 0.22s ease-out;
+  }
+
+  .nn-modal[open]::backdrop {
+    animation: nn-fundo-entra 0.22s ease-out;
+  }
+
   .nn-entra {
     opacity: 0;
     transform: translateY(18px);
@@ -1255,6 +1459,19 @@ line.nn-grade {
     from {
       opacity: 0;
       transform: translateY(0.3em);
+    }
+  }
+
+  @keyframes nn-modal-entra {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+    }
+  }
+
+  @keyframes nn-fundo-entra {
+    from {
+      opacity: 0;
     }
   }
 

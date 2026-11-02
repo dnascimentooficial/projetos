@@ -75,6 +75,8 @@ def _rota(html: Path, raiz: Path) -> str:
 
 
 def _fotografar(navegador, alvo: AlvoImagem, url: str) -> None:
+    from playwright.sync_api import Error as ErroPlaywright
+
     contexto = navegador.new_context(
         viewport={"width": alvo.largura, "height": alvo.altura}, reduced_motion="reduce", color_scheme="light",
     )
@@ -82,11 +84,14 @@ def _fotografar(navegador, alvo: AlvoImagem, url: str) -> None:
         pagina = contexto.new_page()
         faltas: list[str] = []
         pagina.on("response", lambda r: faltas.append(f"{r.status} {r.url}") if r.status >= 400 else None)
-        pagina.goto(url, wait_until="networkidle")
-        pagina.evaluate("document.fonts.ready.then(() => true)")  # o PNG sai depois das fontes locais, nunca com a de reserva
-        if faltas:  # estilo ou fonte que nao carregou geraria uma imagem sem a identidade, e sem aviso
-            raise ErroImagens(f"A página de {alvo.png.name} pediu o que não existe: {', '.join(faltas)}.")
-        alvo.png.parent.mkdir(parents=True, exist_ok=True)
-        pagina.screenshot(path=str(alvo.png), clip={"x": 0, "y": 0, "width": alvo.largura, "height": alvo.altura})
+        try:
+            pagina.goto(url, wait_until="networkidle")
+            pagina.evaluate("document.fonts.ready.then(() => true)")  # o PNG sai depois das fontes locais, nunca com a de reserva
+            if faltas:  # estilo ou fonte que nao carregou geraria uma imagem sem a identidade, e sem aviso
+                raise ErroImagens(f"A página de {alvo.png.name} pediu o que não existe: {', '.join(faltas)}.")
+            alvo.png.parent.mkdir(parents=True, exist_ok=True)
+            pagina.screenshot(path=str(alvo.png), clip={"x": 0, "y": 0, "width": alvo.largura, "height": alvo.altura})
+        except ErroPlaywright as erro:  # tempo esgotado, navegador que fechou: mensagem curta no CLI, sem traceback
+            raise ErroImagens(f"Não consegui gerar {alvo.png.name}: {erro}") from erro
     finally:
         contexto.close()

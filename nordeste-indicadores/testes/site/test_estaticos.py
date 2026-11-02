@@ -192,6 +192,66 @@ def test_movimento_so_sem_reduced_motion(saida):
     assert "IntersectionObserver" in js
 
 
+# --- foto da abertura (Ruling S-U) e modal Ampliar (Ruling S-W) ---
+
+
+def _luminancia(rgb: tuple[float, float, float]) -> float:
+    canais = [c / 255 for c in rgb]
+    lineares = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in canais]
+    return 0.2126 * lineares[0] + 0.7152 * lineares[1] + 0.0722 * lineares[2]
+
+
+def _contraste(a: tuple[float, float, float], b: tuple[float, float, float]) -> float:
+    claro, escuro = sorted((_luminancia(a), _luminancia(b)), reverse=True)
+    return (claro + 0.05) / (escuro + 0.05)
+
+
+def _declaracoes(css: str, seletor: str) -> dict[str, str]:
+    """propriedade -> valor das regras cujo seletor e exatamente `seletor` (sem at-rule em volta)."""
+    achadas = {}
+    for cabecalhos, declaracao in _regras(css):
+        if cabecalhos == (seletor,) and ":" in declaracao:
+            propriedade, valor = declaracao.split(":", 1)
+            achadas[propriedade.strip()] = " ".join(valor.split())
+    return achadas
+
+
+def test_css_da_foto_e_da_camada(saida):
+    css = (saida / "estilo.css").read_text(encoding="utf-8")
+    foto = _declaracoes(css, ".nn-hero-com-foto")
+    assert foto["background-image"] == 'url("/foto-abertura.webp")'  # local: a CSP e default-src 'self'
+    assert foto["background-size"] == "cover"
+    camada = _declaracoes(css, ".nn-hero-com-foto::before")
+    cor = re.fullmatch(r"rgba\((\d+), (\d+), (\d+), ([0-9.]+)\)", camada["background"])
+    assert cor, camada
+    r, g, b, alfa = int(cor[1]), int(cor[2]), int(cor[3]), float(cor[4])
+    assert (r, g, b) == (8, 8, 8)  # o #080808 da identidade
+    assert 0.85 <= alfa <= 0.90 and alfa == 0.88
+    # pior caso: a foto toda branca por baixo; o texto branco da abertura segue com >= 4,5:1 sobre a camada
+    fundo = tuple(255 * (1 - alfa) + c * alfa for c in (r, g, b))
+    assert _contraste((255, 255, 255), fundo) >= 4.5
+    for seletor in (".nn-hero-intro", ".nn-hero .nn-eyebrow"):
+        texto = _declaracoes(css, seletor).get("color")
+        if texto and texto.startswith("rgba(255, 255, 255,"):
+            a = float(texto.rsplit(",", 1)[1].strip(" )"))
+            sobre = tuple(255 * a + c * (1 - a) for c in fundo)
+            assert _contraste(sobre, fundo) >= 4.5, seletor
+    # a foto so existe por CSS: nem <img> nem style= nas paginas (test_sem_style_ou_script_inline) e movimento so sem reducao
+    assert not any(c == (".nn-hero-com-foto",) and "animation" in d for c, d in _regras(css))
+
+
+def test_modal_do_css_e_as_cores_da_faixa(saida):
+    css = (saida / "estilo.css").read_text(encoding="utf-8")
+    modal = _declaracoes(css, ".nn-modal")
+    assert modal["padding"] == "0" and modal["background"] == "var(--nn-painel)"
+    cheia = [(c, d) for c, d in _regras(css) if "max-width: 560px" in c[0] and c[-1] == ".nn-modal" and d.startswith("width")]
+    assert cheia and cheia[0][1] == "width: 100vw"  # no celular o modal ocupa a tela toda
+    assert any(c[-1] == ".nn-modal-gire" and d == "display: block" and "orientation: portrait" in c[0] for c, d in _regras(css))
+    assert _declaracoes(css, ".nn-faixa-abertura")["background"] == "var(--nn-papel)"
+    # a abertura do modal anima so sem reducao de movimento (test_movimento_so_sem_reduced_motion confere o resto)
+    assert any(SEM_REDUCAO in c and c[-1].startswith(".nn-modal") and d.startswith("animation") for c, d in _regras(css))
+
+
 # --- o desenho do site.js segue o do Python ---
 
 

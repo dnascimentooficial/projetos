@@ -7,13 +7,12 @@ Os testes com marcador `navegador` abrem o Chromium (Playwright) e ficam fora da
 import importlib.util
 import json
 import os
-import shutil
+import re
 import struct
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
-import yaml
 
 from nordeste.caminhos import Caminhos
 from nordeste.site import gerar
@@ -21,7 +20,7 @@ from nordeste.site.conteudo import ErroConteudo, carregar_conteudo
 from nordeste.site.gerar import gerar_site
 from nordeste.site.imagens import AlvoImagem, renderizar
 
-from auxiliares import RAIZ, Arvore, copiar_base
+from auxiliares import RAIZ, Arvore, copiar_base, definir_foto, estaticos_com_foto
 
 CONTORNO = RAIZ / "metadados" / "site" / "nordeste-contorno.svg"
 FERRAMENTA = RAIZ / "ferramentas" / "gerar_contorno.py"
@@ -64,7 +63,7 @@ def test_contorno_e_um_path_unico_e_pequeno():
     assert [e for e in raiz.iter() if e is not raiz and e not in paths] == []  # so o <svg> e o <path>
     assert len(raiz.attrib["viewBox"].split()) == 4
     assert paths[0].attrib["d"].startswith("M") and paths[0].attrib["d"].endswith("Z")
-    assert "IBGE" in texto and "2026-11-02" in texto  # a origem e a data ficam no topo (README tambem)
+    assert "IBGE" in texto and re.search(r"\d{4}-\d{2}-\d{2}", texto)  # a origem e a data ficam no topo (README tambem)
 
 
 def _ferramenta():
@@ -108,25 +107,13 @@ def test_ferramenta_dissolve_as_partes_num_unico_contorno(tmp_path):
 def base_com_foto(tmp_path, monkeypatch):
     """Copia da base com `foto` em textos.yaml e uma pasta de estaticos que tem o arquivo da foto."""
     raiz = copiar_base(tmp_path / "repo")
-    estaticos = tmp_path / "estaticos"
-    shutil.copytree(gerar.PASTA_ESTATICOS, estaticos)
-    (estaticos / FOTO["arquivo"]).write_bytes(b"RIFFxxxxWEBP")
-    monkeypatch.setattr(gerar, "PASTA_ESTATICOS", estaticos)
+    estaticos_com_foto(tmp_path, monkeypatch, FOTO["arquivo"])
     return raiz
-
-
-def _com_foto(raiz: Path, foto: dict | None) -> None:
-    arquivo = raiz / "metadados" / "site" / "textos.yaml"
-    textos = yaml.safe_load(arquivo.read_text(encoding="utf-8"))
-    textos.pop("foto", None)
-    if foto is not None:
-        textos["foto"] = foto
-    arquivo.write_text(yaml.safe_dump(textos, allow_unicode=True), encoding="utf-8")
 
 
 def test_sem_foto_nao_ha_imagem_nem_credito(tmp_path):
     raiz = copiar_base(tmp_path / "repo")
-    _com_foto(raiz, None)
+    definir_foto(raiz, None)
     saida = tmp_path / "saida"
     gerar_site(Caminhos(raiz=raiz), saida, imagens=False)
     for pagina in ("index.html", "sobre/index.html"):
@@ -136,13 +123,12 @@ def test_sem_foto_nao_ha_imagem_nem_credito(tmp_path):
 
 
 def test_foto_aparece_na_abertura_e_o_credito_no_rodape_e_em_sobre(tmp_path, base_com_foto):
-    _com_foto(base_com_foto, FOTO)
+    definir_foto(base_com_foto, FOTO)
     saida = tmp_path / "saida"
     gerar_site(Caminhos(raiz=base_com_foto), saida, imagens=False)
     inicio = Arvore((saida / "index.html").read_text(encoding="utf-8"))
-    fotos = inicio.achar("img")
-    assert [f["attrs"]["src"] for f in fotos] == ["/foto-abertura.webp"]
-    assert fotos[0]["attrs"]["alt"] == ""  # decorativa: o crédito diz de quem é
+    assert inicio.achar("img") == []  # a foto e o fundo da abertura, por CSS: nao ha <img> (Ruling S-U)
+    assert "nn-hero-com-foto" in inicio.achar("section", id="topo")[0]["attrs"]["class"].split()
     assert (saida / "foto-abertura.webp").is_file()
     for pagina in ("index.html", "sobre/index.html", "dados/index.html"):
         arvore = Arvore((saida / pagina).read_text(encoding="utf-8"))
@@ -152,26 +138,81 @@ def test_foto_aparece_na_abertura_e_o_credito_no_rodape_e_em_sobre(tmp_path, bas
 
 @pytest.mark.parametrize("faltando", ["arquivo", "credito", "url"])
 def test_foto_incompleta_e_erro_de_conteudo(tmp_path, base_com_foto, faltando):
-    _com_foto(base_com_foto, {k: v for k, v in FOTO.items() if k != faltando})
+    definir_foto(base_com_foto, {k: v for k, v in FOTO.items() if k != faltando})
     with pytest.raises(ErroConteudo, match=f"foto.{faltando}"):
         gerar_site(Caminhos(raiz=base_com_foto), tmp_path / "saida", imagens=False)
 
 
 def test_foto_cujo_arquivo_nao_existe_e_erro_de_conteudo(tmp_path):
     raiz = copiar_base(tmp_path / "repo")
-    _com_foto(raiz, FOTO)
+    definir_foto(raiz, FOTO)
     with pytest.raises(ErroConteudo, match="foto-abertura.webp"):
         gerar_site(Caminhos(raiz=raiz), tmp_path / "saida", imagens=False)
 
 
+def test_foto_com_outro_nome_de_arquivo_e_erro_de_conteudo(tmp_path, base_com_foto):
+    # o estilo.css aponta para /foto-abertura.webp: outro nome deixaria a abertura sem foto, sem aviso
+    (gerar.PASTA_ESTATICOS / "outra.webp").write_bytes(b"RIFFxxxxWEBP")
+    definir_foto(base_com_foto, {**FOTO, "arquivo": "outra.webp"})
+    with pytest.raises(ErroConteudo, match="foto-abertura.webp"):
+        gerar_site(Caminhos(raiz=base_com_foto), tmp_path / "saida", imagens=False)
+
+
 def test_foto_acima_de_200_kb_e_erro_de_conteudo(tmp_path, base_com_foto):
-    _com_foto(base_com_foto, FOTO)
+    definir_foto(base_com_foto, FOTO)
     (gerar.PASTA_ESTATICOS / FOTO["arquivo"]).write_bytes(b"x" * 200_001)
     with pytest.raises(ErroConteudo, match="200 KB"):
         gerar_site(Caminhos(raiz=base_com_foto), tmp_path / "saida", imagens=False)
 
 
 # --- renderizacao (Chromium) ---
+
+
+class _PaginaQueFalha:
+    """Pagina de mentira cujo `goto` ou `screenshot` falha como o Playwright falha (timeout, navegador que fechou)."""
+
+    def __init__(self, erro: Exception, falha_em: str):
+        self._erro, self._falha_em = erro, falha_em
+
+    def on(self, *_args):
+        pass
+
+    def goto(self, *_args, **_kwargs):
+        if self._falha_em == "goto":
+            raise self._erro
+
+    def evaluate(self, *_args):
+        pass
+
+    def screenshot(self, **_kwargs):
+        if self._falha_em == "screenshot":
+            raise self._erro
+
+
+class _NavegadorDeMentira:
+    def __init__(self, pagina):
+        self._pagina = pagina
+
+    def new_context(self, **_kwargs):
+        return self
+
+    def new_page(self):
+        return self._pagina
+
+    def close(self):
+        pass
+
+
+@pytest.mark.parametrize("falha_em", ["goto", "screenshot"])
+def test_erro_do_playwright_na_pagina_vira_erro_de_imagens(tmp_path, falha_em):
+    from playwright.sync_api import TimeoutError as TempoEsgotado
+
+    from nordeste.site.imagens import ErroImagens, _fotografar
+
+    alvo = AlvoImagem(tmp_path / "a.html", tmp_path / "saida" / "a.png", 300, 200)
+    navegador = _NavegadorDeMentira(_PaginaQueFalha(TempoEsgotado("Timeout 30000ms exceeded"), falha_em))
+    with pytest.raises(ErroImagens, match="a.png.*Timeout"):
+        _fotografar(navegador, alvo, "http://127.0.0.1:1/a.html")
 
 
 @pytest.mark.navegador

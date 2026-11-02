@@ -1,5 +1,5 @@
-/* Nordeste em Números: valor ao passar o mouse ou o dedo nos gráficos, seletores de Estados, Explorar (redesenho no
-   navegador, comparação, zoom de período e de escala), menu e movimento.
+/* Nordeste em Números: valor ao passar o mouse ou o dedo nos gráficos, modal Ampliar do Início, seletores de Estados,
+   Explorar (redesenho no navegador, comparação, zoom de período e de escala), menu e movimento.
 
    Sem bibliotecas. Nada de estilo inline (a Content-Security-Policy é style-src 'self'): a aparência vem só de classes
    do estilo.css e de atributos SVG. O desenho do gráfico repete o de graficos.py, para a vista redesenhada ficar igual
@@ -724,6 +724,54 @@
     }
   }
 
+  /* --- modal "Ampliar" ---------------------------------------------------------------------------------------- */
+
+  /* Cada gráfico do Início tem um <template class="nn-ampliado"> com o gráfico grande (1100 x 520, pronto do Python) e
+     o contexto dele. O botão Ampliar (e, com mouse ou caneta, o próprio gráfico) clona o template no único <dialog>,
+     abre com showModal() e liga a dica de valor ao SVG grande, como nos gráficos da página. Fecha pelo botão, por Esc
+     e por clique fora; o foco volta ao botão que abriu. Sem JavaScript os botões ficam com hidden. */
+  function ligarAmpliar() {
+    const dialogo = document.querySelector('dialog.nn-modal');
+    if (!dialogo || typeof dialogo.showModal !== 'function') return;
+    const corpo = dialogo.querySelector('.nn-modal-corpo');
+    let origem = null;
+
+    function abrir(botao) {
+      const modelo = document.getElementById(botao.getAttribute('data-ampliado'));
+      if (!modelo || dialogo.open) return;
+      origem = botao;
+      corpo.replaceChildren(modelo.content.cloneNode(true));
+      const titulo = corpo.querySelector('.nn-modal-titulo');
+      if (titulo) titulo.id = dialogo.getAttribute('aria-labelledby');
+      dialogo.showModal();
+      dialogo.scrollTop = 0;
+      corpo.querySelectorAll('svg[data-pontos]').forEach(ligarDica);
+    }
+
+    dialogo.querySelector('.nn-modal-fechar').addEventListener('click', () => dialogo.close());
+    dialogo.addEventListener('click', (evento) => {
+      if (evento.target === dialogo) dialogo.close(); /* o fundo escurecido é o próprio <dialog> */
+    });
+    dialogo.addEventListener('close', () => {
+      corpo.replaceChildren();
+      if (origem) origem.focus();
+      origem = null;
+    });
+
+    document.querySelectorAll('.nn-ampliar').forEach((botao) => {
+      botao.hidden = false;
+      botao.addEventListener('click', () => abrir(botao));
+      const grafico = botao.closest('.nn-grafico');
+      const caixa = grafico && grafico.querySelector('.nn-graf');
+      if (!caixa) return;
+      /* no toque, tocar no gráfico mostra o valor (ligarDica); só o botão abre o modal */
+      let toque = false;
+      caixa.classList.add('nn-clicavel');
+      caixa.addEventListener('pointerdown', (evento) => { toque = evento.pointerType === 'touch'; });
+      caixa.addEventListener('click', () => { if (!toque) abrir(botao); });
+    });
+  }
+
   /* --- menu em abas: no celular, a aba da página aberta fica à vista ------------------------------------------ */
 
   function centralizarAba() {
@@ -764,10 +812,12 @@
     });
   }
 
-  /* Números da abertura contando até o valor que já está escrito no HTML. */
+  /* Números da abertura (texto do hero e faixa de números) contando até o valor que já está escrito no HTML. */
+  const TEXTOS_COM_NUMEROS = '.nn-hero-intro, .nn-faixa-texto, .nn-numero-valor';
+
   function contarNumeros() {
     const alvos = [];
-    document.querySelectorAll('.nn-hero-intro').forEach((paragrafo) => {
+    document.querySelectorAll(TEXTOS_COM_NUMEROS).forEach((paragrafo) => {
       const caminhante = document.createTreeWalker(paragrafo, NodeFilter.SHOW_TEXT);
       const textos = [];
       while (caminhante.nextNode()) textos.push(caminhante.currentNode);
@@ -816,7 +866,7 @@
         entrada.target.querySelectorAll('.nn-conta').forEach(contar);
       });
     });
-    document.querySelectorAll('.nn-hero-intro').forEach((p) => observador.observe(p));
+    document.querySelectorAll(TEXTOS_COM_NUMEROS).forEach((p) => observador.observe(p));
   }
 
   /* --- início ------------------------------------------------------------------------------------------------- */
@@ -828,6 +878,7 @@
   function iniciar() {
     centralizarAba();
     document.querySelectorAll('.nn-graf svg[data-pontos]').forEach(ligarDica);
+    ligarAmpliar();
     ligarEstados();
     ligarExplorar();
     const movimento = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;

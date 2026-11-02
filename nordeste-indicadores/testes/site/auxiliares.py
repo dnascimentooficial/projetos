@@ -5,6 +5,9 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import pandas as pd
+import yaml
+
+from nordeste.site import gerar
 
 RAIZ = Path(__file__).resolve().parents[2]
 VOID = {"meta", "link", "br", "img", "input", "hr", "col", "source", "area", "base", "wbr"}
@@ -72,3 +75,21 @@ def alterar_base(raiz: Path, alterar) -> None:
     arquivo = raiz / "dados" / "base" / "base_nordeste.csv"
     base = pd.read_csv(arquivo, dtype=str, keep_default_na=False)
     alterar(base).to_csv(arquivo, index=False)
+
+
+def definir_foto(raiz: Path, foto: dict | None) -> None:
+    """Poe (ou tira, com None) a chave `foto` do textos.yaml da copia da base."""
+    arquivo = raiz / "metadados" / "site" / "textos.yaml"
+    textos = yaml.safe_load(arquivo.read_text(encoding="utf-8"))
+    textos.pop("foto", None)
+    if foto is not None:
+        textos["foto"] = foto
+    arquivo.write_text(yaml.safe_dump(textos, allow_unicode=True), encoding="utf-8")
+
+
+def estaticos_com_foto(tmp_path: Path, monkeypatch, arquivo: str) -> None:
+    """Aponta o gerador para uma copia dos estaticos que tem a foto (um webp de mentira): a do pacote nao existe."""
+    estaticos = tmp_path / "estaticos"
+    shutil.copytree(gerar.PASTA_ESTATICOS, estaticos)
+    (estaticos / arquivo).write_bytes(b"RIFFxxxxWEBP")
+    monkeypatch.setattr(gerar, "PASTA_ESTATICOS", estaticos)

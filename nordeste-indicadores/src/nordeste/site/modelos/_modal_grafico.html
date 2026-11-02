@@ -1,0 +1,40 @@
+{% from "_componentes.html" import atualizacoes, legenda %}
+{# O gráfico grande e o contexto dele, guardados num <template> que o site.js clona no <dialog> (Ruling S-W). #}
+{% macro ampliado(p, g, t) %}
+<template class="nn-ampliado" id="nn-ampliado-{{ g.id }}">
+  <div class="nn-ampliado-conteudo">
+    <h2 class="nn-modal-titulo">{{ p.frase_feita }}</h2>
+{% if g.titulo %}
+    <h3>{{ g.titulo }}</h3>
+{% endif %}
+{% if g.subtitulo %}
+    <p class="nn-muted">{{ g.subtitulo }}</p>
+{% endif %}
+{{ legenda() }}
+    <div class="nn-graf-grande">{{ g.ampliado|safe }}</div>
+{% for q in g.quebras %}
+    <p class="nn-muted nn-nota-quebra">{{ t.quebra }} {{ q.ano }}: {{ q.rotulo }}.</p>
+{% endfor %}
+{% if p.alerta %}
+    <p class="nn-muted nn-alerta">{{ p.alerta }}</p>
+{% endif %}
+    <div class="nn-fonte">
+{% for linha in p.fonte %}
+      <span>{{ linha }}</span>
+{% endfor %}
+{{ atualizacoes(g.atualizacoes) }}    </div>
+  </div>
+</template>
+{% endmacro %}
+{# A janela única da página: vazia até o site.js abrir um gráfico (sem JavaScript os botões "Ampliar" ficam escondidos). #}
+{% macro dialogo(t) %}
+<dialog class="nn-modal" aria-labelledby="nn-modal-titulo">
+  <div class="nn-modal-caixa">
+    <div class="nn-modal-topo">
+      <button type="button" class="nn-modal-fechar"><span>{{ t.fechar }}</span> <span aria-hidden="true">×</span></button>
+    </div>
+    <p class="nn-modal-gire">{{ t.gire }}</p>
+    <div class="nn-modal-corpo"></div>
+  </div>
+</dialog>
+{% endmacro %}

@@ -15,7 +15,7 @@ from nordeste.site.conteudo import ErroConteudo, calcular_destaques, carregar_co
 from nordeste.site.dados import DadosSite
 from nordeste.site.gerar import RelatorioSite, gerar_site
 
-from auxiliares import RAIZ, Arvore, alterar_base, copiar_base
+from auxiliares import RAIZ, Arvore, alterar_base, copiar_base, definir_foto, estaticos_com_foto
 
 SITE = "https://nordeste.dnascimento.com.br"
 PAGINAS = {
@@ -110,6 +110,7 @@ def test_abertura_e_selo_vem_da_base(gerado, dados, conteudo):
     destaques = calcular_destaques(dados, conteudo)
     intro = [Arvore.texto(e) for e in arvore.achar("p", classe="nn-hero-intro")]
     assert intro == [" ".join(preencher(p["texto"], destaques).split()) for p in conteudo.textos["abertura"]["intro"]]
+    assert [p["id"] for p in conteudo.textos["abertura"]["intro"]] == ["abertura_inicio"]  # os numeros foram para a faixa
     html = _ler(saida, "sobre/index.html")
     assert "na data desta publicação" not in html
     assert re.search(r"ainda não tinham sido divulgadas pelo IBGE em \d{1,2}º? de \w+ de \d{4}\.", Arvore(html).texto_visivel())
@@ -141,8 +142,9 @@ def test_cada_grafico_sai_em_duas_larguras(gerado, conteudo):
     estreitos = arvore.achar("div", classe="nn-graf-estreito")
     assert len(largos) == len(estreitos) == graficos
     svgs = arvore.achar("svg")
-    assert len(svgs) == 2 * graficos
+    assert len(svgs) == 3 * graficos  # as duas da pagina e a ampliada, guardada num <template> (Ruling S-W)
     assert [s["attrs"]["viewbox"] for s in svgs[:2]] == ["0 0 720 300", "0 0 360 240"]
+    assert {s["attrs"]["viewbox"] for s in svgs[2 * graficos:]} == {"0 0 1100 520"}
     for contenedor in arvore.achar("div", classe="nn-graf"):
         assert contenedor["attrs"]["id"].startswith("g-")
     # cada grafico traz os numeros numa tabela, como a descricao acessivel promete
@@ -356,7 +358,10 @@ def _sem_chave_de_texto(raiz: Path, caminho: tuple[str, ...]) -> None:
 
 @pytest.mark.parametrize(
     "caminho",
-    [("abertura",), ("abertura", "intro"), ("estados", "sem_dados"), ("paginas", "cards"), ("dados", "arquivos", "derivados.csv")],
+    [
+        ("abertura",), ("abertura", "intro"), ("estados", "sem_dados"), ("paginas", "cards"),
+        ("dados", "arquivos", "derivados.csv"), ("faixa", "nota"), ("faixa", "numeros"), ("ampliar", "fechar"),
+    ],
 )
 def test_textos_incompleto_e_erro_de_conteudo(tmp_path, caminho):
     raiz = copiar_base(tmp_path / "repo")
@@ -391,9 +396,22 @@ def test_paragrafo_da_abertura_com_condicao_falsa_some_e_vai_ao_relatorio(tmp_pa
     saida = tmp_path / "saida"
     relatorio = gerar_site(Caminhos(raiz=raiz), saida, imagens=False)
     assert "abertura_numeros" in relatorio.fechos_suprimidos
-    normais = [Arvore.texto(e) for e in Arvore(_ler(saida_normal, "index.html")).achar("p", classe="nn-hero-intro")]
-    sem = [Arvore.texto(e) for e in Arvore(_ler(saida, "index.html")).achar("p", classe="nn-hero-intro")]
-    assert len(normais) == 2 and sem == normais[:1]  # o paragrafo sem afirmacao de direcao continua
+    normais = [Arvore.texto(e) for e in Arvore(_ler(saida_normal, "index.html")).achar("p", classe="nn-faixa-texto")]
+    sem = [Arvore.texto(e) for e in Arvore(_ler(saida, "index.html")).achar("p", classe="nn-faixa-texto")]
+    assert len(normais) == 1 and sem == []  # o paragrafo de numeros sai da faixa com a condicao falsa
+    # o paragrafo da abertura sem afirmacao de direcao continua no hero
+    hero = [Arvore.texto(e) for e in Arvore(_ler(saida, "index.html")).achar("p", classe="nn-hero-intro")]
+    assert len(hero) == 1
+
+
+def test_faixa_com_numero_sem_ano_e_erro_de_conteudo(tmp_path):
+    raiz = copiar_base(tmp_path / "repo")
+    textos = raiz / "metadados" / "site" / "textos.yaml"
+    texto = textos.read_text(encoding="utf-8")
+    assert texto.count('      ano: "em {pob_br.ano_ultimo}"\n') == 1
+    textos.write_text(texto.replace('      ano: "em {pob_br.ano_ultimo}"\n', ""), encoding="utf-8")
+    with pytest.raises(ErroConteudo, match="faixa"):
+        gerar_site(Caminhos(raiz=raiz), tmp_path / "saida", imagens=False)
 
 
 def test_abertura_sem_id_ou_texto_e_erro_de_conteudo(tmp_path):
@@ -402,6 +420,146 @@ def test_abertura_sem_id_ou_texto_e_erro_de_conteudo(tmp_path):
     textos.write_text(textos.read_text(encoding="utf-8").replace("    - id: abertura_inicio\n", "    -\n"), encoding="utf-8")
     with pytest.raises(ErroConteudo, match="abertura"):
         gerar_site(Caminhos(raiz=raiz), tmp_path / "saida", imagens=False)
+
+
+# --- faixa de numeros (Ruling S-V), modal "Ampliar" (Ruling S-W) e foto de fundo (Ruling S-U) ---
+
+MARCADORES_DA_FAIXA = ("{pib_pc_razao.ultimo:1%}", "{pob_ne.ultimo:1%}", "{pob_br.ultimo:1%}")
+
+
+def _inicio(saida: Path) -> tuple[str, Arvore]:
+    html = _ler(saida, "index.html")
+    return html, Arvore(html)
+
+
+def test_cada_grafico_do_inicio_tem_botao_e_template_ampliado(gerado, dados, conteudo):
+    saida, _ = gerado
+    html, arvore = _inicio(saida)
+    destaques = calcular_destaques(dados, conteudo)
+    graficos = [(p, g) for p in conteudo.perguntas for g in p["graficos"]]
+    textos = conteudo.textos["ampliar"]
+    botoes = arvore.achar("button", classe="nn-ampliar")
+    modelos = arvore.achar("template", classe="nn-ampliado")
+    assert len(botoes) == len(modelos) == len(graficos) > 6
+    for botao in botoes:
+        assert Arvore.texto(botao) == textos["botao"] == "Ampliar"
+        assert botao["attrs"]["aria-haspopup"] == "dialog" and botao["attrs"]["type"] == "button"
+        assert "hidden" in botao["attrs"]  # sem JavaScript o botao nao aparece; o site.js o mostra
+        assert botao["attrs"]["aria-label"].startswith(textos["rotulo"])
+    assert [b["attrs"]["data-ampliado"] for b in botoes] == [m["attrs"]["id"] for m in modelos]
+    corpos = re.findall(r'<template class="nn-ampliado" id="[^"]+">(.*?)</template>', html, flags=re.S)
+    assert len(corpos) == len(graficos)
+    for (pergunta, grafico), corpo in zip(graficos, corpos, strict=True):
+        assert len(re.findall(r'viewBox="0 0 1100 520"', corpo)) == 1  # o grafico na terceira largura, pronto do Python
+        assert 'data-pontos="' in corpo  # a dica de valor do site.js le o mesmo atributo dos outros graficos
+        texto = Arvore(corpo).texto_visivel()
+        for esperado in (
+            preencher(pergunta["frase_feita"], destaques), preencher(grafico.get("titulo", ""), destaques),
+            *(preencher(f, destaques) for f in pergunta["fonte"]), "Atualizado em ", "Nordeste",
+            "Faixas de governo",  # a legenda
+        ):
+            assert " ".join(esperado.split()) in texto, (pergunta["id"], esperado)
+        for quebra in grafico.get("quebras", []):
+            assert f"{textos['quebra']} {quebra['ano']}: {quebra['rotulo']}." in texto
+        if "alerta" in pergunta:
+            assert " ".join(preencher(pergunta["alerta"], destaques).split()) in texto
+        assert Arvore(corpo).achar("h2")[0]["attrs"]["class"] == "nn-modal-titulo"
+    # um grafico com quebra de serie e uma pergunta com alerta exercitam as notas
+    assert any(g.get("quebras") for _, g in graficos) and any("alerta" in p for p, _ in graficos)
+
+
+def test_ampliado_so_traz_as_atualizacoes_dos_indicadores_do_proprio_grafico(gerado, dados, conteudo):
+    saida, _ = gerado
+    html, _ = _inicio(saida)
+    corpos = re.findall(r'<template class="nn-ampliado" id="[^"]+">(.*?)</template>', html, flags=re.S)
+    graficos = [g for p in conteudo.perguntas for g in p["graficos"]]
+    for grafico, corpo in zip(graficos, corpos, strict=True):
+        indicadores = {l["indicador"] for l in grafico["linhas"]}
+        assert corpo.count("Atualizado em ") == len([i for i in indicadores if i in dados.fichas]), grafico["id"]
+
+
+def test_um_unico_dialog_por_pagina(gerado):
+    saida, _ = gerado
+    _, arvore = _inicio(saida)
+    dialogos = arvore.achar("dialog")
+    assert len(dialogos) == 1
+    atributos = dialogos[0]["attrs"]
+    assert atributos["class"] == "nn-modal" and atributos["aria-labelledby"] and "open" not in atributos
+    fechar = arvore.achar("button", classe="nn-modal-fechar")
+    assert [Arvore.texto(b) for b in fechar] == ["Fechar ×"]
+    assert Arvore.texto(arvore.achar("p", classe="nn-modal-gire")[0]) == "Gire o celular para ver melhor"
+    for pagina in ("estados/index.html", "explorar/index.html", "cards/index.html", "sobre/index.html", "dados/index.html"):
+        assert not Arvore(_ler(saida, pagina)).achar("dialog"), pagina  # so o Inicio tem graficos ampliaveis
+
+
+def test_faixa_de_numeros_entre_hero_e_legenda(gerado, dados, conteudo):
+    saida, _ = gerado
+    html, arvore = _inicio(saida)
+    destaques = calcular_destaques(dados, conteudo)
+    hero, faixa, legenda = html.index('id="topo"'), html.index('class="nn-faixa-abertura"'), html.index('class="nn-legenda"')
+    assert hero < faixa < legenda
+    esperados = [preencher(m, destaques) for m in MARCADORES_DA_FAIXA]
+    assert [Arvore.texto(e) for e in arvore.achar(classe="nn-numero-valor")] == esperados
+    assert all(re.fullmatch(r"\d{1,3}(\.\d{3})*,\d%", e) for e in esperados)  # formato brasileiro, uma casa
+    anos = [Arvore.texto(e) for e in arvore.achar(classe="nn-numero-ano")]
+    assert anos == [f"em {destaques[i].ultimo.ano}" for i in ("pib_pc_razao", "pob_ne", "pob_br")]
+    assert len(arvore.achar(classe="nn-numero-rotulo")) == 3
+    # os dois paragrafos saem do hero e vem depois dos numeros
+    assert [Arvore.texto(e) for e in arvore.achar("p", classe="nn-faixa-texto")] == [
+        " ".join(preencher(conteudo.textos["faixa"]["texto"], destaques).split())
+    ]
+    nota = [Arvore.texto(e) for e in arvore.achar("p", classe="nn-faixa-nota")]
+    assert nota == [" ".join(conteudo.textos["faixa"]["nota"].split())]
+    assert faixa < html.index('class="nn-faixa-texto"') < html.index('class="nn-faixa-nota"') < legenda
+    assert not arvore.achar("p", classe="nn-hero-nota")
+    # no hero ficam so o selo, o titulo e o primeiro paragrafo
+    assert len(arvore.achar("p", classe="nn-hero-intro")) == 1
+
+
+def _subir_a_pobreza(base):
+    pobreza = base[(base["indicador_id"] == "pobreza") & (base["territorio_id"] == "NE") & (base["valor"] != "")]
+    base.loc[pobreza["ano"].astype(int).idxmax(), "valor"] = "99.0"
+    return base
+
+
+def _sem_pobreza_do_nordeste(base):
+    return base[~((base["indicador_id"] == "pobreza") & (base["territorio_id"] == "NE"))]
+
+
+@pytest.mark.parametrize("alterar", [_subir_a_pobreza, _sem_pobreza_do_nordeste], ids=["condicao_falsa", "destaque_sumido"])
+def test_faixa_some_com_a_condicao_da_abertura(tmp_path, alterar):
+    raiz = copiar_base(tmp_path / "repo")
+    alterar_base(raiz, alterar)
+    saida = tmp_path / "saida"
+    relatorio = gerar_site(Caminhos(raiz=raiz), saida, imagens=False)
+    _, arvore = _inicio(saida)
+    assert "abertura_numeros" in relatorio.fechos_suprimidos
+    # os numeros grandes e o paragrafo somem juntos...
+    assert not arvore.achar(classe="nn-numero-valor") and not arvore.achar(classe="nn-numero-rotulo")
+    assert not arvore.achar("p", classe="nn-faixa-texto")
+    # ...mas a nota de que nada aqui atribui resultado a governo fica, e o resto da pagina tambem
+    assert len(arvore.achar("p", classe="nn-faixa-nota")) == 1
+    assert arvore.achar("section", id="topo") and arvore.achar("dialog")
+
+
+def test_hero_sem_foto_nao_tem_classe_e_com_foto_tem(tmp_path, monkeypatch):
+    foto = {"arquivo": "foto-abertura.webp", "credito": "Fulana de Tal, CC BY-SA 4.0", "url": "https://exemplo.org/foto"}
+    sem = copiar_base(tmp_path / "sem")
+    definir_foto(sem, None)
+    gerar_site(Caminhos(raiz=sem), tmp_path / "saida-sem", imagens=False)
+    hero = Arvore(_ler(tmp_path / "saida-sem", "index.html")).achar("section", id="topo")[0]
+    assert hero["attrs"]["class"] == "nn-hero"
+    assert not (tmp_path / "saida-sem" / foto["arquivo"]).exists()
+
+    com = copiar_base(tmp_path / "com")
+    estaticos_com_foto(tmp_path, monkeypatch, foto["arquivo"])  # um webp de poucos bytes: bem abaixo de 200 KB
+    definir_foto(com, foto)
+    gerar_site(Caminhos(raiz=com), tmp_path / "saida-com", imagens=False)
+    _, arvore = _inicio(tmp_path / "saida-com")
+    assert arvore.achar("section", id="topo")[0]["attrs"]["class"] == "nn-hero nn-hero-com-foto"
+    assert not arvore.achar("img")  # nada de <img> nem de style=: a foto entra por CSS (estilo.css)
+    assert not any("style" in e["attrs"] for e in arvore.elementos)
+    assert (tmp_path / "saida-com" / foto["arquivo"]).read_bytes() == b"RIFFxxxxWEBP"
 
 
 # --- proximo dado, com cobertura sintetica (Ruling S-P) ---

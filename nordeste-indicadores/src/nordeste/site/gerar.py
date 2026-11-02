@@ -43,12 +43,16 @@ OG = (1200, 630)  # imagem de compartilhamento das paginas
 CARD = (1080, 1350)  # PNG de cada card
 FOTO_TAMANHO_MAXIMO = 200_000  # bytes: a foto pesa na primeira tela
 FOTO_EXIGIDA = ("arquivo", "credito", "url")  # `foto` e opcional em textos.yaml; se existir, traz tudo isso
+FOTO_ARQUIVO = "foto-abertura.webp"  # o estilo.css aponta para este nome (fundo da abertura, Ruling S-U)
 LARGO = {"largura": 720}  # os dois tamanhos de cada grafico (Ruling S-O): o CSS mostra um conforme a largura da tela
 ESTREITO = {"largura": 360, "altura": 240}
+AMPLIADO = {"largura": 1100, "altura": 520}  # o terceiro, do modal "Ampliar" (Ruling S-W): guardado num <template>
 ARQUIVOS_DE_DADOS = ("base_nordeste.csv", "derivados.csv")
 EXPLORAR_INICIAL = ("pib_pc", "NE")  # a vista que ja vem desenhada no HTML: indicador e territorio
 TEXTOS_EXIGIDOS = {  # seção de textos.yaml: chaves lidas pelo gerador e pelos modelos
-    "abertura": {"eyebrow", "titulo", "destaque", "intro", "nota"},
+    "abertura": {"eyebrow", "titulo", "destaque", "intro"},
+    "faixa": {"rotulo", "id", "numeros", "texto", "nota"},  # + `condicao`, opcional (Ruling S-V)
+    "ampliar": {"botao", "rotulo", "fechar", "gire", "quebra"},
     "por_que": {"titulo", "paragrafos"}, "como_ler": {"titulo", "itens"}, "o_que_falta": {"titulo", "itens"},
     "dataset": {"nome", "descricao"}, "fontes": {"titulo", "intro"}, "formulas": {"titulo", "intro", "blocos"},
     "arquivos": {"titulo", "intro"}, "dados": {"titulo", "intro", "conferir", "arquivos"},
@@ -89,7 +93,7 @@ PAGINAS_COM_DATASET = ("index", "dados")
 @dataclass
 class RelatorioSite:
     paginas: list[str]
-    # ids das perguntas que ficaram sem fecho ou sairam inteiras e dos paragrafos da abertura que sairam (abertura_numeros)
+    # ids das perguntas que ficaram sem fecho ou sairam inteiras e da faixa de numeros da abertura, se saiu (abertura_numeros)
     fechos_suprimidos: list[str]
     cards_suprimidos: list[str]
 
@@ -177,18 +181,23 @@ def _desenhar(linhas: list[Linha], cfg: ConfigGrafico, governos: pd.DataFrame) -
 
 
 def _montar_grafico(dados: DadosSite, destaques: dict[str, Destaque], grafico: dict) -> dict | None:
-    """O grafico nas duas larguras e a tabela dos numeros; None quando nenhuma linha tem ponto no eixo."""
+    """O grafico nas tres larguras (a do modal tambem), a tabela dos numeros e o que o modal mostra do grafico
+    (notas de quebra e atualizacoes dos seus indicadores); None quando nenhuma linha tem ponto no eixo."""
     linhas, cfg = _linhas(dados, grafico), _config(grafico, destaques)
     largo, estreito = _desenhar(linhas, cfg, dados.governos)
     if not largo:
         return None
     nome = preencher(grafico.get("titulo") or grafico.get("descricao") or grafico["id"], destaques)
+    indicadores = list(dict.fromkeys(l["indicador"] for l in grafico["linhas"]))
     return {
         "id": grafico["id"].replace("_", "-"),
         "titulo": preencher(grafico["titulo"], destaques) if "titulo" in grafico else None,
         "subtitulo": preencher(grafico["subtitulo"], destaques) if "subtitulo" in grafico else None,
         "largo": largo,
         "estreito": estreito,
+        "ampliado": grafico_linhas(linhas, cfg, dados.governos, **AMPLIADO),
+        "quebras": [{"ano": q["ano"], "rotulo": q["rotulo"]} for q in grafico.get("quebras", [])],
+        "atualizacoes": _atualizacoes(dados, indicadores),
         "tabela": _tabela(linhas, cfg, nome),
     }
 
@@ -466,7 +475,9 @@ def _validar_foto(foto: object) -> None:
     _exigir(foto, set(FOTO_EXIGIDA), "textos.foto")
     if not all(isinstance(foto[chave], str) and foto[chave].strip() for chave in FOTO_EXIGIDA):
         raise ErroConteudo("textos.yaml: foto.arquivo, foto.credito e foto.url são textos, não vazios.")
-    if Path(foto["arquivo"]).name != foto["arquivo"] or not (PASTA_ESTATICOS / foto["arquivo"]).is_file():
+    if foto["arquivo"] != FOTO_ARQUIVO:
+        raise ErroConteudo(f"textos.yaml: foto.arquivo é {FOTO_ARQUIVO!r}, o nome que o estilo.css usa; veio {foto['arquivo']!r}.")
+    if not (PASTA_ESTATICOS / foto["arquivo"]).is_file():
         raise ErroConteudo(f"textos.yaml: foto.arquivo {foto['arquivo']!r} não está em estaticos/ do pacote.")
     if (PASTA_ESTATICOS / foto["arquivo"]).stat().st_size > FOTO_TAMANHO_MAXIMO:
         raise ErroConteudo(f"textos.yaml: foto.arquivo {foto['arquivo']!r} passa de {FOTO_TAMANHO_MAXIMO // 1000} KB.")
@@ -489,6 +500,28 @@ def _paragrafos_da_abertura(itens: list, destaques: dict[str, Destaque]) -> tupl
         else:
             suprimidos.append(item["id"])
     return textos, suprimidos
+
+
+def _faixa(faixa: dict, destaques: dict[str, Destaque]) -> tuple[dict, list[str]]:
+    """A faixa de numeros da abertura pronta para preencher e os ids que sairam (`[]` ou o id da faixa).
+
+    Os numeros grandes e o paragrafo valem juntos: saem se a condicao e falsa ou se algum texto cita destaque ausente
+    da base. A nota (de onde vem o dado, o que as faixas de governo nao dizem) nao tem numero e fica sempre.
+    """
+    numeros = faixa["numeros"]
+    formato_ok = isinstance(numeros, list) and numeros and all(
+        isinstance(n, dict) and n.keys() == {"valor", "rotulo", "ano"} for n in numeros
+    )
+    if not formato_ok or faixa.keys() - {*TEXTOS_EXIGIDOS["faixa"], "condicao"}:
+        raise ErroConteudo("textos.yaml, faixa: numeros é uma lista de valor, rotulo e ano; as demais chaves são "
+                           "rotulo, id, texto, nota e, se houver, condicao.")
+    vale = _cita_so_o_que_existe([faixa["texto"], numeros], destaques)
+    if vale and "condicao" in faixa:
+        vale = avaliar_condicao(faixa["condicao"], destaques)
+    pronta = {"rotulo": faixa["rotulo"], "nota": faixa["nota"], "texto": None, "numeros": []}
+    if not vale:
+        return pronta, [faixa["id"]]
+    return {**pronta, "texto": faixa["texto"], "numeros": numeros}, []
 
 
 def _copiar_estaticos(saida: Path) -> None:
@@ -518,7 +551,10 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
     destaques = calcular_destaques(dados, conteudo)
     data = data_por_extenso(dados.data_base)
     abertura, paragrafos_suprimidos = _paragrafos_da_abertura(conteudo.textos["abertura"]["intro"], destaques)
-    com_abertura = {**conteudo.textos, "abertura": {**conteudo.textos["abertura"], "intro": abertura}}
+    faixa, faixa_suprimida = _faixa(conteudo.textos["faixa"], destaques)
+    com_abertura = {
+        **conteudo.textos, "abertura": {**conteudo.textos["abertura"], "intro": abertura}, "faixa": faixa,
+    }
     textos = _resolver(com_abertura, destaques, data)
     perguntas, fechos_suprimidos = _perguntas(dados, destaques, conteudo)
     cards_fora = _cards_suprimidos(conteudo, destaques)
@@ -565,7 +601,7 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
     paginas = [p.arquivo for p in PAGINAS] + [f"cards/{c['id']}/index.html" for c in cards]
     if imagens:
         _gerar_imagens(saida, ambiente, comum, cards, _contorno(caminhos))
-    return RelatorioSite(paginas, [*paragrafos_suprimidos, *fechos_suprimidos], cards_fora)
+    return RelatorioSite(paginas, [*paragrafos_suprimidos, *faixa_suprimida, *fechos_suprimidos], cards_fora)
 
 
 def relatorio_em_json(relatorio: RelatorioSite) -> str:
