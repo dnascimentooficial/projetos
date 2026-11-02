@@ -8,6 +8,13 @@ está em `docs/specs/2026-10-31-base-historica-design.md`; as conferências feit
 > **Primeira publicação real em 2026-11-01** (ver "Situação da publicação", abaixo). As fixtures de
 > `testes/fixtures/` continuam sintéticas (valores derivados de 99999) e nunca chegam à base: a regra R01 barra.
 
+## Site e licença
+
+O site **Nordeste em Números** (https://nordeste.dnascimento.com.br) é gerado a partir desta base pelo comando
+`python -m nordeste site` e atualizado toda semana pelo workflow `.github/workflows/atualizar.yml`, que publica
+na branch `site-publicado`. A compilação está sob **CC BY 4.0**; exceções (fontes, axe-core, foto da abertura)
+em [`LICENSE.md`](LICENSE.md).
+
 ## Situação da publicação
 
 | Item | Valor |
