@@ -8,6 +8,9 @@
 {% for paragrafo in textos.por_que.paragrafos %}
     <p>{{ paragrafo }}</p>
 {% endfor %}
+{% if foto %}
+    <p class="nn-muted nn-credito-sobre">Foto da abertura: <a href="{{ foto.url }}">{{ foto.credito }}</a>.</p>
+{% endif %}
     <h3>{{ textos.como_ler.titulo }}</h3>
     <ul class="nn-lista">
 {% for item in textos.como_ler.itens %}

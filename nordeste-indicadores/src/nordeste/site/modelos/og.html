@@ -1,0 +1,49 @@
+{# Página de apoio que o Chromium fotografa para o PNG de compartilhamento: a imagem OpenGraph (1200x630) de uma
+   página ou o card (1080x1350, o macro de _cartao.html a 2x). Nunca é publicada: o gerador a apaga depois de
+   renderizar, por isso o <style> aqui não conflita com a CSP do site (Ruling S-D). #}
+{% from "_cartao.html" import cartao %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>{{ titulo }}</title>
+<link rel="stylesheet" href="/estilo.css">
+<style>
+html, body { margin: 0; background: #080808; overflow: hidden; }
+{% if card %}
+.nn { padding: 0; max-width: none; display: block; zoom: 2; }
+.nn .nn-cartao { width: 540px; border: 0; border-radius: 0; }
+{% else %}
+.nn-og { position: relative; box-sizing: border-box; width: 1200px; height: 630px; padding: 64px 72px; overflow: hidden;
+  background: #080808; color: #ffffff; font-family: "DM Sans", system-ui, sans-serif; display: grid;
+  grid-template-rows: auto 1fr auto; }
+.nn-og::before, .nn-og::after { content: ""; position: absolute; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 50%; }
+.nn-og::before { width: 760px; height: 760px; right: -150px; top: -250px; }
+.nn-og::after { width: 340px; height: 340px; right: 330px; bottom: -150px; }
+.nn-og > * { position: relative; }
+.nn-og-contorno { position: absolute; right: 76px; top: 70px; width: 400px; height: 490px; }
+.nn-og-contorno path { fill: rgba(255, 255, 255, 0.07); stroke: #ea2e00; stroke-width: 3; stroke-linejoin: round; }
+.nn-og-marca { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.72); }
+.nn-og-titulo { margin: 0; align-self: center; max-width: 680px; font-family: "Manrope", system-ui, sans-serif; font-weight: 800;
+  font-size: 84px; letter-spacing: -0.06em; line-height: 0.95; }
+.nn-og-titulo span { display: block; }
+.nn-og-titulo .nn-og-destaque { color: #ea2e00; }
+.nn-og-rodape { margin: 0; font-size: 26px; font-weight: 600; color: rgba(255, 255, 255, 0.82); }
+{% endif %}
+</style>
+</head>
+<body>
+{% if card %}
+<div class="nn">
+{{ cartao(card, textos.cards, data_curta) }}
+</div>
+{% else %}
+<div class="nn-og">
+  <svg class="nn-og-contorno" viewBox="{{ contorno.viewbox }}" aria-hidden="true"><path d="{{ contorno.d }}"/></svg>
+  <p class="nn-og-marca">Júlio Diógenes · Nordeste em Números</p>
+  <h1 class="nn-og-titulo">{% for linha in og.linhas %}<span>{{ linha }}</span>{% endfor %}{% if og.destaque %}<span class="nn-og-destaque">{{ og.destaque }}</span>{% endif %}</h1>
+  <p class="nn-og-rodape">nordeste.dnascimento.com.br</p>
+</div>
+{% endif %}
+</body>
+</html>

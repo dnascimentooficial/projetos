@@ -20,7 +20,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pillow"]
+site = ["playwright"]
+ferramentas = ["shapely"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -30,5 +32,8 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["testes"]
-markers = ["rede: acessa fontes oficiais reais"]
-addopts = "-m 'not rede'"
+markers = [
+    "rede: acessa fontes oficiais reais",
+    "navegador: abre o Chromium (precisa do extra site)",
+]
+addopts = "-m 'not rede and not navegador'"

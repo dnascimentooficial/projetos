@@ -1,6 +1,13 @@
 # Textos fixos do site, em primeira pessoa. Marcadores {destaque.campo[:formato]} como em perguntas.yaml.
 # O recorte de anos do selo ("2000 a ..."), a data da base e o sha256 saem da base publicada, no gerador.
 
+# Foto da abertura (opcional, descomente quando houver): arquivo em src/nordeste/site/estaticos/, até 200 KB, em webp;
+# credito é o texto do rodapé e de Sobre (autor e licença); url é a página da foto com a licença. Sem a chave, não há foto.
+# foto:
+#   arquivo: "foto-abertura.webp"
+#   credito: "Autora ou autor, licença"
+#   url: "https://..."
+
 abertura:
   eyebrow: "Nordeste em Números"
   titulo:

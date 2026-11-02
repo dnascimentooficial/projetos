@@ -258,6 +258,25 @@ curso. Indicadores `auxiliar` são insumos (denominadores e contagens) e não s�
 | `superior` | Ensino superior, matrículas de graduação e instituições | educacao_superior | exibido | `censup_pre2009`, `censup` | 2001–2024 | verificada |
 <!-- tabela-indicadores:fim -->
 
+## Imagens do site
+
+`python -m nordeste site --saida <pasta>` gera, além das páginas, `og/<pagina>.png` (1200 por 630, a prévia de
+compartilhamento de cada página que não é de card) e `cards/<id>.png` (1080 por 1350, o próprio card). As imagens saem
+de um Chromium sem tela, pelo Playwright: `python -m pip install -e '.[site]'` e, se o navegador não foi instalado
+pelo `playwright install chromium`, `PLAYWRIGHT_CHROMIUM=<caminho do chromium>`. Com `--sem-imagens` nada disso é
+preciso. Os testes que abrem o navegador ficam fora da suíte padrão: `python -m pytest -m navegador`.
+
+**Contorno do Nordeste** (`metadados/site/nordeste-contorno.svg`, desenho das prévias): as nove UFs dissolvidas pela
+`ferramentas/gerar_contorno.py` (`python -m pip install -e '.[ferramentas]'`). A malha vem da malha municipal do IBGE
+redistribuída em CC0 pelo repositório `tbrugz/geodata-br` (`geojson/geojs-21-mun.json` a `geojs-29-mun.json`, em
+`raw.githubusercontent.com`), baixada em 2026-11-02; o `geoftp.ibge.gov.br` estava bloqueado na rede de quem gerou.
+O contorno é só desenho: baías e frestas estreitas (falhas da malha) são fechadas e a ilha de Fernando de Noronha
+não aparece. A origem e a data também estão no comentário no topo do SVG.
+
+**Foto da abertura** (opcional): a chave `foto: {arquivo, credito, url}` de `metadados/site/textos.yaml` põe a
+imagem `src/nordeste/site/estaticos/<arquivo>` (até 200 KB, em `webp`) na abertura e o crédito, com link para a página
+da licença, no rodapé e em Sobre os dados. Sem a chave, não há foto nem crédito.
+
 ## Testes
 
 - `python -m pytest`: suíte padrão, offline, sem os testes de contrato.

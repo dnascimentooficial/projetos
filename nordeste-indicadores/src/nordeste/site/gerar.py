@@ -9,6 +9,7 @@ cita um destaque que sumiu da base, nao saem e vao para o `RelatorioSite`.
 import hashlib
 import json
 import shutil
+import xml.etree.ElementTree as ET
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -29,13 +30,19 @@ from nordeste.site.explorar import (
 )
 from nordeste.site.formatacao import numero
 from nordeste.site.graficos import ConfigGrafico, Linha, faixas_em_json, grafico_linhas, minigrafico
+from nordeste.site.imagens import AlvoImagem, renderizar
 
 NOME_DO_SITE = "Nordeste em Números"
 URL_DO_SITE = "https://nordeste.dnascimento.com.br"
 URL_DO_AUTOR = "https://dnascimento.com.br"
 LICENCA = "https://creativecommons.org/licenses/by/4.0/"
 PASTA_MODELOS = Path(__file__).parent / "modelos"
-PASTA_ESTATICOS = Path(__file__).parent / "estaticos"  # estilo, script, fontes e .htaccess, copiados na raiz do site
+PASTA_ESTATICOS = Path(__file__).parent / "estaticos"  # estilo, script, fontes, foto e .htaccess, copiados na raiz do site
+CONTORNO = ("site", "nordeste-contorno.svg")  # em metadados/; ferramentas/gerar_contorno.py o gera
+OG = (1200, 630)  # imagem de compartilhamento das paginas
+CARD = (1080, 1350)  # PNG de cada card
+FOTO_TAMANHO_MAXIMO = 200_000  # bytes: a foto pesa na primeira tela
+FOTO_EXIGIDA = ("arquivo", "credito", "url")  # `foto` e opcional em textos.yaml; se existir, traz tudo isso
 LARGO = {"largura": 720}  # os dois tamanhos de cada grafico (Ruling S-O): o CSS mostra um conforme a largura da tela
 ESTREITO = {"largura": 360, "altura": 240}
 ARQUIVOS_DE_DADOS = ("base_nordeste.csv", "derivados.csv")
@@ -381,8 +388,44 @@ def _ambiente() -> Environment:
     )
 
 
-def _gerar_imagens(saida: Path, paginas: list[str]) -> None:
-    """Gancho da Tarefa 8 (imagens OpenGraph e cards). Ate la, so as paginas sao geradas."""
+def _contorno(caminhos: Caminhos) -> dict:
+    """O viewBox e o caminho do contorno do Nordeste (metadados/site/nordeste-contorno.svg), para a imagem OpenGraph."""
+    svg = ET.fromstring((caminhos.metadados.joinpath(*CONTORNO)).read_text(encoding="utf-8"))
+    caminho = next(e for e in svg.iter() if e.tag.endswith("}path"))
+    return {"viewbox": svg.attrib["viewBox"], "d": caminho.attrib["d"]}
+
+
+def _texto_og(chave: str, textos: dict) -> dict:
+    """O titulo da imagem de uma pagina: a pergunta da abertura (com o destaque) no Inicio, o nome da pagina nas demais."""
+    if chave == "index":
+        return {"linhas": textos["abertura"]["titulo"], "destaque": textos["abertura"]["destaque"]}
+    return {"linhas": [textos["paginas"][chave]["titulo"].split(" · ")[0]], "destaque": None}
+
+
+def _gerar_imagens(saida: Path, ambiente: Environment, comum: dict, cards: list[dict], contorno: dict) -> None:
+    """og/<pagina>.png (1200x630) para cada pagina que nao e de card e cards/<id>.png (1080x1350) para cada card.
+
+    As paginas de card ja apontam o og:image para o PNG do proprio card. O Chromium fotografa paginas de apoio
+    (modelos/og.html) escritas em `_imagens/`, que somem ao fim, com o estilo e as fontes locais do site.
+    """
+    apoio = saida / "_imagens"
+    apoio.mkdir()
+    alvos = []
+    try:
+        for p in PAGINAS:
+            nome = f"og-{p.chave}.html"
+            _escrever(
+                ambiente, apoio, "og.html", nome, titulo=NOME_DO_SITE, card=None, contorno=contorno,
+                og=_texto_og(p.chave, comum["textos"]), **comum,
+            )
+            alvos.append(AlvoImagem(apoio / nome, saida / "og" / f"{p.chave}.png", *OG))
+        for card in cards:
+            nome = f"card-{card['id']}.html"
+            _escrever(ambiente, apoio, "og.html", nome, titulo=card["frase_feita"], card=card, contorno=None, og=None, **comum)
+            alvos.append(AlvoImagem(apoio / nome, saida / "cards" / f"{card['id']}.png", *CARD))
+        renderizar(alvos, raiz=saida)
+    finally:
+        shutil.rmtree(apoio)
 
 
 def _validar_saida(caminhos: Caminhos, saida: Path) -> None:
@@ -414,6 +457,19 @@ def _validar_textos(textos: object) -> None:
         "dados": {**dict.fromkeys(TEXTOS_EXIGIDOS["dados"] - {"arquivos"}), "arquivos": set(ARQUIVOS_DE_DADOS)},
     }
     _exigir(textos, exigidos, "textos")
+    if "foto" in textos:
+        _validar_foto(textos["foto"])
+
+
+def _validar_foto(foto: object) -> None:
+    """`foto: {arquivo, credito, url}` (Ruling S-Q): o arquivo esta em estaticos/ e o credito aponta para a pagina da licenca."""
+    _exigir(foto, set(FOTO_EXIGIDA), "textos.foto")
+    if not all(isinstance(foto[chave], str) and foto[chave].strip() for chave in FOTO_EXIGIDA):
+        raise ErroConteudo("textos.yaml: foto.arquivo, foto.credito e foto.url são textos, não vazios.")
+    if Path(foto["arquivo"]).name != foto["arquivo"] or not (PASTA_ESTATICOS / foto["arquivo"]).is_file():
+        raise ErroConteudo(f"textos.yaml: foto.arquivo {foto['arquivo']!r} não está em estaticos/ do pacote.")
+    if (PASTA_ESTATICOS / foto["arquivo"]).stat().st_size > FOTO_TAMANHO_MAXIMO:
+        raise ErroConteudo(f"textos.yaml: foto.arquivo {foto['arquivo']!r} passa de {FOTO_TAMANHO_MAXIMO // 1000} KB.")
 
 
 def _paragrafos_da_abertura(itens: list, destaques: dict[str, Destaque]) -> tuple[list[str], list[str]]:
@@ -508,7 +564,7 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
 
     paginas = [p.arquivo for p in PAGINAS] + [f"cards/{c['id']}/index.html" for c in cards]
     if imagens:
-        _gerar_imagens(saida, paginas)
+        _gerar_imagens(saida, ambiente, comum, cards, _contorno(caminhos))
     return RelatorioSite(paginas, [*paragrafos_suprimidos, *fechos_suprimidos], cards_fora)
 
 

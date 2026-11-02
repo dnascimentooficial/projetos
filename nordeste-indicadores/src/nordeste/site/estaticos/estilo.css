@@ -369,6 +369,21 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.nn-hero-foto {
+  display: block;
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  object-fit: cover;
+  border-radius: var(--nn-raio);
+  margin-top: 6px;
+}
+
+@media (max-width: 560px) {
+  .nn-hero-foto {
+    aspect-ratio: 4 / 3;
+  }
+}
+
 .nn-hero-nota {
   color: rgba(255, 255, 255, 0.58);
   font-size: 13px;

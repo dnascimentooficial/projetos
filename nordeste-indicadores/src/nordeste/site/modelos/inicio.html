@@ -23,6 +23,9 @@
   <p class="nn-hero-intro">{{ paragrafo }}</p>
 {% endfor %}
   <p class="nn-hero-nota">{{ abertura.nota }}</p>
+{% if foto %}
+  <img class="nn-hero-foto" src="/{{ foto.arquivo }}" alt="" decoding="async">
+{% endif %}
 </section>
 
 <section class="nn-pagina" id="resumo" aria-label="As perguntas">
