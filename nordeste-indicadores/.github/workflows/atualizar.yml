@@ -202,7 +202,7 @@ jobs:
               echo
               python -m nordeste.automacao resumo --mudancas dados/relatorios/mudancas.csv
             } > "$RUNNER_TEMP/corpo.md"
-            .github/scripts/abrir-issue.sh --so-se-nova "Ano novo na base: releia os textos" "$RUNNER_TEMP/corpo.md"
+            .github/scripts/abrir-issue.sh "Ano novo na base: releia os textos" "$RUNNER_TEMP/corpo.md"
           fi
 
       - name: Publicar o site na branch site-publicado

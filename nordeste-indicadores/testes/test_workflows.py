@@ -329,17 +329,23 @@ def test_anos_novos_abrem_issue_com_o_resumo(ambiente, tmp_path, com_base_anteri
     assert chamada == ["-m", "nordeste.automacao", "anos-novos", "--mudancas", "dados/relatorios/mudancas.csv", *anterior]
 
 
-@pytest.mark.parametrize(("codigo", "saida", "aberta", "issue"),
-                         [(0, "", False, False), (0, "pib:2024\n", True, False), (2, "", False, False)])
-def test_anos_novos_sem_novidade_aberta_ou_erro_nao_abrem_issue(ambiente, codigo, saida, aberta, issue):
+def test_anos_novos_comentam_na_aberta(ambiente):
+    """Cada semana compara com a base anterior: os anos novos sao informacao nova e vao como comentario."""
     pasta, log, issues, config = ambiente
-    if aberta:
-        issues.write_text(json.dumps([{"number": 4, "title": "Ano novo na base: releia os textos"}]))
-    config.write_text(json.dumps({"anos-novos": {"codigo": codigo, "saida": saida}}))
-    resultado = _rodar(_passo("atualizar.yml", "avisar_anos_novos"), pasta)
-    assert resultado.returncode == codigo
+    issues.write_text(json.dumps([{"number": 4, "title": "Ano novo na base: releia os textos"}]))
+    config.write_text(json.dumps({"anos-novos": {"saida": "pib:2025\n"}}))
+    assert _rodar(_passo("atualizar.yml", "avisar_anos_novos"), pasta).returncode == 0
     assert _issues_abertas(log) == []
-    assert not [c for c in _chamadas(log) if c[:2] == ["issue", "comment"]]
+    (comentario,) = [c for c in _chamadas(log) if c[:2] == ["issue", "comment"]]
+    assert comentario[2] == "4" and "pib:2025" in Path(comentario[comentario.index("--body-file") + 1]).read_text()
+
+
+@pytest.mark.parametrize("codigo", [0, 2])
+def test_anos_novos_sem_novidade_ou_erro_nao_avisam(ambiente, codigo):
+    pasta, log, _, config = ambiente
+    config.write_text(json.dumps({"anos-novos": {"codigo": codigo}}))
+    assert _rodar(_passo("atualizar.yml", "avisar_anos_novos"), pasta).returncode == codigo
+    assert _chamadas(log) == []
 
 
 @pytest.mark.parametrize(("codigo", "saida", "issue"), [(0, 0, False), (1, 1, True), (2, 2, False)])
