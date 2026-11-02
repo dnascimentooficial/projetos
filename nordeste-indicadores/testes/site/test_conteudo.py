@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ from nordeste.site.conteudo import (
     avaliar_condicao,
     calcular_destaques,
     carregar_conteudo,
+    destaques_citados,
     preencher,
 )
 from nordeste.site.dados import DadosSite, Ponto
@@ -95,6 +97,38 @@ def test_condicao_com_destaque_ausente_e_falsa(destaques):
     assert avaliar_condicao("sumiu.ultimo > 0", destaques) is False
 
 
+def test_condicao_com_multiplicacao_por_literal(destaques):
+    # x vai de 58,8 a 44,7: 44,7 / 58,8 = 0,76; z vai de 38,78 a 43,57: razao 1,12
+    assert avaliar_condicao("x.ultimo <= x.primeiro * 0.8", destaques) is True
+    assert avaliar_condicao("x.ultimo <= x.primeiro * 0.75", destaques) is False
+    assert avaliar_condicao("z.ultimo > z.primeiro * 1.1", destaques) is True
+    assert avaliar_condicao("z.ultimo > z.primeiro * 1.2", destaques) is False
+    assert avaliar_condicao("y.ultimo > y.primeiro * 2", destaques) is False   # inteiro tambem serve
+    assert avaliar_condicao("x.ultimo * 2 > 80", destaques) is True            # fator a esquerda
+    assert avaliar_condicao("x.ultimo * 0.5 > z.ultimo * 0.5", destaques) is True  # fator dos dois lados
+    assert avaliar_condicao("y.ultimo >= y.primeiro * 1.8 e y.ultimo < y.primeiro * 2", destaques) is True
+
+
+def test_condicao_com_conjuncao_exige_todas(destaques):
+    assert avaliar_condicao("x.ultimo < x.primeiro e z.ultimo > z.primeiro", destaques) is True
+    assert avaliar_condicao("x.ultimo < x.primeiro e z.ultimo < z.primeiro", destaques) is False
+    assert avaliar_condicao("x.ultimo > x.primeiro e z.ultimo > z.primeiro", destaques) is False
+    assert avaliar_condicao("x.ultimo < 50 e x.ultimo > 40 e z.ultimo > 40", destaques) is True
+    # destaque ausente em qualquer comparacao derruba a condicao inteira
+    assert avaliar_condicao("x.ultimo < x.primeiro e sumiu.ultimo > 0", destaques) is False
+    assert avaliar_condicao("sumiu.ultimo > 0 e x.ultimo < x.primeiro", destaques) is False
+    # e a gramatica e conferida mesmo quando o destaque ausente ja decidiu: expressao ruim nunca passa em silencio
+    with pytest.raises(ErroConteudo):
+        avaliar_condicao("sumiu.ultimo > 0 ou x.ultimo < x.primeiro", destaques)
+
+
+def test_destaques_citados_lista_os_ids_dos_marcadores(destaques):
+    assert destaques_citados("De {x.ano_primeiro} a {x.ano_ultimo}: {x.ultimo:1%} contra {z.ultimo:1}.") == {"x", "z"}
+    assert destaques_citados("sem marcador") == set()
+    with pytest.raises(ErroConteudo):
+        destaques_citados("{x.ultimo}")
+
+
 @pytest.mark.parametrize("expressao", [
     "__import__('os')",
     "x.ultimo",
@@ -106,6 +140,18 @@ def test_condicao_com_destaque_ausente_e_falsa(destaques):
     "x.ultimo < um",
     "x.ultimo<x.primeiro",
     "",
+    "x.ultimo < x.primeiro ou x.dif > 0",      # so "e" liga comparacoes
+    "x.ultimo < x.primeiro e",                 # conjuncao sem a segunda comparacao
+    "e x.ultimo < x.primeiro",
+    "x.ultimo < x.primeiro e x.dif",           # segunda comparacao sem operador
+    "x.ultimo * y.primeiro < 3",               # "*" so multiplica por numero literal
+    "x.ultimo < y.primeiro * z.primeiro",
+    "x.ultimo * < 3",
+    "x.ultimo * 2 * 3 < 9",                    # um fator so
+    "3 * 2 < x.ultimo",                        # o fator e de um destaque
+    "x.ultimo + 1 < 50",
+    "x.ultimo < x.primeiro + 1",
+    "x.ultimo / 2 < 50",
 ])
 def test_condicao_rejeita_expressao_fora_da_gramatica(destaques, expressao):
     with pytest.raises(ErroConteudo):
@@ -127,9 +173,12 @@ def test_calcular_destaques_usa_os_filtros_e_ignora_destaque_sem_dado():
     )
     d = calcular_destaques(dados, conteudo)
     assert set(d) == {"a_ne", "a_nova", "a_razao", "b_ne"}  # destaque sem dado fica fora
-    assert d["a_ne"] == Destaque("a_ne", Ponto(2011, 10.0, "s_antiga"), Ponto(2013, 12.5, "s_nova"))
-    assert d["a_nova"].primeiro == Ponto(2012, 11.5, "s_nova")
-    assert d["a_razao"].ultimo == Ponto(2013, 0.75, "s_nova")
+    # alfa/NE troca de serie em 2012 (s_antiga ate 2012, s_nova de 2012 em diante): so conta a serie do ultimo
+    # ponto, o "primeiro" nao vai buscar 2011 na pesquisa antiga (nada se emenda)
+    assert d["a_ne"] == Destaque("a_ne", Ponto(2012, 11.5, "s_nova"), Ponto(2013, 12.5, "s_nova"))
+    assert d["a_nova"] == Destaque("a_nova", Ponto(2012, 11.5, "s_nova"), Ponto(2013, 12.5, "s_nova"))
+    assert d["a_razao"] == Destaque("a_razao", Ponto(2012, 0.65, "s_nova"), Ponto(2013, 0.75, "s_nova"))
+    assert d["a_razao"].dif == pytest.approx(0.10)
     assert d["b_ne"].primeiro.ano == 2011 and d["b_ne"].ultimo.ano == 2013  # 2012 e indisponivel: nao conta
     assert avaliar_condicao("sem_dado.ultimo > a_ne.ultimo", d) is False
 
@@ -146,7 +195,7 @@ def _conteudo_minimo() -> dict[str, object]:
         "destaques": {"x": {"tipo": "serie", "indicador": "alfa", "territorio": "NE"}},
         "perguntas": [{
             "id": "p1", "rotulo": "R", "frase_feita": "F", "lide": "De {x.ano_primeiro} a {x.ano_ultimo}.",
-            "graficos": [_GRAFICO],
+            "graficos": [copy.deepcopy(_GRAFICO)],
             "fecho": {"texto": "Subiu.", "condicao": "x.ultimo > x.primeiro"},
             "fonte": ["Fonte: A."],
         }],
@@ -227,3 +276,33 @@ def test_carregar_conteudo_recusa_estrutura_errada(tmp_path, alterar):
     alterar(bruto)
     with pytest.raises(ErroConteudo):
         carregar_conteudo(_escrever(tmp_path, bruto))
+
+
+def test_carregar_conteudo_nao_compartilha_o_grafico_entre_card_e_pergunta(tmp_path):
+    conteudo = carregar_conteudo(_escrever(tmp_path, _conteudo_minimo()))
+    conteudo.cards[0]["grafico"]["casas"] = 9
+    assert conteudo.perguntas[0]["graficos"][0]["casas"] == 1
+
+
+@pytest.mark.parametrize("condicao", [3, None, ["x.ultimo > x.primeiro"], {"a": 1}])
+def test_carregar_conteudo_recusa_condicao_que_nao_e_texto(tmp_path, condicao):
+    bruto = _conteudo_minimo()
+    bruto["cards"][0]["condicao"] = condicao
+    with pytest.raises(ErroConteudo, match="condicao"):
+        carregar_conteudo(_escrever(tmp_path, bruto))
+
+
+def test_carregar_conteudo_aceita_condicao_estendida(tmp_path):
+    bruto = _conteudo_minimo()
+    bruto["cards"][0]["condicao"] = "x.ultimo >= x.primeiro * 1.5 e x.ultimo < 100"
+    assert carregar_conteudo(_escrever(tmp_path, bruto)).cards[0]["condicao"].endswith("< 100")
+
+
+def test_carregar_conteudo_arquivo_ausente_ou_yaml_quebrado_vira_erro_de_conteudo(tmp_path):
+    _escrever(tmp_path, _conteudo_minimo())
+    (tmp_path / "textos.yaml").unlink()
+    with pytest.raises(ErroConteudo, match="textos"):
+        carregar_conteudo(tmp_path)
+    (tmp_path / "textos.yaml").write_text("a: [1, 2\nb: {", encoding="utf-8")
+    with pytest.raises(ErroConteudo, match="textos"):
+        carregar_conteudo(tmp_path)

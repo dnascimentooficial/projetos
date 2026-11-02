@@ -8,6 +8,7 @@ import pytest
 from nordeste.caminhos import Caminhos
 from nordeste.site.conteudo import avaliar_condicao, calcular_destaques, carregar_conteudo, preencher
 from nordeste.site.dados import DadosSite
+from nordeste.site.formatacao import escala_auto, numero
 
 RAIZ = Path(__file__).resolve().parents[2]
 PASTA_SITE = RAIZ / "metadados" / "site"
@@ -67,20 +68,28 @@ def test_conteudo_real_carrega_e_preenche_tudo(conteudo, destaques):
         assert not re.search(r"\bnan\b|\bNaN\b|\bNone\b|\bundefined\b", preenchido), preenchido
 
 
-def test_numeros_do_conteudo_real_conferem_com_o_painel_aprovado(conteudo, destaques):
-    # Valores do painel aprovado (base publicada em 01/11/2026): se a base mudar, estes mudam de proposito.
+def test_numeros_do_conteudo_real_vem_da_base_publicada(conteudo, destaques):
+    # A base muda toda semana: nada aqui fixa valor, so a relacao entre o texto e o destaque que o alimenta.
+    pob, pib, sup, creche = destaques["pob_ne"], destaques["pib_pc_razao"], destaques["superior_ne"], destaques["creche_ne"]
     esperado = {
-        "{pob_ne.primeiro:1%}": "58,8%", "{pob_ne.ultimo:1%}": "44,7%", "{pob_ne.ano_primeiro}": "2012",
-        "{pib_pc_razao.dif:+1}": "+4,8", "{superior_ne.ultimo:auto}": "2,19 mi", "{creche_ne.primeiro:auto}": "403 mil",
-        "R$ {renda_ref.ultimo:0}": "R$ 2.554", "{gini_ne.ultimo:3}": "0,503", "{vol_ne.ultimo:0}": "163",
+        "{pob_ne.primeiro:1%}": numero(pob.primeiro.valor, 1) + "%",
+        "{pob_ne.ultimo:1%}": numero(pob.ultimo.valor, 1) + "%",
+        "{pob_ne.ano_primeiro}": str(pob.primeiro.ano),
+        "{pib_pc_razao.dif:+1}": ("+" if pib.dif > 0 else "") + numero(pib.dif, 1),
+        "{superior_ne.ultimo:auto}": escala_auto(sup.ultimo.valor),
+        "{creche_ne.primeiro:auto}": escala_auto(creche.primeiro.valor),
+        "R$ {renda_ref.ultimo:0}": "R$ " + numero(destaques["renda_ref"].ultimo.valor, 0),
+        "{gini_ne.ultimo:3}": numero(destaques["gini_ne"].ultimo.valor, 3),
+        "{vol_ne.ultimo:0}": numero(destaques["vol_ne"].ultimo.valor, 0),
     }
     for marcador, texto in esperado.items():
         assert preencher(marcador, destaques) == texto
     pobreza = next(c for c in conteudo.cards if c["id"] == "pobreza")
-    assert preencher(pobreza["de"], destaques) == "58,8%"
-    assert preencher(pobreza["para"], destaques) == "44,7%"
+    assert preencher(pobreza["de"], destaques) == numero(pob.primeiro.valor, 1) + "%"
+    assert preencher(pobreza["para"], destaques) == numero(pob.ultimo.valor, 1) + "%"
     assert preencher(pobreza["frase"], destaques) == (
-        "da população do Nordeste vivia abaixo da linha de pobreza, de 2012 a 2024. No Brasil, hoje, 26,5%."
+        f"da população do Nordeste vivia abaixo da linha de pobreza, de {pob.primeiro.ano} a {pob.ultimo.ano}. "
+        f"No Brasil, hoje, {numero(destaques['pob_br'].ultimo.valor, 1)}%."
     )
 
 
@@ -106,8 +115,9 @@ def test_sem_travessao_nos_textos():
         assert "—" not in arquivo.read_text(encoding="utf-8"), arquivo.name
 
 
-def test_sem_numero_digitado_nos_textos(conteudo):
-    # Todo numero de dado vem de marcador. Sobram so as definicoes dos indicadores (linhas de pobreza em US$).
+def test_sem_decimal_digitado_nos_textos(conteudo):
+    # Todo valor decimal vem de marcador. Sobram so as definicoes dos indicadores (linhas de pobreza em US$).
+    # Anos de fatos historicos (pandemia, lacunas, metodologia) ficam digitados: sao fatos fixos.
     decimais = []
     for texto in _textos([conteudo.perguntas, conteudo.cards, conteudo.textos]):
         decimais += re.findall(r"\d+[.,]\d+", re.sub(r"\{[^{}]*\}", "", texto))

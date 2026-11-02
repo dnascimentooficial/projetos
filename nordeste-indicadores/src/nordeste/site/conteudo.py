@@ -1,9 +1,11 @@
 """Conteudo editorial do site: destaques, perguntas, cards e textos, com marcadores de numero e condicoes de fecho.
 
 Nenhum numero de dado e digitado nos textos: cada um e um marcador `{id.campo:formato}` preenchido pela base.
-Cada fecho e cada card trazem uma condicao (`id.campo < id.campo`) que, falsa, suprime o texto que ela sustenta.
+Cada fecho e cada card trazem uma condicao (comparacoes `id.campo [* numero] <op> ...` ligadas por `e`) que,
+falsa, suprime o texto que ela sustenta.
 """
 
+import copy
 import operator
 import re
 from dataclasses import dataclass
@@ -85,6 +87,11 @@ def _valor_do_campo(destaque: Destaque, campo: str) -> float:
     return destaque.dif if campo == "dif" else getattr(destaque, campo).valor
 
 
+def destaques_citados(texto: str) -> set[str]:
+    """Ids dos destaques citados pelos marcadores do texto (marcador invalido levanta ErroConteudo)."""
+    return {_analisar_marcador(corpo)[0] for corpo in _MARCADOR.findall(texto)}
+
+
 def preencher(texto: str, destaques: dict[str, Destaque]) -> str:
     """Troca cada marcador `{id.campo[:formato]}` pelo numero do destaque; marcador sem dado levanta ErroConteudo."""
     def trocar(achado: re.Match) -> str:
@@ -101,35 +108,64 @@ def preencher(texto: str, destaques: dict[str, Destaque]) -> str:
 
 
 # --- condicoes ---
+# Gramatica: `<termo> <op> <termo>`, varias ligadas por ` e ` (todas verdadeiras). Termo: `id.campo`, `id.campo * numero`
+# ou numero literal. Sem `eval`: a expressao e quebrada em palavras e cada palavra e conferida.
 
-def _analisar_termo(termo: str) -> tuple[str, str] | float:
-    achado = _TERMO_DE_DESTAQUE.fullmatch(termo)
+_Termo = tuple[str, str, float] | float  # (id, campo, fator) ou literal
+
+
+def _analisar_termo(palavras: list[str], expr: str) -> _Termo:
+    """Consome um termo do inicio de `palavras` (e o remove da lista)."""
+    if not palavras:
+        raise ErroConteudo(f"Condicao invalida: {expr!r}. Falta um termo.")
+    palavra = palavras.pop(0)
+    achado = _TERMO_DE_DESTAQUE.fullmatch(palavra)
     if achado:
-        return achado.group(1), achado.group(2)
-    if _NUMERO_LITERAL.fullmatch(termo):
-        return float(termo)
-    raise ErroConteudo(f"Termo invalido: {termo!r}. Use id.campo (campo em {_CAMPOS}) ou um numero.")
+        fator = 1.0
+        if palavras[:1] == ["*"]:
+            if len(palavras) < 2 or not _NUMERO_LITERAL.fullmatch(palavras[1]):
+                raise ErroConteudo(f"Condicao invalida: {expr!r}. '*' so multiplica id.campo por um numero literal.")
+            fator = float(palavras[1])
+            del palavras[:2]
+        return achado.group(1), achado.group(2), fator
+    if _NUMERO_LITERAL.fullmatch(palavra):
+        return float(palavra)
+    raise ErroConteudo(f"Condicao invalida: {expr!r}. Termo invalido {palavra!r}: use id.campo (campo em {_CAMPOS}) ou um numero.")
 
 
-def _analisar_condicao(expr: str) -> tuple[tuple[str, str] | float, str, tuple[str, str] | float]:
-    partes = expr.split()
-    if len(partes) != 3 or partes[1] not in _COMPARADORES:
-        raise ErroConteudo(f"Condicao invalida: {expr!r}. Use '<termo> <op> <termo>', op em {tuple(_COMPARADORES)}.")
-    return _analisar_termo(partes[0]), partes[1], _analisar_termo(partes[2])
+def _analisar_condicao(expr: str) -> list[tuple[_Termo, str, _Termo]]:
+    palavras = expr.split()
+    comparacoes = []
+    while True:
+        esquerda = _analisar_termo(palavras, expr)
+        if not palavras or palavras[0] not in _COMPARADORES:
+            raise ErroConteudo(f"Condicao invalida: {expr!r}. Use '<termo> <op> <termo>', op em {tuple(_COMPARADORES)}.")
+        op = palavras.pop(0)
+        comparacoes.append((esquerda, op, _analisar_termo(palavras, expr)))
+        if not palavras:
+            return comparacoes
+        if palavras.pop(0) != "e":
+            raise ErroConteudo(f"Condicao invalida: {expr!r}. Comparacoes se ligam so por 'e'.")
+
+
+def destaques_da_condicao(expr: str) -> set[str]:
+    """Ids dos destaques citados pela condicao (condicao fora da gramatica levanta ErroConteudo)."""
+    return {t[0] for esq, _, dir_ in _analisar_condicao(expr) for t in (esq, dir_) if not isinstance(t, float)}
 
 
 def avaliar_condicao(expr: str, destaques: dict[str, Destaque]) -> bool:
-    """`<termo> <op> <termo>` sobre os destaques; destaque ausente da base torna a condicao falsa."""
-    esquerda, op, direita = _analisar_condicao(expr)
-    valores = []
-    for termo in (esquerda, direita):
+    """Todas as comparacoes de `expr` verdadeiras; destaque ausente da base torna a condicao falsa."""
+    comparacoes = _analisar_condicao(expr)
+    if not destaques_da_condicao(expr) <= destaques.keys():
+        return False
+
+    def valor(termo: _Termo) -> float:
         if isinstance(termo, float):
-            valores.append(termo)
-        elif termo[0] in destaques:
-            valores.append(_valor_do_campo(destaques[termo[0]], termo[1]))
-        else:
-            return False
-    return _COMPARADORES[op](*valores)
+            return termo
+        id_, campo, fator = termo
+        return _valor_do_campo(destaques[id_], campo) * fator
+
+    return all(_COMPARADORES[op](valor(esq), valor(dir_)) for esq, op, dir_ in comparacoes)
 
 
 # --- carga e validacao dos YAML ---
@@ -240,19 +276,20 @@ def _validar_cards(cards: object, graficos: dict[str, dict]) -> None:
         if isinstance(card["grafico"], str):
             if card["grafico"] not in graficos:
                 raise ErroConteudo(f"{onde}: grafico {card['grafico']!r} nao esta em perguntas.yaml.")
-            card["grafico"] = graficos[card["grafico"]]
+            card["grafico"] = copy.deepcopy(graficos[card["grafico"]])
         else:
             _validar_grafico(card["grafico"], f"{onde}, grafico")
 
 
 def _validar_textos_e_condicoes(obj: object, declarados: set[str], onde: str, chave: str | None = None) -> None:
     """Todo marcador e toda condicao do conteudo citam so destaques declarados e seguem a gramatica."""
+    if chave == "condicao" and not isinstance(obj, str):
+        raise ErroConteudo(f"{onde}: condicao deve ser um texto, veio {obj!r}.")
     if isinstance(obj, str):
         if chave == "condicao":
-            esquerda, _, direita = _analisar_condicao(obj)
-            citados = {t[0] for t in (esquerda, direita) if not isinstance(t, float)}
+            citados = destaques_da_condicao(obj)
         else:
-            citados = {_analisar_marcador(m)[0] for m in _MARCADOR.findall(obj)}
+            citados = destaques_citados(obj)
             resto = _MARCADOR.sub("", obj)
             if "{" in resto or "}" in resto:
                 raise ErroConteudo(f"{onde}: chave solta em {obj!r}.")
@@ -268,7 +305,11 @@ def _validar_textos_e_condicoes(obj: object, declarados: set[str], onde: str, ch
 
 
 def _ler(pasta: Path, nome: str) -> object:
-    return yaml.safe_load((pasta / f"{nome}.yaml").read_text(encoding="utf-8"))
+    caminho = pasta / f"{nome}.yaml"
+    try:
+        return yaml.safe_load(caminho.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as erro:
+        raise ErroConteudo(f"{caminho}: nao foi possivel ler ({erro}).") from erro
 
 
 def carregar_conteudo(pasta: Path) -> Conteudo:
@@ -293,10 +334,13 @@ def pontos_da_selecao(dados: DadosSite, spec: dict) -> list[Ponto]:
 
 
 def calcular_destaques(dados: DadosSite, conteudo: Conteudo) -> dict[str, Destaque]:
-    """Primeiro e ultimo ponto de cada destaque; o que nao tem dado na base fica fora do dicionario."""
+    """Primeiro e ultimo ponto de cada destaque, sempre da mesma serie (a do ultimo ponto): pesquisas diferentes
+    nunca se emendam. O que nao tem dado na base fica fora do dicionario."""
     resultado = {}
     for id_, spec in conteudo.destaques.items():
         pontos = pontos_da_selecao(dados, spec)
         if pontos:
-            resultado[id_] = Destaque(id_, pontos[0], pontos[-1])
+            ultimo = pontos[-1]
+            primeiro = next(p for p in pontos if p.serie == ultimo.serie)
+            resultado[id_] = Destaque(id_, primeiro, ultimo)
     return resultado

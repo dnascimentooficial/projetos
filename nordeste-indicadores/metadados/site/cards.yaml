@@ -1,8 +1,9 @@
 # Os 17 cards para compartilhar: uma frase feita, o numero de antes e de depois, a frase de contexto,
 # o fecho e a condicao que o sustenta. `de` e `para` sao marcadores; `grafico` e o id de um grafico de
 # perguntas.yaml ou, onde nenhuma pergunta o desenha, o grafico inteiro. `fonte` e so o nome da fonte:
-# o card acrescenta a data da base e o endereco. A condicao e uma unica comparacao; o que ela nao cobre
-# fica registrado no comentario de cada card. Card cuja condicao falha nao e publicado.
+# o card acrescenta a data da base e o endereco. A condicao cobre o que o fecho afirma e a base permite
+# verificar (comparacoes ligadas por "e", com "id.campo * numero" para proporcoes); palavras vagas ganham um
+# limite editorial, comentado em cada card. Card cuja condicao falha nao e publicado.
 
 - id: pobreza
   rotulo: Pobreza
@@ -12,7 +13,7 @@
   frase: "da população do Nordeste vivia abaixo da linha de pobreza, de {pob_ne.ano_primeiro} a {pob_ne.ano_ultimo}. No Brasil, hoje, {pob_br.ultimo:1%}."
   grafico: g_pob
   fecho: "Caiu. E ainda é mais que no Brasil."
-  condicao: "pob_ne.ultimo < pob_ne.primeiro"  # cobre "caiu"; nao cobre "ainda e mais que no Brasil"
+  condicao: "pob_ne.ultimo < pob_ne.primeiro e pob_ne.ultimo > pob_br.ultimo"
   fonte: "IBGE, PNAD Contínua"
 
 - id: extrema
@@ -23,7 +24,8 @@
   frase: "da população vivia com menos de US$ 3,00 por dia, de {ext_ne.ano_primeiro} a {ext_ne.ano_ultimo}. No Brasil, hoje, {ext_br.ultimo:1%}."
   grafico: g_ext
   fecho: "Caiu pela metade."
-  condicao: "ext_ne.ultimo < ext_ne.primeiro"  # "pela metade" (ultimo <= primeiro / 2) nao cabe na gramatica: cobre so "caiu"
+  # "Pela metade": o último valor é, no máximo, 55% do primeiro (folga para arredondamento de "metade").
+  condicao: "ext_ne.ultimo <= ext_ne.primeiro * 0.55"
   fonte: "IBGE, PNAD Contínua"
 
 - id: gini
@@ -51,7 +53,7 @@
   frase: "é a nota do IDEB do 1º ao 5º ano no Nordeste, de {ideb_ai_ne.ano_primeiro} a {ideb_ai_ne.ano_ultimo}, numa escala de 0 a 10. O Brasil está em {ideb_ai_br.ultimo:1}."
   grafico: g_ideb_ai
   fecho: "Mais que dobrou."
-  condicao: "ideb_ai_ne.dif > ideb_ai_ne.primeiro"  # ultimo > 2 x primeiro: cobre o fecho inteiro
+  condicao: "ideb_ai_ne.ultimo > ideb_ai_ne.primeiro * 2"
   fonte: "INEP, IDEB"
 
 - id: ideb_af
@@ -62,7 +64,8 @@
   frase: "é a nota do IDEB do 6º ao 9º ano no Nordeste, de {ideb_af_ne.ano_primeiro} a {ideb_af_ne.ano_ultimo}. O Brasil está em {ideb_af_br.ultimo:1}."
   grafico: g_ideb_af
   fecho: "Melhorou, e já encosta no Brasil."
-  condicao: "ideb_af_ne.ultimo > ideb_af_ne.primeiro"  # cobre "melhorou"; nao cobre "encosta no Brasil"
+  # "Encosta no Brasil": ao menos 90% da nota do Brasil.
+  condicao: "ideb_af_ne.ultimo > ideb_af_ne.primeiro e ideb_af_ne.ultimo >= ideb_af_br.ultimo * 0.9"
   fonte: "INEP, IDEB"
 
 - id: ideb_em
@@ -73,7 +76,8 @@
   frase: "é a nota do IDEB do ensino médio no Nordeste, de {ideb_em_ne.ano_primeiro} a {ideb_em_ne.ano_ultimo}. O Brasil está em {ideb_em_br.ultimo:1}."
   grafico: g_ideb_em
   fecho: "Melhorou pouco. E o Brasil inteiro vai mal aqui."
-  condicao: "ideb_em_ne.ultimo > ideb_em_ne.primeiro"  # cobre "melhorou"; nao cobre "pouco" nem "o Brasil vai mal"
+  # "Melhorou pouco" (alta de menos de 50%) e "o Brasil inteiro vai mal" (nota do Brasil abaixo de 5, o meio da escala).
+  condicao: "ideb_em_ne.ultimo > ideb_em_ne.primeiro e ideb_em_ne.ultimo < ideb_em_ne.primeiro * 1.5 e ideb_em_br.ultimo < 5"
   fonte: "INEP, IDEB"
 
 - id: superior
@@ -90,7 +94,8 @@
     linhas:
       - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: superior, territorio: NE, sub: matriculas, rede: total, serie: censup}
   fecho: "Quase dobrou. A população cresceu bem menos que isso."
-  condicao: "superior_ne.ultimo > superior_ne.primeiro"  # cobre "cresceu"; nao cobre "quase dobrou" nem a populacao
+  # "Quase dobrou": entre 1,8 e 2 vezes o primeiro valor. "A população cresceu bem menos" fica sem condição (sem destaque de população).
+  condicao: "superior_ne.ultimo >= superior_ne.primeiro * 1.8 e superior_ne.ultimo < superior_ne.primeiro * 2"
   fonte: "INEP, Censo da Educação Superior"
 
 - id: creche
@@ -107,7 +112,7 @@
     linhas:
       - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: matriculas_basica, territorio: NE, etapa: creche, rede: total, serie: educacenso}
   fecho: "Mais que dobrou."
-  condicao: "creche_ne.dif > creche_ne.primeiro"  # ultimo > 2 x primeiro: cobre o fecho inteiro
+  condicao: "creche_ne.ultimo > creche_ne.primeiro * 2"
   fonte: "INEP, Censo Escolar"
 
 - id: pibpc
@@ -118,7 +123,8 @@
   frase: "é quanto o Nordeste tem de riqueza por pessoa para cada 100% do resto do país, de {pib_pc_razao.ano_primeiro} a {pib_pc_razao.ano_ultimo}."
   grafico: g_pibpc
   fecho: "Saiu do lugar. Devagar."
-  condicao: "pib_pc_razao.ultimo > pib_pc_razao.primeiro"  # cobre "saiu do lugar"; nao cobre "devagar"
+  # "Saiu do lugar" (razão subiu) e "devagar" (alta de menos de 25%).
+  condicao: "pib_pc_razao.ultimo > pib_pc_razao.primeiro e pib_pc_razao.ultimo < pib_pc_razao.primeiro * 1.25"
   fonte: "IBGE, Contas Regionais"
 
 - id: vol
@@ -129,7 +135,8 @@
   frase: "é o tamanho da economia do Nordeste em {vol_ne.ano_ultimo}, se {vol_ne.ano_primeiro} valia 100, já sem inflação. O Brasil chegou a {vol_br.ultimo:0}."
   grafico: g_vol
   fecho: "Cresceu, e cresceu mais que o país."
-  condicao: "vol_ne.ultimo > vol_br.ultimo"  # cobre "mais que o pais"; "cresceu" vale por construcao (indice parte de 100)
+  # "Cresceu" (acima do primeiro ano) e "mais que o país".
+  condicao: "vol_ne.ultimo > vol_ne.primeiro e vol_ne.ultimo > vol_br.ultimo"
   fonte: "IBGE, Contas Regionais"
 
 - id: part
@@ -140,7 +147,8 @@
   frase: "é a fatia do Nordeste no PIB do Brasil, de {part_ne.ano_primeiro} a {part_ne.ano_ultimo}. A região tem cerca de um quarto da população."
   grafico: g_part
   fecho: "Pesa pouco e mudou pouco. Esse tem fundo de verdade."
-  condicao: "part_ne.ultimo < 25"  # "pesa pouco" = menos que o quarto da populacao da frase; nao cobre "mudou pouco"
+  # "Pesa pouco" (menos que o quarto da população da própria frase) e "mudou pouco" (dentro de 10% da participação inicial).
+  condicao: "part_ne.ultimo < 25 e part_ne.ultimo > part_ne.primeiro * 0.9 e part_ne.ultimo < part_ne.primeiro * 1.1"
   fonte: "IBGE, Contas Regionais"
 
 - id: renda
@@ -151,7 +159,8 @@
   frase: "é a renda por pessoa no Nordeste para cada 100% do resto do país, de {renda_razao.ano_primeiro} a {renda_razao.ano_ultimo}."
   grafico: g_renda
   fecho: "Subiu. E ainda falta muito."
-  condicao: "renda_razao.ultimo > renda_razao.primeiro"  # cobre "subiu"; nao cobre "ainda falta muito"
+  # "Subiu" e "ainda falta muito" (razão abaixo de 60%).
+  condicao: "renda_razao.ultimo > renda_razao.primeiro e renda_razao.ultimo < 60"
   fonte: "IBGE, PNAD Contínua"
 
 - id: renda_rs
@@ -169,7 +178,8 @@
       - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: renda_dom_pc, territorio: NE}
       - {rotulo: "Brasil fora do NE", rotulo_curto: "Brasil fora do NE", destaque: false, tipo: serie, indicador: renda_dom_pc, territorio: BR_FORA_NE}
   fecho: "Subiu mais de um terço."
-  condicao: "renda_ne.ultimo > renda_ne.primeiro"  # "mais de um terco" (3 x dif > primeiro) nao cabe na gramatica: cobre so "subiu"
+  # "Mais de um terço": ao menos 1,33 vez o primeiro valor.
+  condicao: "renda_ne.ultimo >= renda_ne.primeiro * 1.33"
   fonte: "IBGE, PNAD Contínua"
 
 - id: rend
@@ -187,7 +197,8 @@
       - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: rendimento_trabalho, territorio: NE}
       - {rotulo: Brasil, rotulo_curto: BR, destaque: false, tipo: serie, indicador: rendimento_trabalho, territorio: BR}
   fecho: "Subiu, e ainda é cerca de dois terços da média do país."
-  condicao: "rend_ne.ultimo > rend_ne.primeiro"  # cobre "subiu"; nao cobre "cerca de dois tercos da media do pais"
+  # "Subiu" e "cerca de dois terços da média do país" (entre 60% e 75% do rendimento do Brasil).
+  condicao: "rend_ne.ultimo > rend_ne.primeiro e rend_ne.ultimo >= rend_br.ultimo * 0.6 e rend_ne.ultimo <= rend_br.ultimo * 0.75"
   fonte: "IBGE, PNAD Contínua"
 
 - id: desoc
@@ -198,7 +209,7 @@
   frase: "foi a taxa de desemprego no Nordeste, de {desoc_ne.ano_primeiro} a {desoc_ne.ano_ultimo}. No Brasil, {desoc_br.ultimo:1%}."
   grafico: g_desoc
   fecho: "Caiu. Mas segue acima do Brasil."
-  condicao: "desoc_ne.ultimo < desoc_ne.primeiro"  # cobre "caiu"; nao cobre "segue acima do Brasil"
+  condicao: "desoc_ne.ultimo < desoc_ne.primeiro e desoc_ne.ultimo > desoc_br.ultimo"
   fonte: "IBGE, PNAD Contínua"
 
 - id: informal
@@ -216,7 +227,8 @@
       - {rotulo: Nordeste, rotulo_curto: NE, destaque: true, tipo: serie, indicador: informalidade, territorio: NE}
       - {rotulo: "Brasil fora do NE", rotulo_curto: "Brasil fora do NE", destaque: false, tipo: serie, indicador: informalidade, territorio: BR_FORA_NE}
   fecho: "Metade é. Esse dói."
-  condicao: "informal_ne.ultimo > informal_ref.ultimo"  # cobre "esse doi" (acima do resto do pais); nao cobre "metade"
+  # "Metade é" (entre 45% e 55%) e "esse dói" (acima do resto do país).
+  condicao: "informal_ne.ultimo >= 45 e informal_ne.ultimo <= 55 e informal_ne.ultimo > informal_ref.ultimo"
   fonte: "IBGE, PNAD Contínua"
 
 - id: idhm
@@ -227,5 +239,6 @@
   frase: "é o IDHM do Nordeste, de 0 a 1, de {idhm_ne.ano_primeiro} a {idhm_ne.ano_ultimo}. O do Brasil está em {idhm_br.ultimo:3}."
   grafico: g_idhm
   fecho: "Subiu, com um tropeço na pandemia. A distância encurtou."
-  condicao: "idhm_ne.dif > idhm_br.dif"  # a distancia para o Brasil encurtou (mesma janela de anos); nao cobre "subiu" nem o tropeco
+  # "Subiu" e "a distância encurtou" (mesma janela de anos). Não verifica "o tropeço na pandemia" (ponto a ponto).
+  condicao: "idhm_ne.ultimo > idhm_ne.primeiro e idhm_ne.dif > idhm_br.dif"
   fonte: "Atlas Brasil (PNUD, Ipea, FJP)"
