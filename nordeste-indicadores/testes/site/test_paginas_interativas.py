@@ -300,6 +300,16 @@ def test_card_mostra_numeros_frase_e_fonte_da_base(gerado, dados, conteudo):
         assert arvore.achar("svg")[0]["attrs"]["aria-hidden"] == "true"
 
 
+def test_rotulo_dos_cards_e_neutro(gerado, conteudo):
+    # Ruling S-R: "Os dados dizem outra coisa" contradiria os cards cujo fecho admite fundo de verdade.
+    saida, _ = gerado
+    for card in conteudo.cards:
+        arvore = Arvore(_ler(saida, f"cards/{card['id']}/index.html"))
+        assert [Arvore.texto(e) for e in arvore.achar("p", classe="nn-c-sera")] == ["O que os dados dizem"], card["id"]
+        assert "Os dados dizem outra coisa" not in arvore.texto_visivel(), card["id"]
+    assert "Os dados dizem outra coisa" not in _ler(saida, "cards/index.html")
+
+
 def test_lista_de_cards_leva_a_cada_pagina(gerado, conteudo):
     saida, _ = gerado
     arvore = Arvore(_ler(saida, "cards/index.html"))

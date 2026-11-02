@@ -39,6 +39,18 @@ LARGO = {"largura": 720}  # os dois tamanhos de cada grafico (Ruling S-O): o CSS
 ESTREITO = {"largura": 360, "altura": 240}
 ARQUIVOS_DE_DADOS = ("base_nordeste.csv", "derivados.csv")
 EXPLORAR_INICIAL = ("pib_pc", "NE")  # a vista que ja vem desenhada no HTML: indicador e territorio
+TEXTOS_EXIGIDOS = {  # seção de textos.yaml: chaves lidas pelo gerador e pelos modelos
+    "abertura": {"eyebrow", "titulo", "destaque", "intro", "nota"},
+    "por_que": {"titulo", "paragrafos"}, "como_ler": {"titulo", "itens"}, "o_que_falta": {"titulo", "itens"},
+    "dataset": {"nome", "descricao"}, "fontes": {"titulo", "intro"}, "formulas": {"titulo", "intro", "blocos"},
+    "arquivos": {"titulo", "intro"}, "dados": {"titulo", "intro", "conferir", "arquivos"},
+    "estados": {
+        "titulo", "intro", "titulo_mapa", "titulo_ranking", "escala_pior", "escala_melhor", "nota_do_mapa", "tabela",
+        "fonte", "sem_dados",
+    },
+    "explorar": {"titulo", "intro", "nota", "tabela", "fonte", "sem_dados"},
+    "cards": {"titulo", "intro", "sera", "baixar", "voltar"},
+}
 FRASE_DA_DATA = "na data desta publicação"
 MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro",
          "novembro", "dezembro")
@@ -66,7 +78,8 @@ PAGINAS_COM_DATASET = ("index", "dados")
 @dataclass
 class RelatorioSite:
     paginas: list[str]
-    fechos_suprimidos: list[str]  # ids das perguntas que ficaram sem fecho ou sairam inteiras
+    # ids das perguntas que ficaram sem fecho ou sairam inteiras e dos paragrafos da abertura que sairam (abertura_numeros)
+    fechos_suprimidos: list[str]
     cards_suprimidos: list[str]
 
 
@@ -368,12 +381,34 @@ def _gerar_imagens(saida: Path, paginas: list[str]) -> None:
 
 
 def _validar_saida(caminhos: Caminhos, saida: Path) -> None:
-    """A saida e apagada: nunca a base publicada, os relatorios ou os metadados, nem uma pasta que os contenha."""
+    """A saida e apagada: nunca a base publicada, os relatorios ou os metadados, nem uma pasta que os contenha ou
+    que esteja dentro deles."""
     destino = saida.resolve()
     for protegida in (caminhos.base, caminhos.relatorios, caminhos.metadados):
         protegida = protegida.resolve()
-        if destino == protegida or destino in protegida.parents:
-            raise ValueError(f"A pasta de saída {saida} apagaria {protegida}: escolha outra, fora da base e dos metadados.")
+        if destino == protegida or destino in protegida.parents or protegida in destino.parents:
+            raise ValueError(f"A pasta de saída {saida} mexeria em {protegida}: escolha outra, fora da base e dos metadados.")
+
+
+def _exigir(parte: object, spec: set | dict, caminho: str) -> None:
+    """`spec` e um conjunto de chaves ou um mapa chave -> spec (None: so a chave); falta vira ErroConteudo."""
+    if not isinstance(parte, dict):
+        raise ErroConteudo(f"textos.yaml: falta a seção {caminho}.")
+    for chave in sorted(spec):
+        if chave not in parte:
+            raise ErroConteudo(f"textos.yaml: falta {caminho}.{chave}.")
+        if isinstance(spec, dict) and spec[chave] is not None:
+            _exigir(parte[chave], spec[chave], f"{caminho}.{chave}")
+
+
+def _validar_textos(textos: object) -> None:
+    """As chaves de textos.yaml que o gerador e os modelos leem; faltando uma, ErroConteudo em vez de KeyError."""
+    exigidos = {
+        **TEXTOS_EXIGIDOS,
+        "paginas": {p.chave: {"titulo", "descricao"} for p in PAGINAS},
+        "dados": {**dict.fromkeys(TEXTOS_EXIGIDOS["dados"] - {"arquivos"}), "arquivos": set(ARQUIVOS_DE_DADOS)},
+    }
+    _exigir(textos, exigidos, "textos")
 
 
 def _paragrafos_da_abertura(itens: list, destaques: dict[str, Destaque]) -> tuple[list[str], list[str]]:
@@ -413,6 +448,7 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
     _validar_saida(caminhos, saida)
     dados = DadosSite.carregar(caminhos)
     conteudo = carregar_conteudo(caminhos.metadados / "site")
+    _validar_textos(conteudo.textos)
     destaques = calcular_destaques(dados, conteudo)
     data = data_por_extenso(dados.data_base)
     abertura, paragrafos_suprimidos = _paragrafos_da_abertura(conteudo.textos["abertura"]["intro"], destaques)

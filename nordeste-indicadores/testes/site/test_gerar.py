@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import yaml
 
 from nordeste.caminhos import Caminhos
 from nordeste.cli import main
@@ -330,13 +331,46 @@ def test_nao_apaga_a_base_publicada_nem_os_metadados(tmp_path):
     # Ruling S-P: apagar dados/base, dados/relatorios ou metadados (ou uma pasta que os contenha) e irreversivel no robo.
     raiz = copiar_base(tmp_path / "repo")
     antes = sorted(p.relative_to(raiz) for p in raiz.rglob("*"))
-    for perigosa in (raiz / "dados", raiz / "dados" / "base", raiz / "dados" / "relatorios", raiz / "metadados"):
+    dentro = (raiz / "dados" / "base" / "x", raiz / "dados" / "relatorios" / "x", raiz / "metadados" / "site" / "x")
+    for perigosa in (raiz / "dados", raiz / "dados" / "base", raiz / "dados" / "relatorios", raiz / "metadados", *dentro):
         with pytest.raises(ValueError, match="saída"):
             gerar_site(Caminhos(raiz=raiz), perigosa, imagens=False)
     assert sorted(p.relative_to(raiz) for p in raiz.rglob("*")) == antes
     # uma pasta qualquer dentro do projeto, fora da base e dos metadados, pode ser a saida
     gerar_site(Caminhos(raiz=raiz), raiz / "saida-do-site", imagens=False)
     assert (raiz / "saida-do-site" / "index.html").is_file()
+
+
+# --- textos.yaml incompleto ---
+
+
+def _sem_chave_de_texto(raiz: Path, caminho: tuple[str, ...]) -> None:
+    arquivo = raiz / "metadados" / "site" / "textos.yaml"
+    textos = yaml.safe_load(arquivo.read_text(encoding="utf-8"))
+    pai = textos
+    for chave in caminho[:-1]:
+        pai = pai[chave]
+    del pai[caminho[-1]]
+    arquivo.write_text(yaml.safe_dump(textos, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "caminho",
+    [("abertura",), ("abertura", "intro"), ("estados", "sem_dados"), ("paginas", "cards"), ("dados", "arquivos", "derivados.csv")],
+)
+def test_textos_incompleto_e_erro_de_conteudo(tmp_path, caminho):
+    raiz = copiar_base(tmp_path / "repo")
+    _sem_chave_de_texto(raiz, caminho)
+    with pytest.raises(ErroConteudo, match=r"textos\.yaml: falta .*" + re.escape(caminho[-1])):
+        gerar_site(Caminhos(raiz=raiz), tmp_path / "saida", imagens=False)
+
+
+def test_cli_com_chave_de_texto_faltando_sai_com_um_sem_traceback(tmp_path, capsys):
+    raiz = copiar_base(tmp_path / "repo")
+    _sem_chave_de_texto(raiz, ("abertura", "intro"))
+    assert main(["--raiz", str(raiz), "site", "--saida", str(tmp_path / "saida"), "--sem-imagens"]) == 1
+    erro = capsys.readouterr().err
+    assert "abertura.intro" in erro and "Traceback" not in erro
 
 
 # --- condicao nos paragrafos da abertura (Ruling S-P) ---
