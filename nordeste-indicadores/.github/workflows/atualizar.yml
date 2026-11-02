@@ -1,0 +1,219 @@
+name: Atualizar
+
+# Publicação semanal: coleta, consolida, valida, publica a base na main, gera o site e, se ele mudou, publica o site
+# na branch site-publicado (o hPanel puxa essa branch pelo webhook). Códigos de saída de `python -m nordeste.automacao`:
+# 0 = sim/ok, 1 = "não" (conferir, links, site-mudou), 2 = erro da etapa; um 2 nunca é lido como "não".
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # segunda, 03h de Brasília
+  workflow_dispatch:
+
+concurrency: atualizar
+
+permissions:
+  contents: write
+  issues: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      URL_DO_SITE: https://nordeste.dnascimento.com.br/
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Instalar
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,site,ferramentas]"
+          python -m playwright install --with-deps chromium
+
+      - name: Baixar os brutos da release
+        run: python -m nordeste.automacao baixar-brutos --repo "$GH_REPO"
+
+      - name: Coletar
+        id: coletar
+        run: |
+          pular=$(python -m nordeste.automacao pular-inep)
+          # o relatorio da semana anterior nao vale: so um falhas_coleta.csv novo prova que a coleta chegou ao fim
+          rm -f dados/relatorios/falhas_coleta.csv
+          codigo=0
+          # shellcheck disable=SC2086 # cada linha de pular-inep e "--pular-indicador <id>": dois argumentos
+          python -m nordeste coletar $pular || codigo=$?
+          if [ "$codigo" -eq 1 ] && [ -f dados/relatorios/falhas_coleta.csv ]; then
+            echo "::warning::Séries que falharam ficam com a coleta anterior; veja dados/relatorios/falhas_coleta.csv."
+          elif [ "$codigo" -ne 0 ]; then
+            exit "$codigo"
+          fi
+
+      - name: Consolidar
+        run: python -m nordeste consolidar
+
+      - name: Ensaio da publicação
+        id: ensaio
+        run: |
+          codigo=0
+          python -m nordeste publicar --ensaio 2> "$RUNNER_TEMP/ensaio.txt" || codigo=$?
+          cat "$RUNNER_TEMP/ensaio.txt" >&2
+          if [ "$codigo" -ne 0 ]; then
+            {
+              echo "A validação barrou a publicação desta semana: nada foi publicado."
+              echo
+              echo "Saída do ensaio:"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/ensaio.txt"
+              echo '```'
+              echo
+              echo "dados/relatorios/validacao.csv:"
+              echo
+              echo '```'
+              cat dados/relatorios/validacao.csv
+              echo '```'
+            } > "$RUNNER_TEMP/corpo.md"
+            .github/scripts/abrir-issue.sh "Publicação barrada" "$RUNNER_TEMP/corpo.md"
+            exit 1
+          fi
+
+      - name: Guardar a base publicada antes desta execução
+        run: |
+          if [ -f dados/base/base_nordeste.csv ]; then
+            cp dados/base/base_nordeste.csv "$RUNNER_TEMP/base_anterior.csv"
+          fi
+
+      - name: Publicar a base
+        run: python -m nordeste publicar
+
+      - name: Commit dos dados na main
+        run: |
+          if [ -n "$(git status --porcelain dados/)" ]; then
+            git add dados/
+            git -c user.name="github-actions[bot]" \
+                -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+                commit -q -m "dados: publicação automática da base"
+            git push origin HEAD:main
+          else
+            echo "A base e os relatórios não mudaram."
+          fi
+
+      - name: Baixar o site publicado
+        id: site_anterior
+        run: |
+          mkdir -p _anterior
+          codigo=0
+          git ls-remote --exit-code --heads origin site-publicado > /dev/null || codigo=$?
+          case "$codigo" in
+            0)
+              git fetch -q --depth 1 origin +refs/heads/site-publicado:refs/remotes/origin/site-publicado
+              git archive origin/site-publicado | tar -x -C _anterior # so os arquivos do site, sem .git
+              echo "SITE_ANTERIOR=sim" >> "$GITHUB_ENV"
+              ;;
+            2) echo "SITE_ANTERIOR=nao" >> "$GITHUB_ENV" ;; # primeira publicacao
+            *) exit "$codigo" ;;
+          esac
+
+      - name: Gerar o site
+        run: python -m nordeste site --saida _site --relatorio site.json --anterior _anterior
+
+      - name: Avisar fechos e cards suprimidos
+        run: |
+          python - > "$RUNNER_TEMP/suprimidos.txt" <<'PY'
+          import json
+
+          relatorio = json.load(open("site.json", encoding="utf-8"))
+          for id_ in relatorio["fechos_suprimidos"]:
+              print(f"O fecho de {id_} deixou de valer")
+          for id_ in relatorio["cards_suprimidos"]:
+              print(f"O card {id_} deixou de valer")
+          PY
+          sha=$(sha256sum dados/base/base_nordeste.csv | cut -d ' ' -f 1)
+          while IFS= read -r titulo; do
+            {
+              echo "A condição que sustenta este texto deixou de valer com a base publicada (sha256 $sha)."
+              echo "O site saiu sem ele. Releia o texto e a condição em metadados/site/."
+            } > "$RUNNER_TEMP/corpo.md"
+            .github/scripts/abrir-issue.sh "$titulo" "$RUNNER_TEMP/corpo.md" < /dev/null
+          done < "$RUNNER_TEMP/suprimidos.txt"
+
+      - name: Avisar anos novos
+        run: |
+          argumentos=(--mudancas dados/relatorios/mudancas.csv)
+          if [ -f "$RUNNER_TEMP/base_anterior.csv" ]; then
+            argumentos+=(--base-anterior "$RUNNER_TEMP/base_anterior.csv")
+          fi
+          python -m nordeste.automacao anos-novos "${argumentos[@]}" > "$RUNNER_TEMP/anos_novos.txt"
+          if [ -s "$RUNNER_TEMP/anos_novos.txt" ]; then
+            {
+              echo "A base publicada trouxe ano novo nestes indicadores (indicador:ano). Releia os textos que os citam."
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/anos_novos.txt"
+              echo '```'
+              echo
+              echo "Maiores mudanças em valores já publicados:"
+              echo
+              python -m nordeste.automacao resumo --mudancas dados/relatorios/mudancas.csv
+            } > "$RUNNER_TEMP/corpo.md"
+            .github/scripts/abrir-issue.sh "Ano novo na base: releia os textos" "$RUNNER_TEMP/corpo.md"
+          fi
+
+      - name: Publicar o site na branch site-publicado
+        id: publicar_site
+        run: |
+          codigo=0
+          python -m nordeste.automacao site-mudou --anterior _anterior --novo _site || codigo=$?
+          case "$codigo" in
+            0) ;;
+            1) echo "O site gerado é igual ao publicado: nada a publicar."; exit 0 ;;
+            *) exit "$codigo" ;;
+          esac
+          if [ "$SITE_ANTERIOR" = sim ]; then
+            git worktree add -q -B site-publicado _publicar origin/site-publicado
+          else
+            git worktree add -q --detach _publicar
+            git -C _publicar checkout -q --orphan site-publicado # branch sem historia em comum com a main
+          fi
+          git -C _publicar rm -rfq --ignore-unmatch . # tira o codigo (orfa) ou o site antigo; o .git fica
+          cp -a _site/. _publicar/
+          git -C _publicar add -A
+          git -C _publicar -c user.name="github-actions[bot]" \
+              -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "site: publicação automática"
+          git -C _publicar push -q origin site-publicado
+          echo "publicado=sim" >> "$GITHUB_OUTPUT"
+
+      - name: Enviar os brutos novos para a release
+        run: python -m nordeste.automacao enviar-brutos --repo "$GH_REPO"
+
+      - name: Conferir o site no ar
+        id: conferir
+        if: steps.publicar_site.outputs.publicado == 'sim'
+        run: |
+          sha=$(sha256sum dados/base/base_nordeste.csv | cut -d ' ' -f 1)
+          codigo=0
+          python -m nordeste.automacao conferir --url "$URL_DO_SITE" --sha256 "$sha" || codigo=$?
+          case "$codigo" in
+            0) echo "O rodapé do site no ar traz o sha256 da base publicada." ;;
+            1)
+              {
+                echo "Publiquei o site na branch site-publicado, mas o rodapé de $URL_DO_SITE não trouxe o sha256 $sha"
+                echo "da base depois de alguns minutos. Confira a implantação automática do Git no hPanel (webhook)."
+              } > "$RUNNER_TEMP/corpo.md"
+              .github/scripts/abrir-issue.sh "Site não atualizou" "$RUNNER_TEMP/corpo.md"
+              exit 1
+              ;;
+            *) exit "$codigo" ;;
+          esac
