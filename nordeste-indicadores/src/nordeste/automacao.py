@@ -424,6 +424,9 @@ def main(argv: list[str] | None = None) -> int:
     except (ErroAutomacao, ErroFicha, OSError, ValueError) as erro:
         print(erro, file=sys.stderr)
         return 2  # erro da propria etapa; 1 e o "nao" de conferir, links e site-mudou e o "incompleto" de baixar-brutos
+    except Exception as erro:  # noqa: BLE001 - excecao inesperada nunca pode sair com 1 e ser lida como "nao"/"incompleto"
+        print(f"erro inesperado: {erro!r}", file=sys.stderr)
+        return 2
     return 0
 
 

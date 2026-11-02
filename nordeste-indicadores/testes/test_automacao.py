@@ -768,3 +768,12 @@ def test_cli_auxiliar_ajuda_do_anos_novos_avisa_que_sem_base_anterior_e_aproxima
     with pytest.raises(SystemExit):
         automacao.main(["anos-novos", "--help"])
     assert "aproximado" in capsys.readouterr().out
+
+
+def test_cli_excecao_inesperada_sai_com_2_e_nunca_com_1(monkeypatch, tmp_path, capsys):
+    def explode(*_args, **_kwargs):
+        raise KeyError("assets")
+
+    monkeypatch.setattr(automacao, "baixar_brutos", explode)
+    assert automacao.main(["baixar-brutos", "--repo", "dono/repo", "--raiz", str(tmp_path)]) == 2
+    assert "erro inesperado" in capsys.readouterr().err
