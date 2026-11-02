@@ -41,11 +41,21 @@ def _csp_do_htaccess(site: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def site_gerado(tmp_path_factory) -> Path:
-    """O site completo (sem as imagens PNG, que test_imagens.py cobre), gerado uma vez da base e dos metadados reais."""
+def _site_e_relatorio(tmp_path_factory):
     saida = tmp_path_factory.mktemp("site") / "saida"
-    gerar_site(Caminhos(raiz=RAIZ), saida, imagens=False)
-    return saida
+    return saida, gerar_site(Caminhos(raiz=RAIZ), saida, imagens=False)
+
+
+@pytest.fixture(scope="session")
+def site_gerado(_site_e_relatorio) -> Path:
+    """O site completo (sem as imagens PNG, que test_imagens.py cobre), gerado uma vez da base e dos metadados reais."""
+    return _site_e_relatorio[0]
+
+
+@pytest.fixture(scope="session")
+def relatorio_site(_site_e_relatorio):
+    """O RelatorioSite do site acima: o que a base viva suprimiu (fechos, faixa de numeros, cards)."""
+    return _site_e_relatorio[1]
 
 
 @pytest.fixture(scope="session")
@@ -79,12 +89,18 @@ def navegador():
         aberto.close()
 
 
+def _e_favicon(url: str) -> bool:
+    return url.split("?")[0].endswith("/favicon.ico")
+
+
 @pytest.fixture
 def abrir(navegador, endereco):
     """`with abrir("/explorar/", largura=390) as pagina:` abre a rota num contexto novo e o fecha ao sair.
 
-    Erros da pagina (excecao de script, resposta 4xx ou 5xx, erro no console) vao para `pagina.erros`. Opcoes extras
-    (`java_script_enabled`, `reduced_motion`, `color_scheme`) vao ao contexto do Playwright.
+    Erros da pagina (excecao de script, resposta 4xx ou 5xx, erro no console, inclusive o que cita 404) vao para
+    `pagina.erros`, e o `with` afirma ao sair, se o corpo nao falhou antes, que ela esta vazia: todo teste que abre uma
+    pagina tambem vale como teste de pagina sem erro. Opcoes extras (`java_script_enabled`, `reduced_motion`,
+    `color_scheme`) vao ao contexto do Playwright.
     """
 
     @contextmanager
@@ -93,12 +109,15 @@ def abrir(navegador, endereco):
         try:
             pagina = contexto.new_page()
             erros: list[str] = []
-            pagina.on("pageerror", lambda e: erros.append(str(e)))
-            pagina.on("response", lambda r: erros.append(f"{r.status} {r.url}") if r.status >= 400 and "favicon" not in r.url else None)
-            pagina.on("console", lambda m: erros.append(m.text) if m.type == "error" and "404" not in m.text else None)
+            pagina.on("pageerror", lambda e: erros.append(f"pageerror: {e}"))
+            pagina.on("response", lambda r: erros.append(f"{r.status} {r.url}") if r.status >= 400 and not _e_favicon(r.url) else None)
+            # o erro de console de um 404 tambem conta (o handler acima so ve a resposta, este ve o que o usuario ve).
+            # A unica excecao e o /favicon.ico: o site nao tem icone e o Chromium o pede sozinho (nao e recurso da pagina).
+            pagina.on("console", lambda m: erros.append(f"console: {m.text} ({m.location.get('url', '')})") if m.type == "error" and not _e_favicon(m.location.get("url", "")) else None)
             pagina.goto(endereco + rota, wait_until="networkidle")
             pagina.erros = erros
             yield pagina
+            assert erros == [], f"{rota}: erros de pagina ou de console: {erros}"
         finally:
             contexto.close()
 

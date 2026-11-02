@@ -5,12 +5,15 @@ Marcador `navegador`: `python -m pytest -m navegador testes/navegador`. As pagin
 Content-Security-Policy do .htaccess, entao script ou estilo inline apareceria como erro de console.
 """
 
+import io
 import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import numpy as np
 import pytest
+from PIL import Image
 
 from nordeste.caminhos import Caminhos
 from nordeste.site.conteudo import carregar_conteudo
@@ -120,20 +123,23 @@ def test_explorar_com_brasil_fora_do_nordeste_cabe_na_largura(abrir, largura, in
         assert _estouro(pagina) == {}
         pagina.locator("#explorar-vista svg:visible").hover(position={"x": largura / 2, "y": 60})  # a dica de valor tambem
         assert _estouro(pagina) == {}
-        assert pagina.erros == []
 
 
 # --- sem JavaScript, movimento reduzido e peso ---
 
 
-def test_sem_javascript_mostra_numeros_e_graficos(abrir):
+def test_sem_javascript_mostra_numeros_e_graficos(abrir, relatorio_site):
     with abrir("/", java_script_enabled=False) as pagina:
         lide = pagina.locator("#resumo .nn-frase").first.inner_text()
         assert re.search(r"\d", lide) and "{" not in lide and "}" not in lide  # preenchido pela base, nunca o marcador
         assert pagina.locator("#resumo .nn-graf-largo svg").first.is_visible()
         assert pagina.locator("svg").count() >= 6
-        assert pagina.locator(".nn-numero-valor").count() == 3 and pagina.locator(".nn-numero-valor:visible").count() == 3
-        assert re.search(r"\d", pagina.locator(".nn-hero-intro").first.inner_text())
+        # a faixa de numeros depende da condicao abertura_numeros na base viva: os dois estados sao corretos
+        if "abertura_numeros" in relatorio_site.fechos_suprimidos:
+            assert pagina.locator(".nn-numero-valor").count() == 0  # suprimida: sai inteira, sem numero solto
+        else:
+            assert pagina.locator(".nn-numero-valor").count() == 3 and pagina.locator(".nn-numero-valor:visible").count() == 3
+        assert re.search(r"\d", pagina.locator(".nn-hero-intro").first.inner_text())  # o 1o paragrafo cita 2000 e nao tem condicao
 
 
 _ANIMADOS = """() => {
@@ -180,6 +186,81 @@ def test_peso_da_inicial(abrir):
     assert sum(r["bytes"] for r in sem_a_foto) <= LIMITE_DA_INICIAL, sorted(sem_a_foto, key=lambda r: -r["bytes"])[:3]
 
 
+# --- abertura com foto: a foto aparece e o texto segue legivel sobre os pixels reais do fundo ---
+
+_TEXTOS_DA_ABERTURA = """() => {
+  const hero = document.querySelector('#topo');
+  const alvos = [];
+  for (const el of hero.querySelectorAll('.nn-eyebrow, .nn-hero-titulo > span, .nn-hero-intro')) {
+    const intervalo = document.createRange();
+    intervalo.selectNodeContents(el);
+    alvos.push({
+      nome: el.className || el.tagName.toLowerCase(),
+      cor: getComputedStyle(el).color,
+      caixas: [...intervalo.getClientRects()].map((c) => ({ x: c.left, y: c.top, w: c.width, h: c.height })),
+    });
+  }
+  const c = hero.getBoundingClientRect();
+  return { hero: { x: c.left, y: c.top, w: c.width, h: c.height }, alvos };
+}"""
+_LIMITE_DO_CONTRASTE = 4.5
+
+
+def _luminancia_relativa(rgb: np.ndarray) -> np.ndarray:
+    c = rgb / 255.0
+    linear = np.where(c <= 0.03928, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    return linear @ np.array([0.2126, 0.7152, 0.0722])
+
+
+def _contrastes(texto: np.ndarray, fundo: np.ndarray) -> np.ndarray:
+    a, b = _luminancia_relativa(texto), _luminancia_relativa(fundo)
+    return (np.maximum(a, b) + 0.05) / (np.minimum(a, b) + 0.05)
+
+
+@pytest.mark.parametrize("largura", [CELULAR, DESKTOP])
+def test_abertura_com_foto_aparece_e_o_texto_passa_de_4_5_sobre_os_pixels_do_fundo(abrir, largura):
+    with abrir("/", largura=largura, altura=900, reduced_motion="reduce") as pagina:
+        assert "nn-hero-com-foto" in pagina.locator("#topo").get_attribute("class").split()
+        foto = pagina.evaluate(
+            """async () => {
+              const url = getComputedStyle(document.querySelector('#topo')).backgroundImage.match(/url\\("?([^")]+)"?\\)/)[1];
+              const imagem = new Image();
+              imagem.src = url;
+              await imagem.decode();
+              return { url, largura: imagem.naturalWidth, altura: imagem.naturalHeight };
+            }"""
+        )
+        assert foto["url"].endswith("/foto-abertura.webp") and (foto["largura"], foto["altura"]) == (1024, 768)
+        medidas = pagina.evaluate(_TEXTOS_DA_ABERTURA)
+        pagina.evaluate("() => document.querySelectorAll('#topo > *').forEach((e) => { e.style.visibility = 'hidden'; })")
+        caixa = medidas["hero"]
+        recorte = {"x": 0, "y": caixa["y"], "width": largura, "height": caixa["h"]}
+        fundo = np.array(Image.open(io.BytesIO(pagina.screenshot(clip=recorte))).convert("RGB"), dtype=float)
+
+    # a foto esta la, sob a camada: bem mais variada que o preto liso (#080808) que a abertura tem sem foto
+    x0, x1 = int(caixa["x"]) + 24, int(caixa["x"] + caixa["w"]) - 24
+    miolo = fundo[24:-24, x0:x1].reshape(-1, 3)
+    assert (np.abs(miolo - 8).max(axis=1) > 3).mean() > 0.5, "o fundo da abertura esta liso: a foto nao aparece"
+    assert miolo.max() > 40  # a parte clara da foto (o sol, a espuma) atravessa os 12% da foto sob a camada
+
+    reprovados, piores = [], {}
+    for n, alvo in enumerate(medidas["alvos"]):
+        canais = [float(v) for v in re.findall(r"[\d.]+", alvo["cor"])]
+        cor, alfa = np.array(canais[:3]), canais[3] if len(canais) > 3 else 1.0
+        assert alvo["caixas"], alvo["nome"]
+        pior = 99.0
+        for c in alvo["caixas"]:  # cada linha de texto, sobre os pixels que de fato ficam atras dela
+            xa, xb = max(0, int(c["x"])), min(largura, int(np.ceil(c["x"] + c["w"])))
+            ya, yb = max(0, int(c["y"] - caixa["y"])), min(fundo.shape[0], int(np.ceil(c["y"] + c["h"] - caixa["y"])))
+            atras = fundo[ya:yb, xa:xb].reshape(-1, 3)
+            pior = min(pior, _contrastes(alfa * cor + (1 - alfa) * atras, atras).min())
+        piores[f"{n}:{alvo['nome']}"] = round(float(pior), 2)
+        if pior < _LIMITE_DO_CONTRASTE:
+            reprovados.append(f"{alvo['nome']} ({alvo['cor']}): {pior:.2f}:1")
+    assert len(piores) >= 5  # o selo, as linhas do titulo (com o destaque) e o paragrafo
+    assert reprovados == [], piores
+
+
 # --- Explorar ---
 
 
@@ -207,7 +288,6 @@ def test_explorar_troca_indicador_e_territorio(abrir, site_gerado):
         esperado = json.loads((site_gerado / "explorar" / "dados" / "gini.json").read_text(encoding="utf-8"))["BA"]
         assert esperado and _pontos_do_destaque(pagina) == esperado  # o desenho vem dos pontos da base, sem retoque
         assert pagina.url.endswith("?indicador=gini&territorio=BA")  # o endereco guarda a escolha
-        assert pagina.erros == []
 
 
 # --- cards ---
@@ -287,8 +367,8 @@ def test_explorar_redesenhado_no_navegador_igual_ao_do_python(abrir):
                         diferentes.append(f"{indicador.chave}/{territorio}: o Python nao desenha e o navegador desenhou")
                     continue
                 comparados += 1
-                if len(obtidos) != len(esperados) == 2:
-                    diferentes.append(f"{indicador.chave}/{territorio}: {len(obtidos)} graficos no navegador")
+                if len(esperados) != 2 or len(obtidos) != 2:  # a vista tem sempre dois graficos: o largo e o estreito
+                    diferentes.append(f"{indicador.chave}/{territorio}: {len(esperados)} graficos no Python e {len(obtidos)} no navegador")
                     continue
                 for largura, (no_navegador, do_python) in zip(("largo", "estreito"), zip(obtidos, esperados)):
                     if diferenca := _primeira_diferenca(_arvore(no_navegador), _arvore(do_python)):
