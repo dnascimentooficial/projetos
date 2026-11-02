@@ -369,21 +369,15 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* com foto (textos.yaml: foto): a foto é o fundo da abertura, esmaecida por uma camada preta de 88%. O texto branco
-   sobre ela passa de 4,5:1 mesmo com a foto toda branca por baixo (a camada sobre branco puro é o pior caso). O laranja
-   do destaque não passa (ver abaixo). A camada
-   toma o lugar do círculo grande do ::before; o círculo pequeno do ::after continua por cima. */
+/* com foto (textos.yaml: foto): a foto é o fundo da abertura, sob um degradê preto como o do hero do dnascimento.com.br:
+   forte onde está o texto (esquerda; no celular, em cima) e leve onde a foto aparece (direita; no celular, embaixo).
+   O contraste do texto é medido nos pixels reais, atrás de cada linha, por testes/navegador. A camada toma o lugar do
+   círculo grande do ::before; o círculo pequeno do ::after continua por cima. */
 
 .nn-hero-com-foto {
   background-image: url("/foto-abertura.webp");
   background-size: cover;
-  background-position: 70% 12%; /* o sol da foto fica no canto superior direito, longe do texto, que é à esquerda */
-}
-
-/* o laranja puro (#ea2e00) dá 4,7:1 sobre a camada sem foto nenhuma e menos de 3,6:1 sobre o sol: com foto, o destaque
-   do título vira branco translúcido, como o selo (7,7:1 no pior caso medido) */
-.nn-hero-com-foto .nn-hero-titulo .nn-destaque {
-  color: rgba(255, 255, 255, 0.66);
+  background-position: 70% 75%; /* o sol da foto fica no canto superior direito, longe do texto, que é à esquerda */
 }
 
 .nn-hero-com-foto::before {
@@ -392,7 +386,32 @@ body {
   aspect-ratio: auto;
   border: 0;
   border-radius: 0;
-  background: rgba(8, 8, 8, 0.88);
+  background:
+    linear-gradient(90deg, rgba(8, 8, 8, 0.94) 0%, rgba(8, 8, 8, 0.9) 40%, rgba(8, 8, 8, 0.8) 70%, rgba(8, 8, 8, 0.72) 100%),
+    linear-gradient(180deg, rgba(8, 8, 8, 0.08) 0%, rgba(8, 8, 8, 0.2) 100%);
+}
+
+@media (max-width: 900px) { /* o título chega mais perto da borda direita: degradê um pouco mais fechado */
+  .nn-hero-com-foto::before {
+    background:
+      linear-gradient(90deg, rgba(8, 8, 8, 0.94) 0%, rgba(8, 8, 8, 0.9) 40%, rgba(8, 8, 8, 0.84) 70%, rgba(8, 8, 8, 0.76) 100%),
+      linear-gradient(180deg, rgba(8, 8, 8, 0.08) 0%, rgba(8, 8, 8, 0.2) 100%);
+  }
+}
+
+@media (max-width: 560px) {
+  .nn-hero-com-foto::before {
+    background: linear-gradient(180deg, rgba(8, 8, 8, 0.92) 0%, rgba(8, 8, 8, 0.88) 50%, rgba(8, 8, 8, 0.5) 100%);
+  }
+}
+
+/* o destaque do título com foto: o laranja puro (#ea2e00) não passa de 4,5:1 nos pixels mais claros da foto (1,9:1 a
+   1280 px e 3,3:1 a 390 px no pior pixel medido, mesmo sob o degradê). #f4927a é #ea2e00 misturado com 48% de branco: a
+   menor mistura que passa nas larguras testadas é 44% (a 768 px, onde o título mais se aproxima da borda direita) e a
+   48% sobra margem; sem foto o destaque segue #ea2e00. */
+
+.nn-hero-com-foto .nn-hero-titulo .nn-destaque {
+  color: #f4927a;
 }
 
 /* --- faixa de números, logo abaixo da abertura: fundo papel nos dois temas --- */

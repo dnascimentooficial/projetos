@@ -217,7 +217,7 @@ def _contrastes(texto: np.ndarray, fundo: np.ndarray) -> np.ndarray:
     return (np.maximum(a, b) + 0.05) / (np.minimum(a, b) + 0.05)
 
 
-@pytest.mark.parametrize("largura", [CELULAR, DESKTOP])
+@pytest.mark.parametrize("largura", [CELULAR, 560, 561, 768, 900, 901, DESKTOP])  # os dois lados dos pontos de quebra do degradê (560 e 900 px)
 def test_abertura_com_foto_aparece_e_o_texto_passa_de_4_5_sobre_os_pixels_do_fundo(abrir, largura):
     with abrir("/", largura=largura, altura=900, reduced_motion="reduce") as pagina:
         assert "nn-hero-com-foto" in pagina.locator("#topo").get_attribute("class").split()
@@ -241,7 +241,7 @@ def test_abertura_com_foto_aparece_e_o_texto_passa_de_4_5_sobre_os_pixels_do_fun
     x0, x1 = int(caixa["x"]) + 24, int(caixa["x"] + caixa["w"]) - 24
     miolo = fundo[24:-24, x0:x1].reshape(-1, 3)
     assert (np.abs(miolo - 8).max(axis=1) > 3).mean() > 0.5, "o fundo da abertura esta liso: a foto nao aparece"
-    assert miolo.max() > 40  # a parte clara da foto (o sol, a espuma) atravessa os 12% da foto sob a camada
+    assert miolo.max() > 40  # a parte clara da foto (a espuma, o mar) atravessa o degradê
 
     reprovados, piores = [], {}
     for n, alvo in enumerate(medidas["alvos"]):

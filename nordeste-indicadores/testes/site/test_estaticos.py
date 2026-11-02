@@ -221,26 +221,31 @@ def test_css_da_foto_e_da_camada(saida):
     foto = _declaracoes(css, ".nn-hero-com-foto")
     assert foto["background-image"] == 'url("/foto-abertura.webp")'  # local: a CSP e default-src 'self'
     assert foto["background-size"] == "cover"
-    camada = _declaracoes(css, ".nn-hero-com-foto::before")
-    cor = re.fullmatch(r"rgba\((\d+), (\d+), (\d+), ([0-9.]+)\)", camada["background"])
-    assert cor, camada
-    r, g, b, alfa = int(cor[1]), int(cor[2]), int(cor[3]), float(cor[4])
-    assert (r, g, b) == (8, 8, 8)  # o #080808 da identidade
-    assert 0.85 <= alfa <= 0.90 and alfa == 0.88
-    # pior caso: a foto toda branca por baixo; o texto branco da abertura segue com >= 4,5:1 sobre a camada
-    fundo = tuple(255 * (1 - alfa) + c * alfa for c in (r, g, b))
-    assert _contraste((255, 255, 255), fundo) >= 4.5
-    for seletor in (".nn-hero-intro", ".nn-hero .nn-eyebrow", ".nn-hero-com-foto .nn-hero-titulo .nn-destaque"):
-        texto = _declaracoes(css, seletor).get("color")
-        if texto and texto.startswith("rgba(255, 255, 255,"):
-            a = float(texto.rsplit(",", 1)[1].strip(" )"))
-            sobre = tuple(255 * a + c * (1 - a) for c in fundo)
-            assert _contraste(sobre, fundo) >= 4.5, seletor
-    # o laranja puro (#ea2e00) nao chega a 4,5:1 nem sobre a camada sem foto nenhuma por baixo: com foto, o destaque
-    # do titulo da abertura e branco translúcido (medido nos pixels reais em testes/navegador)
-    assert _contraste((234, 46, 0), fundo) < 4.5
+    # a camada e um degradê preto (#080808), forte onde esta o texto e leve onde a foto aparece (Ruling S-AB); o contraste
+    # do texto vale o que testes/navegador mede nos pixels reais, aqui so o desenho do degradê e o pior caso do lado do texto
+    camada = _declaracoes(css, ".nn-hero-com-foto::before")["background"]
+    celular = next(
+        " ".join(d.split()).split(":", 1)[1].strip() for c, d in _regras(css)
+        if c == ("@media (max-width: 560px)", ".nn-hero-com-foto::before") and d.startswith("background:")
+    )
+    for fundo_css, direcao, minimo_no_texto in ((camada, "90deg", 0.9), (celular, "180deg", 0.9)):
+        assert f"linear-gradient({direcao}, " in fundo_css, fundo_css
+        paradas = [(int(r), int(g), int(b), float(a)) for r, g, b, a in re.findall(r"rgba\((\d+), (\d+), (\d+), ([0-9.]+)\)", fundo_css.split("), linear-gradient")[0])]
+        assert {p[:3] for p in paradas} == {(8, 8, 8)}  # o #080808 da identidade
+        alfas = [p[3] for p in paradas]
+        assert alfas[0] >= minimo_no_texto and alfas == sorted(alfas, reverse=True) and alfas[-1] <= 0.8  # a foto aparece no fim
+        # pior caso do lado do texto: a foto toda branca sob a primeira parada; o texto branco segue com >= 4,5:1
+        fundo = tuple(255 * (1 - alfas[0]) + 8 * alfas[0] for _ in range(3))
+        assert _contraste((255, 255, 255), fundo) >= 4.5
+        texto_translucido = 255 * 0.66 + fundo[0] * (1 - 0.66)
+        assert _contraste((texto_translucido,) * 3, fundo) >= 4.5  # o selo (branco a 66%) tambem
+    # o laranja puro (#ea2e00) nao passa nos pixels claros da foto (medido em testes/navegador): com foto o destaque do
+    # titulo e um laranja claro, mais claro que a identidade e menos que o branco
     destaque = _declaracoes(css, ".nn-hero-com-foto .nn-hero-titulo .nn-destaque").get("color", "")
-    assert destaque.startswith("rgba(255, 255, 255,"), destaque
+    assert re.fullmatch(r"#[0-9a-f]{6}", destaque), destaque
+    r, g, b = (int(destaque[i:i + 2], 16) for i in (1, 3, 5))
+    assert (r, g, b) != (0xEA, 0x2E, 0x00) and r >= 0xEA and g > 0x2E and b > 0x00 and g < 0xFF and b < 0xFF
+    assert _declaracoes(css, ".nn-hero-titulo .nn-destaque")["color"] == "var(--nn-laranja)"  # sem foto segue laranja
     # a foto so existe por CSS: nem <img> nem style= nas paginas (test_sem_style_ou_script_inline) e movimento so sem reducao
     assert not any(c == (".nn-hero-com-foto",) and "animation" in d for c, d in _regras(css))
 
