@@ -373,7 +373,9 @@ body {
    ::before, sem passar por baixo de nenhum texto: no desktop (> 900 px) é a metade direita da abertura e o título cede
    a coluna da esquerda; até 900 px é uma faixa no topo e o texto vem abaixo. A foto leva só uma camada leve (15%) e um
    degradê que a funde no preto na emenda. O destaque do título segue #ea2e00 (4,7:1 sobre #080808). O círculo grande do
-   ::before dá lugar à foto; o círculo pequeno do ::after continua, por cima da foto. */
+   ::before dá lugar à foto; o círculo pequeno do ::after continua, por cima da foto. No desktop a foto é ampliada (115% da
+   altura) e recortada à esquerda do sol: o canto superior direito da foto (sol e o reflexo dele no mar) fica fora do
+   quadro, o Farol da Barra inteiro, e a coluna do texto ganha largura para o título voltar a ~72 px. */
 
 .nn-hero-com-foto {
   --nn-foto-alt: clamp(170px, 42vw, 340px); /* altura da faixa de foto até 900 px */
@@ -390,18 +392,26 @@ body {
 
 @media (min-width: 901px) {
   .nn-hero-com-foto {
-    padding-right: calc(52% + 24px); /* a coluna do texto termina antes da foto */
+    padding-left: clamp(22px, 4.4vw, 56px);
+    padding-right: calc(48% + 20px); /* a coluna do texto termina antes da foto */
   }
 
   .nn-hero-com-foto::before {
     --nn-foto-fusao: linear-gradient(90deg, #080808 0%, rgba(8, 8, 8, 0) 36%);
     inset: 0 0 0 auto;
-    width: 52%;
-    background-position: 0 0, 0 0, 62% 50%; /* enquadra o Farol da Barra */
+    width: 48%;
+    /* a altura da foto vale 115% da abertura (a largura, 1,53 vez a altura, cobre a coluna, que tem ~1:1); o recorte
+       a 35% / 20% pega céu, cidade, farol e pedras e para antes do sol e do reflexo dele, no terço direito da foto */
+    background-size: auto, auto, auto 115%;
+    background-position: 0 0, 0 0, 35% 20%;
+  }
+
+  .nn-hero-com-foto::after {
+    right: 6%; /* o círculo pequeno fica todo dentro da foto, sem cruzar a emenda */
   }
 
   .nn .nn-hero-com-foto .nn-hero-titulo {
-    font-size: clamp(36px, 4.7vw, 64px); /* "do mesmo jeito?" cabe na coluna do texto */
+    font-size: clamp(36px, 5.6vw, 72px); /* "do mesmo jeito?" cabe na coluna do texto até 72 px (1280 px) */
   }
 }
 

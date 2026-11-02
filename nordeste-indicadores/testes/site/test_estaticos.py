@@ -237,7 +237,17 @@ def test_css_da_foto_abertura_dividida(saida):
     # desktop: a foto e a metade direita; a coluna do texto termina antes dela
     desktop = _regra_em(css, ("@media (min-width: 901px)",), ".nn-hero-com-foto::before")
     largura = float(re.fullmatch(r"(\d+)%", desktop["width"])[1])
-    assert 45 <= largura <= 55
+    assert 48 <= largura <= 50  # Rodada 4: a coluna do texto fica com 50 a 52% para o titulo crescer
+    # o sol (canto superior direito da foto) sai do quadro: a foto e ampliada pela altura (>= 100%, cobre a coluna, que e
+    # mais alta que 1:1,33) e o recorte fica do lado esquerdo (x <= 50%); o teste de navegador mede a area estourada
+    tamanho = re.fullmatch(r"auto (\d+)%", desktop["background-size"].rsplit(",", 1)[1].strip())
+    assert tamanho and 100 <= int(tamanho[1]) <= 130, desktop["background-size"]
+    posicao_x = re.fullmatch(r"(\d+)% (\d+)%", desktop["background-position"].rsplit(",", 1)[1].strip())
+    assert posicao_x and int(posicao_x[1]) <= 50, desktop["background-position"]
+    # o titulo volta a ~72 px (teto entre 72 e 80 px), sem passar de 64 px a 901 px nem de 72 px a 1280 px na inclinacao
+    titulo = re.fullmatch(r"clamp\((\d+)px, ([\d.]+)vw, (\d+)px\)",
+                          _regra_em(css, ("@media (min-width: 901px)",), ".nn .nn-hero-com-foto .nn-hero-titulo")["font-size"])
+    assert titulo and 72 <= int(titulo[3]) <= 80 and float(titulo[2]) * 9.01 <= 64 and float(titulo[2]) * 12.8 <= 72.5, titulo
     assert desktop["--nn-foto-fusao"].startswith("linear-gradient(90deg, #080808 0%, rgba(8, 8, 8, 0)")  # emenda: preto liso
     assert _regra_em(css, ("@media (min-width: 901px)",), ".nn-hero-com-foto")["padding-right"].startswith(f"calc({largura:g}% + ")
     # ate 900 px: faixa no topo que funde no preto embaixo, e o texto desce abaixo dela

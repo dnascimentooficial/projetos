@@ -211,10 +211,23 @@ _ABERTURA = """() => {
       caixas: [...intervalo.getClientRects()].map((c) => ({ x: c.left, y: c.top, w: c.width, h: c.height })),
     });
   }
-  return { hero: { x: caixa.left, y: caixa.top, w: caixa.width, h: caixa.height }, foto, alvos };
+  const titulo = hero.querySelector('.nn-hero-titulo');
+  const linhas = [...titulo.querySelectorAll(':scope > span')].map((s) => {
+    const intervalo = document.createRange();
+    intervalo.selectNodeContents(s);
+    return new Set([...intervalo.getClientRects()].map((c) => Math.round(c.top))).size;
+  });
+  const raio = parseFloat(getComputedStyle(hero).borderTopRightRadius);
+  return { hero: { x: caixa.left, y: caixa.top, w: caixa.width, h: caixa.height }, foto, alvos, raio,
+           titulo: { fonte: parseFloat(getComputedStyle(titulo).fontSize), linhas } };
 }"""
 _LIMITE_DO_CONTRASTE = 4.5
 _LARGURAS_DA_ABERTURA = [CELULAR, 560, 561, 768, 900, 901, DESKTOP]  # os dois lados dos pontos de quebra (560 e 900 px)
+# area estourada da foto (o sol): a camada de 15% leva o branco puro a rgb(218, 218, 218), luminancia 0,70, entao nenhum
+# pixel da foto passa de 0,9 na tela; 0,55 na tela equivale a ~0,8 na foto. Com o sol no quadro (Rodada 3) eram 0,5% a
+# 1,3% dos pixels da foto acima disso; sem ele, ~0,01%.
+_LUMINANCIA_ESTOURADA = 0.55
+_LIMITE_DA_AREA_ESTOURADA = 0.001  # fracao dos pixels da foto
 
 
 def _luminancia_relativa(rgb: np.ndarray) -> np.ndarray:
@@ -259,6 +272,20 @@ def test_abertura_com_foto_texto_fora_da_foto_e_com_contraste_nos_pixels_reais(a
     # e a emenda funde no preto: a borda do lado do texto e preto liso
     emenda = fundo[fy:fy + int(foto["h"]), fx:fx + 2] if lado_a_lado else fundo[fy + int(foto["h"]) - 2:fy + int(foto["h"]), fx:fx + int(foto["w"])]
     assert np.abs(emenda - 8).max() <= 8, "a foto nao funde no preto na emenda"  # os 2 px da borda: preto, a menos de 3% da foto
+    if lado_a_lado:
+        # o sol fica fora do quadro: quase nenhum pixel estourado na foto (os cantos arredondados, fora da abertura, nao contam)
+        regiao = fundo[fy:fy + int(foto["h"]), int(np.ceil(foto["x"])):int(foto["x"] + foto["w"])]
+        alt, larg = regiao.shape[:2]
+        yy, xx = np.mgrid[0:alt, 0:larg]
+        r = medidas["raio"]
+        dx, dy = xx - (larg - r), np.maximum(r - yy, yy - (alt - r))
+        dentro = ~((dx > 0) & (dy > 0) & (dx ** 2 + dy ** 2 > (r - 1) ** 2))
+        estourada = float((_luminancia_relativa(regiao[dentro]) > _LUMINANCIA_ESTOURADA).mean())
+        assert estourada < _LIMITE_DA_AREA_ESTOURADA, f"{estourada:.2%} da foto estourada (o sol voltou ao quadro?)"
+        # e o titulo volta a crescer: ~72 px a 1280 px, sem quebrar "O Nordeste esta" nem "do mesmo jeito?"
+        assert medidas["titulo"]["linhas"][:2] == [1, 1], medidas["titulo"]
+        if largura >= DESKTOP:
+            assert medidas["titulo"]["fonte"] >= 70, medidas["titulo"]
 
     reprovados, piores = [], {}
     for n, alvo in enumerate(medidas["alvos"]):
