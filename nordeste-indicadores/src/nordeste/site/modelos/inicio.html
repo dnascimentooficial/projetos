@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_componentes.html" import atualizacoes %}
 {% macro grafico(g) %}
 <div class="nn-grafico">
 {% if g.titulo %}
@@ -75,10 +76,7 @@
 {% for linha in p.fonte %}
       <span>{{ linha }}</span>
 {% endfor %}
-{% for a in p.atualizacoes %}
-      <span class="nn-atualizacao"><b>{{ a.nome }}.</b> Atualizado em {{ a.atualizado }}.{% if a.proximo %} Próximo dado esperado: {{ a.proximo }}.{% endif %}</span>
-{% endfor %}
-    </div>
+{{ atualizacoes(p.atualizacoes) }}    </div>
   </article>
 {% endfor %}
 </section>

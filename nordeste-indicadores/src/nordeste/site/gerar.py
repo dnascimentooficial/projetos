@@ -1,4 +1,5 @@
-"""Gerador do site estatico: Inicio, Sobre e Dados a partir da base publicada, dos relatorios e dos metadados.
+"""Gerador do site estatico a partir da base publicada, dos relatorios e dos metadados: Inicio, Estados, Explorar,
+Cards, Sobre e Dados.
 
 Nada aqui le o relogio nem a base de trabalho: a mesma base publicada gera o mesmo site, byte a byte. Todo numero de
 texto vem de um marcador preenchido pela base (`conteudo.preencher`); fecho e card cuja condicao falha, ou cujo texto
@@ -13,17 +14,23 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NamedTuple
 
+import pandas as pd
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from nordeste.caminhos import Caminhos
 from nordeste.site.conteudo import (
-    Conteudo, Destaque, avaliar_condicao, calcular_destaques, carregar_conteudo, destaques_citados,
+    Conteudo, Destaque, ErroConteudo, avaliar_condicao, calcular_destaques, carregar_conteudo, destaques_citados,
     pontos_da_selecao, preencher,
 )
 from nordeste.site.dados import DadosSite
+from nordeste.site.explorar import (
+    ETIQUETA_DO_TERRITORIO, FAIXAS, INDICADORES_EXPLORAR, NOME_DO_TERRITORIO, POR_CHAVE, TERRITORIOS,
+    IndicadorExplorar, dados_explorar, pontos, pontos_do_indicador, referencias, tabela_do_territorio, vistas_estados,
+)
 from nordeste.site.formatacao import numero
-from nordeste.site.graficos import ConfigGrafico, Linha, grafico_linhas
+from nordeste.site.graficos import ConfigGrafico, Linha, grafico_linhas, minigrafico
 
+NOME_DO_SITE = "Nordeste em Números"
 URL_DO_SITE = "https://nordeste.dnascimento.com.br"
 URL_DO_AUTOR = "https://dnascimento.com.br"
 LICENCA = "https://creativecommons.org/licenses/by/4.0/"
@@ -31,6 +38,7 @@ PASTA_MODELOS = Path(__file__).parent / "modelos"
 LARGO = {"largura": 720}  # os dois tamanhos de cada grafico (Ruling S-O): o CSS mostra um conforme a largura da tela
 ESTREITO = {"largura": 360, "altura": 240}
 ARQUIVOS_DE_DADOS = ("base_nordeste.csv", "derivados.csv")
+EXPLORAR_INICIAL = ("pib_pc", "NE")  # a vista que ja vem desenhada no HTML: indicador e territorio
 FRASE_DA_DATA = "na data desta publicação"
 MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro",
          "novembro", "dezembro")
@@ -44,9 +52,11 @@ class Pagina(NamedTuple):
     rotulo: str  # no menu
 
 
-# As paginas das proximas tarefas entram aqui.
 PAGINAS = (
     Pagina("index", "inicio.html", "index.html", "/", "Início"),
+    Pagina("estados", "estados.html", "estados/index.html", "/estados/", "Estados"),
+    Pagina("explorar", "explorar.html", "explorar/index.html", "/explorar/", "Explorar"),
+    Pagina("cards", "cards.html", "cards/index.html", "/cards/", "Cards"),
     Pagina("sobre", "sobre.html", "sobre/index.html", "/sobre/", "Sobre os dados"),
     Pagina("dados", "dados.html", "dados/index.html", "/dados/", "Dados"),
 )
@@ -136,10 +146,16 @@ def _tabela(linhas: list[Linha], cfg: ConfigGrafico, nome: str) -> list[dict]:
     ]
 
 
+def _desenhar(linhas: list[Linha], cfg: ConfigGrafico, governos: pd.DataFrame) -> tuple[str, str]:
+    """O grafico nas duas larguras (Ruling S-O); vazio quando nenhuma linha tem ponto no eixo."""
+    largo = grafico_linhas(linhas, cfg, governos, **LARGO)
+    return (largo, grafico_linhas(linhas, cfg, governos, **ESTREITO)) if largo else ("", "")
+
+
 def _montar_grafico(dados: DadosSite, destaques: dict[str, Destaque], grafico: dict) -> dict | None:
     """O grafico nas duas larguras e a tabela dos numeros; None quando nenhuma linha tem ponto no eixo."""
     linhas, cfg = _linhas(dados, grafico), _config(grafico, destaques)
-    largo = grafico_linhas(linhas, cfg, dados.governos, **LARGO)
+    largo, estreito = _desenhar(linhas, cfg, dados.governos)
     if not largo:
         return None
     nome = preencher(grafico.get("titulo") or grafico.get("descricao") or grafico["id"], destaques)
@@ -148,7 +164,7 @@ def _montar_grafico(dados: DadosSite, destaques: dict[str, Destaque], grafico: d
         "titulo": preencher(grafico["titulo"], destaques) if "titulo" in grafico else None,
         "subtitulo": preencher(grafico["subtitulo"], destaques) if "subtitulo" in grafico else None,
         "largo": largo,
-        "estreito": grafico_linhas(linhas, cfg, dados.governos, **ESTREITO),
+        "estreito": estreito,
         "tabela": _tabela(linhas, cfg, nome),
     }
 
@@ -219,6 +235,72 @@ def _cards_suprimidos(conteudo: Conteudo, destaques: dict[str, Destaque]) -> lis
     ]
 
 
+# --- Estados, Explorar e Cards ---
+
+def _contexto_dos_estados(dados: DadosSite) -> dict:
+    vistas = vistas_estados(dados)
+    for vista in vistas:
+        vista["atualizacoes"] = _atualizacoes(dados, [vista["indicador_id"]])
+    return {"estados": vistas, "faixas": [f"nn-f{i}" for i in range(FAIXAS)]}
+
+
+def _vista_explorar(dados: DadosSite, ind: IndicadorExplorar, por_territorio: dict, territorio: str) -> dict:
+    """O titulo, o grafico (as duas larguras) e a tabela do territorio escolhido.
+
+    Territorio sem nenhum ponto no indicador: `grafico` fica None e a pagina mostra o aviso. As linhas de referencia
+    (Brasil, Nordeste) nao aparecem sozinhas, para nao parecerem a serie do territorio.
+    """
+    vista = {
+        "titulo": f"{ind.nome}: {NOME_DO_TERRITORIO[territorio]} ({ind.unidade})", "grafico": None, "tabela": [],
+    }
+    if not por_territorio[territorio]:
+        return vista
+    linhas = [
+        Linha(NOME_DO_TERRITORIO[t], ETIQUETA_DO_TERRITORIO[t], pontos(por_territorio[t]), t == territorio)
+        for t in (*referencias(territorio), territorio)
+    ]
+    cfg = ConfigGrafico(titulo=f"{ind.nome}, {NOME_DO_TERRITORIO[territorio]}", casas=ind.casas, sufixo=ind.sufixo)
+    largo, estreito = _desenhar(linhas, cfg, dados.governos)
+    if largo:
+        vista["grafico"] = {"id": "g-explorar", "largo": largo, "estreito": estreito}
+        vista["tabela"] = tabela_do_territorio(ind, por_territorio[territorio], territorio)
+    return vista
+
+
+def vista_explorar_em_html(dados: DadosSite, textos: dict, indicador: str, territorio: str) -> str:
+    """O HTML da vista do Explorar de um indicador e territorio: grafico e tabela, ou o aviso de que nao ha dados."""
+    ind = POR_CHAVE[indicador]
+    vista = _vista_explorar(dados, ind, pontos_do_indicador(dados, ind), territorio)
+    return str(_ambiente().get_template("_vista_explorar.html").module.vista(vista, textos["explorar"]))
+
+
+def _contexto_do_explorar(dados: DadosSite, por_indicador: dict[str, dict[str, list[list]]]) -> dict:
+    chave, territorio = EXPLORAR_INICIAL
+    vista = _vista_explorar(dados, POR_CHAVE[chave], por_indicador[chave], territorio)
+    return {
+        "explorar": {
+            "indicadores": INDICADORES_EXPLORAR,
+            "territorios": [{"id": id_, "nome": nome} for id_, nome, _ in TERRITORIOS],
+            "inicial": {"indicador": chave, "territorio": territorio},
+            "vista": vista,
+        }
+    }
+
+
+def _cartao(dados: DadosSite, destaques: dict[str, Destaque], card: dict) -> dict:
+    """O card pronto para o modelo: textos preenchidos, minigrafico e o resumo das previas de compartilhamento."""
+    de, para = preencher(card["de"], destaques), preencher(card["para"], destaques)
+    frase, fecho = preencher(card["frase"], destaques), preencher(card["fecho"], destaques)
+    frase_feita = preencher(card["frase_feita"], destaques)
+    return {
+        "id": card["id"], "rotulo": preencher(card["rotulo"], destaques), "frase_feita": frase_feita,
+        "titulo_sem_aspas": frase_feita.strip("“”"), "de": de, "para": para, "frase": frase, "fecho": fecho,
+        "fonte": preencher(card["fonte"], destaques), "longo": card.get("longo", False),
+        "mini": minigrafico(_linhas(dados, card["grafico"])),
+        "resumo": f"{de} → {para} {frase} {fecho}",
+    }
+
+
 # --- paginas ---
 
 def _anos_da_base(dados: DadosSite) -> tuple[int, int]:
@@ -286,10 +368,44 @@ def _gerar_imagens(saida: Path, paginas: list[str]) -> None:
 
 
 def _validar_saida(caminhos: Caminhos, saida: Path) -> None:
-    """A saida e apagada: nunca a pasta do projeto nem uma pasta que a contenha."""
-    raiz, destino = caminhos.raiz.resolve(), saida.resolve()
-    if destino == raiz or destino in raiz.parents:
-        raise ValueError(f"A pasta de saída {saida} contém o projeto: escolha uma pasta fora dele.")
+    """A saida e apagada: nunca a base publicada, os relatorios ou os metadados, nem uma pasta que os contenha."""
+    destino = saida.resolve()
+    for protegida in (caminhos.base, caminhos.relatorios, caminhos.metadados):
+        protegida = protegida.resolve()
+        if destino == protegida or destino in protegida.parents:
+            raise ValueError(f"A pasta de saída {saida} apagaria {protegida}: escolha outra, fora da base e dos metadados.")
+
+
+def _paragrafos_da_abertura(itens: list, destaques: dict[str, Destaque]) -> tuple[list[str], list[str]]:
+    """Textos dos paragrafos da abertura que valem e os ids dos que sairam.
+
+    Como no fecho, sai o paragrafo cuja condicao e falsa ou cujo texto cita destaque ausente da base.
+    """
+    textos, suprimidos = [], []
+    for item in itens:
+        if not isinstance(item, dict) or not {"id", "texto"} <= item.keys() or item.keys() - {"id", "texto", "condicao"}:
+            raise ErroConteudo(f"textos.yaml, abertura.intro: cada parágrafo tem id e texto, e pode ter condicao: {item!r}.")
+        vale = _cita_so_o_que_existe(item["texto"], destaques)
+        if vale and "condicao" in item:
+            vale = avaliar_condicao(item["condicao"], destaques)
+        if vale:
+            textos.append(item["texto"])
+        else:
+            suprimidos.append(item["id"])
+    return textos, suprimidos
+
+
+def _escrever(ambiente: Environment, saida: Path, modelo: str, arquivo: str, **contexto: object) -> None:
+    destino = saida / arquivo
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(ambiente.get_template(modelo).render(**contexto).encode("utf-8"))
+
+
+def _pagina(chave: str, rota: str, titulo: str, descricao: str, imagem: str, json_ld: str | None = None) -> dict:
+    return {
+        "chave": chave, "rota": rota, "url": URL_DO_SITE + rota, "titulo": titulo, "descricao": descricao,
+        "imagem": imagem, "json_ld": json_ld,
+    }
 
 
 def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> RelatorioSite:
@@ -299,8 +415,13 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
     conteudo = carregar_conteudo(caminhos.metadados / "site")
     destaques = calcular_destaques(dados, conteudo)
     data = data_por_extenso(dados.data_base)
-    textos = _resolver(conteudo.textos, destaques, data)
+    abertura, paragrafos_suprimidos = _paragrafos_da_abertura(conteudo.textos["abertura"]["intro"], destaques)
+    com_abertura = {**conteudo.textos, "abertura": {**conteudo.textos["abertura"], "intro": abertura}}
+    textos = _resolver(com_abertura, destaques, data)
     perguntas, fechos_suprimidos = _perguntas(dados, destaques, conteudo)
+    cards_fora = _cards_suprimidos(conteudo, destaques)
+    cards = [_cartao(dados, destaques, c) for c in conteudo.cards if c["id"] not in cards_fora]
+    explorar = dados_explorar(dados)
     anos = _anos_da_base(dados)
     arquivos = _arquivos_de_dados(caminhos, textos)
     comum = {
@@ -308,30 +429,40 @@ def gerar_site(caminhos: Caminhos, saida: Path, *, imagens: bool = True) -> Rela
         "data_base": data, "sha256_base": dados.sha256_base, "licenca": LICENCA, "autor_url": URL_DO_AUTOR,
         "foto": textos.get("foto"),
         "textos": textos, "selo": f"{textos['abertura']['eyebrow']} · {anos[0]} a {anos[1]}",
-        "perguntas": perguntas, "fontes": _fontes(dados), "arquivos": arquivos,
+        "perguntas": perguntas, "fontes": _fontes(dados), "arquivos": arquivos, "cards": cards,
+        "data_curta": "/".join(reversed(dados.data_base.split("-"))),
     }
+    por_pagina = {"estados": _contexto_dos_estados(dados), "explorar": _contexto_do_explorar(dados, explorar)}
 
     if saida.exists():
         shutil.rmtree(saida)
     (saida / "dados").mkdir(parents=True)
+    (saida / "explorar" / "dados").mkdir(parents=True)
     ambiente = _ambiente()
     for p in PAGINAS:
-        pagina = {
-            "chave": p.chave, "rota": p.rota, "url": URL_DO_SITE + p.rota,
-            "titulo": textos["paginas"][p.chave]["titulo"], "descricao": textos["paginas"][p.chave]["descricao"],
-            "imagem": f"{URL_DO_SITE}/og/{p.chave}.png",
-            "json_ld": _json_ld(dados, textos, anos, arquivos) if p.chave in PAGINAS_COM_DATASET else None,
-        }
-        destino = saida / p.arquivo
-        destino.parent.mkdir(parents=True, exist_ok=True)
-        destino.write_bytes(ambiente.get_template(p.modelo).render(pagina=pagina, **comum).encode("utf-8"))
+        pagina = _pagina(
+            p.chave, p.rota, textos["paginas"][p.chave]["titulo"], textos["paginas"][p.chave]["descricao"],
+            f"{URL_DO_SITE}/og/{p.chave}.png",
+            _json_ld(dados, textos, anos, arquivos) if p.chave in PAGINAS_COM_DATASET else None,
+        )
+        _escrever(ambiente, saida, p.modelo, p.arquivo, pagina=pagina, **comum, **por_pagina.get(p.chave, {}))
+    for card in cards:
+        rota = f"/cards/{card['id']}/"
+        pagina = _pagina(
+            "cards", rota, f"{card['frase_feita']} · {NOME_DO_SITE}", card["resumo"],
+            f"{URL_DO_SITE}/cards/{card['id']}.png",
+        )
+        _escrever(ambiente, saida, "card.html", f"cards/{card['id']}/index.html", pagina=pagina, card=card, **comum)
     for nome in ARQUIVOS_DE_DADOS:
         shutil.copyfile(caminhos.base / nome, saida / "dados" / nome)
+    for chave, por_territorio in explorar.items():
+        texto = json.dumps(por_territorio, ensure_ascii=False, separators=(",", ":")) + "\n"
+        (saida / "explorar" / "dados" / f"{chave}.json").write_bytes(texto.encode("utf-8"))
 
-    paginas = [p.arquivo for p in PAGINAS]
+    paginas = [p.arquivo for p in PAGINAS] + [f"cards/{c['id']}/index.html" for c in cards]
     if imagens:
         _gerar_imagens(saida, paginas)
-    return RelatorioSite(paginas, fechos_suprimidos, _cards_suprimidos(conteudo, destaques))
+    return RelatorioSite(paginas, [*paragrafos_suprimidos, *fechos_suprimidos], cards_fora)
 
 
 def relatorio_em_json(relatorio: RelatorioSite) -> str:

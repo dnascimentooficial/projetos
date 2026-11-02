@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_vista_explorar.html" import vista %}
+{% block conteudo %}
+{% set t = textos.explorar %}
+{% set e = explorar %}
+<section class="nn-pagina" id="explorar" aria-labelledby="titulo-principal">
+  <h1 id="titulo-principal">{{ t.titulo }}</h1>
+  <p class="nn-muted">{{ t.intro }}</p>
+  <div class="nn-controles">
+    <label for="sel-expl-ind">Indicador
+      <select id="sel-expl-ind" class="nn-sel-expl-ind">
+{% for i in e.indicadores %}
+        <option value="{{ i.chave }}" data-nome="{{ i.nome }}" data-unidade="{{ i.unidade }}" data-casas="{{ i.casas }}" data-sufixo="{{ i.sufixo }}"{% if i.chave == e.inicial.indicador %} selected{% endif %}>{{ i.rotulo }}</option>
+{% endfor %}
+      </select>
+    </label>
+    <label for="sel-expl-terr">Território
+      <select id="sel-expl-terr" class="nn-sel-expl-terr">
+{% for x in e.territorios %}
+        <option value="{{ x.id }}"{% if x.id == e.inicial.territorio %} selected{% endif %}>{{ x.nome }}</option>
+{% endfor %}
+      </select>
+    </label>
+    <label for="sel-expl-terr2">Comparar lado a lado com
+      <select id="sel-expl-terr2" class="nn-sel-expl-terr2">
+        <option value="" selected>nenhum</option>
+{% for x in e.territorios %}
+        <option value="{{ x.id }}">{{ x.nome }}</option>
+{% endfor %}
+      </select>
+    </label>
+  </div>
+  <article class="nn-card" id="explorar-grafico" data-dados="/explorar/dados/" data-sem-dados="{{ t.sem_dados }}">
+    <p class="nn-eyebrow">Explorar</p>
+    <h2 id="explorar-titulo">{{ e.vista.titulo }}</h2>
+    <p class="nn-muted">{{ t.nota }}</p>
+    <div id="explorar-vista">
+{{ vista(e.vista, t) }}
+    </div>
+    <div class="nn-fonte"><span>{{ t.fonte }}</span></div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% macro vista(v, t) %}
+{% if v.grafico %}
+<div class="nn-graf" id="{{ v.grafico.id }}">
+  <div class="nn-graf-largo">{{ v.grafico.largo|safe }}</div>
+  <div class="nn-graf-estreito">{{ v.grafico.estreito|safe }}</div>
+</div>
+<details>
+  <summary>{{ t.tabela }}</summary>
+  <div class="nn-tabela">
+    <table>
+      <thead><tr><th scope="col">Ano</th><th scope="col">Território</th><th scope="col" class="nn-num">Valor</th><th scope="col">Série da fonte</th></tr></thead>
+      <tbody>
+{% for r in v.tabela %}
+        <tr><td>{{ r.ano }}</td><td>{{ r.territorio }}</td><td class="nn-num">{{ r.valor }}</td><td>{{ r.serie }}</td></tr>
+{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% else %}
+<p class="nn-muted nn-sem-dados">{{ t.sem_dados }}</p>
+{% endif %}
+{% endmacro %}

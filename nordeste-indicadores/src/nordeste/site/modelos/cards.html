@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<section class="nn-pagina" id="cards" aria-labelledby="titulo-principal">
+  <h1 id="titulo-principal">{{ textos.cards.titulo }}</h1>
+  <p class="nn-muted">{{ textos.cards.intro }}</p>
+  <ul class="nn-cartoes-lista">
+{% for c in cards %}
+    <li><a class="nn-cartao-link" href="/cards/{{ c.id }}/"><span class="nn-eyebrow">{{ c.rotulo }}</span><span class="nn-c-mito">{{ c.frase_feita }}</span><span class="nn-c-numero{% if c.longo %} nn-c-longo{% endif %}">{{ c.de }} → {{ c.para }}</span></a></li>
+{% endfor %}
+  </ul>
+</section>
+{% endblock %}

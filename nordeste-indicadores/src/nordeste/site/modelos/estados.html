@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "_componentes.html" import atualizacoes %}
+{% block conteudo %}
+{% set t = textos.estados %}
+<section class="nn-pagina" id="estados" aria-labelledby="titulo-principal">
+  <h1 id="titulo-principal">{{ t.titulo }}</h1>
+  <p class="nn-muted">{{ t.intro }}</p>
+  <div class="nn-controles">
+    <label for="sel-estado-ind">Indicador
+      <select id="sel-estado-ind" class="nn-sel-estado">
+{% for v in estados %}
+        <option value="{{ v.chave }}"{% if loop.first %} selected{% endif %}>{{ v.rotulo }}</option>
+{% endfor %}
+      </select>
+    </label>
+  </div>
+{% for v in estados %}
+
+  <div class="nn-vista" id="estados-{{ v.chave }}" data-vista="{{ v.chave }}"{% if not loop.first %} hidden{% endif %}>
+    <article class="nn-card">
+      <p class="nn-eyebrow">Estados</p>
+      <h2>{{ t.titulo_mapa }}: {{ v.nome }}</h2>
+{% if v.anos %}
+      <p class="nn-muted">{{ t.nota_do_mapa }}</p>
+      <div class="nn-escala" aria-hidden="true"><span>{{ t.escala_pior }}</span>{% for f in faixas %}<i class="{{ f }}"></i>{% endfor %}<span>{{ t.escala_melhor }}</span></div>
+      <div class="nn-mapa-caixa">
+        <table class="nn-mapa" aria-hidden="true">
+          <thead><tr><td></td>{% for ano in v.anos %}<th scope="col" class="nn-ano">{{ ano }}</th>{% endfor %}</tr></thead>
+          <tbody>
+{% for linha in v.linhas %}
+            <tr><th scope="row" class="nn-uf">{{ linha.uf }}</th>{% for c in linha.celulas %}<td class="nn-cel {{ c.classe }}" title="{{ c.titulo }}"></td>{% endfor %}</tr>
+{% endfor %}
+          </tbody>
+        </table>
+      </div>
+{% else %}
+      <p class="nn-muted">{{ t.sem_dados }}</p>
+{% endif %}
+    </article>
+{% if v.anos %}
+    <article class="nn-card">
+      <p class="nn-eyebrow">Estados</p>
+      <h2>{{ t.titulo_ranking }}: {{ v.ano_do_ranking }}</h2>
+      <div class="nn-ranking" role="list" aria-label="Ranking dos estados do Nordeste">
+{% for r in v.ranking %}
+        <div class="nn-rk" role="listitem"><span>{{ r.posicao }}</span><svg class="nn-rk-barra" aria-hidden="true" focusable="false" width="100%" height="100%"><rect class="nn-rk-fill" width="{{ r.largura }}%" height="100%"/></svg><span class="nn-rk-val">{{ r.valor }}</span></div>
+{% endfor %}
+      </div>
+      <details>
+        <summary>{{ t.tabela }}</summary>
+        <div class="nn-tabela">
+          <table>
+            <thead><tr><th scope="col">Estado</th><th scope="col">Ano</th><th scope="col" class="nn-num">Valor</th></tr></thead>
+            <tbody>
+{% for r in v.tabela %}
+              <tr><td>{{ r.estado }}</td><td>{{ r.ano }}</td><td class="nn-num">{{ r.valor }}</td></tr>
+{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <div class="nn-fonte">
+        <span>{{ t.fonte }}</span>
+{{ atualizacoes(v.atualizacoes) }}
+      </div>
+    </article>
+{% endif %}
+  </div>
+{% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% macro atualizacoes(lista) %}
+{% for a in lista %}
+      <span class="nn-atualizacao"><b>{{ a.nome }}.</b> Atualizado em {{ a.atualizado }}.{% if a.proximo %} Próximo dado esperado: {{ a.proximo }}.{% endif %}</span>
+{% endfor %}
+{% endmacro %}

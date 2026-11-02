@@ -7,9 +7,15 @@ abertura:
     - "O Nordeste está"
     - "do mesmo jeito?"
   destaque: "Mudou. E ainda falta chão."
+  # Cada parágrafo tem id (aparece no relatório quando sai) e, se afirma uma direção que a base pode inverter,
+  # a condição que o sustenta, como nos fechos. Parágrafo cuja condição falha ou cujo texto cita destaque ausente não sai.
   intro:
-    - "Volta e meia eu escuto que o Nordeste está do mesmo jeito. Que nada mudou. Fui conferir nos números oficiais, de 2000 para cá."
-    - "Em {pib_pc_razao.ano_ultimo}, a riqueza por pessoa do Nordeste era {pib_pc_razao.ultimo:1%} da do resto do país. Em {pib_pc_razao.ano_primeiro}, era {pib_pc_razao.primeiro:1%}. A pobreza caiu de {pob_ne.primeiro:1%} para {pob_ne.ultimo:1%} da população entre {pob_ne.ano_primeiro} e {pob_ne.ano_ultimo}, mas segue acima da média do Brasil, de {pob_br.ultimo:1%}."
+    - id: abertura_inicio
+      texto: "Volta e meia eu escuto que o Nordeste está do mesmo jeito. Que nada mudou. Fui conferir nos números oficiais, de 2000 para cá."
+    - id: abertura_numeros
+      texto: "Em {pib_pc_razao.ano_ultimo}, a riqueza por pessoa do Nordeste era {pib_pc_razao.ultimo:1%} da do resto do país. Em {pib_pc_razao.ano_primeiro}, era {pib_pc_razao.primeiro:1%}. A pobreza caiu de {pob_ne.primeiro:1%} para {pob_ne.ultimo:1%} da população entre {pob_ne.ano_primeiro} e {pob_ne.ano_ultimo}, mas segue acima da média do Brasil, de {pob_br.ultimo:1%}."
+      # "Caiu" e "segue acima da média do Brasil".
+      condicao: "pob_ne.ultimo < pob_ne.primeiro e pob_ne.ultimo > pob_br.ultimo"
   nota: "Tudo aqui vem do IBGE, do INEP, do Ipea e do Atlas Brasil. Nada é estimado por mim. As faixas cinza nos gráficos mostram quem governava o país em cada período, só para situar o tempo. Nenhum número aqui diz que um governo causou um resultado."
 
 por_que:
@@ -43,6 +49,15 @@ paginas:
   sobre:
     titulo: "Sobre os dados · Nordeste em Números"
     descricao: "Por que eu fiz este site, como ler os gráficos, todas as fontes, as fórmulas que eu uso e o que ainda falta na base."
+  estados:
+    titulo: "Os estados do Nordeste · Nordeste em Números"
+    descricao: "Mapa de calor ano a ano e ranking dos estados do Nordeste em indicadores de economia, trabalho, pobreza, educação e desenvolvimento humano, com dados oficiais do IBGE, do INEP e do Atlas Brasil."
+  explorar:
+    titulo: "Explorar os dados · Nordeste em Números"
+    descricao: "Escolha um indicador e um território, compare dois lado a lado e confira cada ano publicado pelas fontes oficiais."
+  cards:
+    titulo: "Cards para compartilhar · Nordeste em Números"
+    descricao: "Frases feitas sobre o Nordeste confrontadas com os números oficiais, em cards prontos para baixar e compartilhar."
   dados:
     titulo: "Dados para baixar · Nordeste em Números"
     descricao: "Os arquivos CSV da base histórica do Nordeste, com a data de publicação e o sha256 de cada um, para conferir a integridade."
@@ -98,3 +113,30 @@ dados:
   arquivos:
     base_nordeste.csv: "Uma linha por indicador, território e ano."
     derivados.csv: "Razões e outras métricas de comparação entre territórios."
+
+estados:
+  titulo: "Os estados do Nordeste"
+  intro: "Escolha um indicador para ver os estados ano a ano e o ranking do último ano com dado. Os valores vêm da mesma base do resto do site, e ano sem dado fica em branco."
+  titulo_mapa: "Os estados, ano a ano"
+  titulo_ranking: "Ranking no último ano disponível"
+  escala_pior: "pior"
+  escala_melhor: "melhor"
+  nota_do_mapa: "Quanto mais escura a célula, melhor a situação naquele indicador. Célula hachurada: ano sem dado. Os valores aparecem ao passar o mouse e na tabela abaixo."
+  tabela: "Ver todos os números dos estados"
+  fonte: "Fontes: IBGE (Contas Regionais, PNAD Contínua), INEP (IDEB, Indicadores de Fluxo Escolar) e Atlas Brasil (IDHM). As razões com o Brasil fora do Nordeste eu calculo a partir das contagens publicadas."
+  sem_dados: "Este indicador não tem dados para os estados."
+
+explorar:
+  titulo: "Explorar os dados"
+  intro: "Escolha um indicador e um território para ver a série completa, ou compare dois lado a lado. Cada linha mostra só o que a fonte publicou."
+  nota: "A linha forte é o território escolhido. As claras são referências: o Brasil e, para estados e outras regiões, o Nordeste. A linha quebra quando a pesquisa muda ou falta um ano, porque pesquisas diferentes não se emendam."
+  tabela: "Ver os números do território escolhido"
+  fonte: "Valores como publicados pela fonte, sem interpolação. As fontes e os métodos de cada indicador estão em Sobre os dados."
+  sem_dados: "Este indicador não tem dados para este território."
+
+cards:
+  titulo: "Cards para compartilhar"
+  intro: "São frases feitas que a gente escuta sobre o Nordeste. Abra uma, baixe a imagem do card (formato vertical, bom para WhatsApp e Instagram) e mande para quem precisa ver. Os números saem da mesma base do site, com a fonte no rodapé do card. Alguns cards confirmam um pedaço da frase, e o card diz isso."
+  sera: "Os dados dizem outra coisa"
+  baixar: "Baixar imagem (PNG)"
+  voltar: "Ver todos os cards"

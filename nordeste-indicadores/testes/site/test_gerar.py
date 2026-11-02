@@ -3,8 +3,6 @@
 import hashlib
 import json
 import re
-import shutil
-from html.parser import HTMLParser
 from pathlib import Path
 
 import pandas as pd
@@ -12,65 +10,23 @@ import pytest
 
 from nordeste.caminhos import Caminhos
 from nordeste.cli import main
-from nordeste.site.conteudo import calcular_destaques, carregar_conteudo, preencher
+from nordeste.site.conteudo import ErroConteudo, calcular_destaques, carregar_conteudo, preencher
 from nordeste.site.dados import DadosSite
 from nordeste.site.gerar import RelatorioSite, gerar_site
 
-RAIZ = Path(__file__).resolve().parents[2]
+from auxiliares import RAIZ, Arvore, alterar_base, copiar_base
+
 SITE = "https://nordeste.dnascimento.com.br"
-PAGINAS = {"index.html": "/", "sobre/index.html": "/sobre/", "dados/index.html": "/dados/"}
-OG = {"index.html": "index", "sobre/index.html": "sobre", "dados/index.html": "dados"}
+PAGINAS = {
+    "index.html": "/", "estados/index.html": "/estados/", "explorar/index.html": "/explorar/",
+    "cards/index.html": "/cards/", "sobre/index.html": "/sobre/", "dados/index.html": "/dados/",
+}
+OG = {
+    "index.html": "index", "estados/index.html": "estados", "explorar/index.html": "explorar",
+    "cards/index.html": "cards", "sobre/index.html": "sobre", "dados/index.html": "dados",
+}
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro",
          "novembro", "dezembro"]
-VOID = {"meta", "link", "br", "img", "input", "hr", "col", "source", "area", "base", "wbr"}
-
-
-class Arvore(HTMLParser):
-    """Elementos do HTML gerado (tag, atributos, texto) e o texto visivel (sem script e style)."""
-
-    def __init__(self, html: str):
-        super().__init__(convert_charrefs=True)
-        self.elementos: list[dict] = []
-        self.visivel: list[str] = []
-        self._pilha: list[dict] = []
-        self.feed(html)
-        self.close()
-
-    def handle_starttag(self, tag, attrs):
-        elemento = {"tag": tag, "attrs": dict(attrs), "texto": []}
-        self.elementos.append(elemento)
-        if tag not in VOID:
-            self._pilha.append(elemento)
-
-    def handle_endtag(self, tag):
-        while self._pilha:
-            if self._pilha.pop()["tag"] == tag:
-                return
-
-    def handle_data(self, data):
-        for elemento in self._pilha:
-            elemento["texto"].append(data)
-        if not any(e["tag"] in ("script", "style") for e in self._pilha):
-            self.visivel.append(data)
-
-    def achar(self, tag: str | None = None, classe: str | None = None, **attrs) -> list[dict]:
-        achados = []
-        for e in self.elementos:
-            if tag is not None and e["tag"] != tag:
-                continue
-            if classe is not None and classe not in e["attrs"].get("class", "").split():
-                continue
-            if any(e["attrs"].get(k.replace("_", "-")) != v for k, v in attrs.items()):
-                continue
-            achados.append(e)
-        return achados
-
-    @staticmethod
-    def texto(elemento: dict) -> str:
-        return " ".join("".join(elemento["texto"]).split())
-
-    def texto_visivel(self) -> str:
-        return " ".join("".join(self.visivel).split())
 
 
 def _ler(saida: Path, pagina: str) -> str:
@@ -111,7 +67,8 @@ def gerado(tmp_path_factory) -> tuple[Path, RelatorioSite]:
 
 def test_gera_as_paginas_do_nucleo(gerado):
     saida, relatorio = gerado
-    assert sorted(relatorio.paginas) == sorted(PAGINAS)
+    cards = sorted(f"cards/{c['id']}/index.html" for c in carregar_conteudo(RAIZ / "metadados" / "site").cards)
+    assert sorted(relatorio.paginas) == sorted([*PAGINAS, *cards])
     for pagina in PAGINAS:
         assert (saida / pagina).is_file()
     assert (saida / "dados" / "base_nordeste.csv").read_bytes() == (RAIZ / "dados/base/base_nordeste.csv").read_bytes()
@@ -151,7 +108,7 @@ def test_abertura_e_selo_vem_da_base(gerado, dados, conteudo):
     assert [Arvore.texto(e) for e in arvore.achar("p", classe="nn-eyebrow")][0] == selo
     destaques = calcular_destaques(dados, conteudo)
     intro = [Arvore.texto(e) for e in arvore.achar("p", classe="nn-hero-intro")]
-    assert intro == [" ".join(preencher(t, destaques).split()) for t in conteudo.textos["abertura"]["intro"]]
+    assert intro == [" ".join(preencher(p["texto"], destaques).split()) for p in conteudo.textos["abertura"]["intro"]]
     html = _ler(saida, "sobre/index.html")
     assert "na data desta publicação" not in html
     assert re.search(r"ainda não tinham sido divulgadas pelo IBGE em \d{1,2}º? de \w+ de \d{4}\.", Arvore(html).texto_visivel())
@@ -320,29 +277,13 @@ def test_gerar_apaga_e_recria_a_saida(tmp_path):
 # --- supressao de fecho e card (Ruling S-N) ---
 
 
-def _copiar_base(destino: Path) -> Path:
-    """Copia o que o site le: metadados e a base publicada (nao a de trabalho, nem os brutos)."""
-    shutil.copytree(RAIZ / "metadados", destino / "metadados")
-    for pasta, arquivos in (("base", ("base_nordeste.csv", "derivados.csv")), ("relatorios", ("cobertura.csv", "coletas.csv"))):
-        (destino / "dados" / pasta).mkdir(parents=True)
-        for arquivo in arquivos:
-            shutil.copy(RAIZ / "dados" / pasta / arquivo, destino / "dados" / pasta / arquivo)
-    return destino
-
-
-def _alterar_base(raiz: Path, alterar) -> None:
-    arquivo = raiz / "dados" / "base" / "base_nordeste.csv"
-    base = pd.read_csv(arquivo, dtype=str, keep_default_na=False)
-    alterar(base).to_csv(arquivo, index=False)
-
-
 def _fechos(saida: Path) -> list[str]:
     return [Arvore.texto(e) for e in Arvore(_ler(saida, "index.html")).achar("p", classe="nn-fecho")]
 
 
 def test_fecho_com_condicao_falsa_some_e_vai_ao_relatorio(tmp_path, gerado, conteudo):
     _, normal = gerado
-    raiz = _copiar_base(tmp_path / "repo")
+    raiz = copiar_base(tmp_path / "repo")
 
     def inverter(base):
         # a pobreza do Nordeste termina acima do que comecou: "pob_ne.ultimo < pob_ne.primeiro" fica falsa
@@ -350,13 +291,14 @@ def test_fecho_com_condicao_falsa_some_e_vai_ao_relatorio(tmp_path, gerado, cont
         base.loc[pobreza["ano"].astype(int).idxmax(), "valor"] = "99.0"
         return base
 
-    _alterar_base(raiz, inverter)
+    alterar_base(raiz, inverter)
     saida = tmp_path / "saida"
     relatorio = gerar_site(Caminhos(raiz=raiz), saida, imagens=False)
     pobreza = next(p for p in conteudo.perguntas if p["id"] == "pobreza")
     arvore = Arvore(_ler(saida, "index.html"))
     assert arvore.achar("article", id="q-pobreza")  # a pergunta fica, so o fecho sai
-    assert "pobreza" in relatorio.fechos_suprimidos and relatorio.fechos_suprimidos == ["pobreza"]
+    # o paragrafo da abertura que diz "a pobreza caiu" tem a mesma condicao e sai junto (Ruling S-P)
+    assert relatorio.fechos_suprimidos == ["abertura_numeros", "pobreza"]
     assert "pobreza" in relatorio.cards_suprimidos
     assert not any(pobreza["fecho"]["texto"] in f for f in _fechos(saida))
     assert len(_fechos(saida)) == len(conteudo.perguntas) - 1
@@ -364,24 +306,93 @@ def test_fecho_com_condicao_falsa_some_e_vai_ao_relatorio(tmp_path, gerado, cont
 
 
 def test_destaque_sumido_da_base_tira_a_pergunta_e_nao_quebra(tmp_path, conteudo):
-    raiz = _copiar_base(tmp_path / "repo")
-    _alterar_base(raiz, lambda b: b[~((b["indicador_id"] == "pobreza") & (b["territorio_id"] == "NE"))])
+    raiz = copiar_base(tmp_path / "repo")
+    alterar_base(raiz, lambda b: b[~((b["indicador_id"] == "pobreza") & (b["territorio_id"] == "NE"))])
     saida = tmp_path / "saida"
     relatorio = gerar_site(Caminhos(raiz=raiz), saida, imagens=False)
     arvore = Arvore(_ler(saida, "index.html"))
     assert not arvore.achar("article", id="q-pobreza")  # o lide cita o destaque ausente: a pergunta toda sai
     assert len(arvore.achar("article")) == len(conteudo.perguntas) - 1
-    assert "pobreza" in relatorio.fechos_suprimidos
+    assert relatorio.fechos_suprimidos == ["abertura_numeros", "pobreza"]  # o paragrafo da abertura cita o destaque
     assert relatorio.cards_suprimidos == ["pobreza"]  # o card cuja frase cita o destaque ausente; os outros ficam
     assert (saida / "sobre" / "index.html").is_file()
 
 
 def test_nao_apaga_a_pasta_que_contem_o_projeto(tmp_path):
-    raiz = _copiar_base(tmp_path / "repo")
+    raiz = copiar_base(tmp_path / "repo")
     for perigosa in (tmp_path, raiz):
         with pytest.raises(ValueError, match="saída"):
             gerar_site(Caminhos(raiz=raiz), perigosa, imagens=False)
     assert (raiz / "metadados").is_dir()
+
+
+def test_nao_apaga_a_base_publicada_nem_os_metadados(tmp_path):
+    # Ruling S-P: apagar dados/base, dados/relatorios ou metadados (ou uma pasta que os contenha) e irreversivel no robo.
+    raiz = copiar_base(tmp_path / "repo")
+    antes = sorted(p.relative_to(raiz) for p in raiz.rglob("*"))
+    for perigosa in (raiz / "dados", raiz / "dados" / "base", raiz / "dados" / "relatorios", raiz / "metadados"):
+        with pytest.raises(ValueError, match="saída"):
+            gerar_site(Caminhos(raiz=raiz), perigosa, imagens=False)
+    assert sorted(p.relative_to(raiz) for p in raiz.rglob("*")) == antes
+    # uma pasta qualquer dentro do projeto, fora da base e dos metadados, pode ser a saida
+    gerar_site(Caminhos(raiz=raiz), raiz / "saida-do-site", imagens=False)
+    assert (raiz / "saida-do-site" / "index.html").is_file()
+
+
+# --- condicao nos paragrafos da abertura (Ruling S-P) ---
+
+
+def test_paragrafo_da_abertura_com_condicao_falsa_some_e_vai_ao_relatorio(tmp_path, gerado, conteudo):
+    saida_normal, normal = gerado
+    assert normal.fechos_suprimidos == []
+    raiz = copiar_base(tmp_path / "repo")
+
+    def subir_a_pobreza(base):
+        # "A pobreza caiu": a base inverte a direcao e o paragrafo deixa de valer
+        pobreza = base[(base["indicador_id"] == "pobreza") & (base["territorio_id"] == "NE") & (base["valor"] != "")]
+        base.loc[pobreza["ano"].astype(int).idxmax(), "valor"] = "99.0"
+        return base
+
+    alterar_base(raiz, subir_a_pobreza)
+    saida = tmp_path / "saida"
+    relatorio = gerar_site(Caminhos(raiz=raiz), saida, imagens=False)
+    assert "abertura_numeros" in relatorio.fechos_suprimidos
+    normais = [Arvore.texto(e) for e in Arvore(_ler(saida_normal, "index.html")).achar("p", classe="nn-hero-intro")]
+    sem = [Arvore.texto(e) for e in Arvore(_ler(saida, "index.html")).achar("p", classe="nn-hero-intro")]
+    assert len(normais) == 2 and sem == normais[:1]  # o paragrafo sem afirmacao de direcao continua
+
+
+def test_abertura_sem_id_ou_texto_e_erro_de_conteudo(tmp_path):
+    raiz = copiar_base(tmp_path / "repo")
+    textos = raiz / "metadados" / "site" / "textos.yaml"
+    textos.write_text(textos.read_text(encoding="utf-8").replace("    - id: abertura_inicio\n", "    -\n"), encoding="utf-8")
+    with pytest.raises(ErroConteudo, match="abertura"):
+        gerar_site(Caminhos(raiz=raiz), tmp_path / "saida", imagens=False)
+
+
+# --- proximo dado, com cobertura sintetica (Ruling S-P) ---
+
+
+def test_proximo_dado_aparece_so_onde_a_cobertura_preve(tmp_path, conteudo):
+    raiz = copiar_base(tmp_path / "repo")
+    cobertura = raiz / "dados" / "relatorios" / "cobertura.csv"
+    tabela = pd.read_csv(cobertura, dtype=str, keep_default_na=False)
+    tabela["proxima_publicacao"] = ""
+    tabela.loc[(tabela["indicador_id"] == "pobreza") & (tabela["territorio_id"] == "NE"), "proxima_publicacao"] = "2031-02"
+    # a previsao de outro territorio nao conta: a regra olha so o Nordeste
+    tabela.loc[(tabela["indicador_id"] == "gini") & (tabela["territorio_id"] == "BA"), "proxima_publicacao"] = "2031-03"
+    tabela.to_csv(cobertura, index=False)
+    saida = tmp_path / "saida"
+    gerar_site(Caminhos(raiz=raiz), saida, imagens=False)
+    arvore = Arvore(_ler(saida, "index.html"))
+    for pergunta in conteudo.perguntas:
+        indicadores = {l["indicador"] for g in pergunta["graficos"] for l in g["linhas"]}
+        texto = Arvore.texto(arvore.achar("article", id=f"q-{pergunta['id']}")[0])
+        esperado = 1 if "pobreza" in indicadores else 0
+        assert texto.count("Próximo dado esperado: ") == esperado, pergunta["id"]
+        assert ("Próximo dado esperado: fevereiro de 2031." in texto) == bool(esperado), pergunta["id"]
+        assert "março de 2031" not in texto
+        assert texto.count("Atualizado em ") == len(indicadores)  # a data da coleta segue em todos
 
 
 # --- linha de comando ---
@@ -394,11 +405,12 @@ def test_cli_site_sai_com_zero(tmp_path):
     assert (saida / "index.html").is_file()
     relatorio = json.loads(arquivo.read_text(encoding="utf-8"))
     assert sorted(relatorio) == ["cards_suprimidos", "fechos_suprimidos", "paginas"]
-    assert sorted(relatorio["paginas"]) == sorted(PAGINAS)
+    cards = [f"cards/{c['id']}/index.html" for c in carregar_conteudo(RAIZ / "metadados" / "site").cards]
+    assert sorted(relatorio["paginas"]) == sorted([*PAGINAS, *cards])
 
 
 def test_cli_site_com_conteudo_invalido_sai_com_um(tmp_path, capsys):
-    raiz = _copiar_base(tmp_path / "repo")
+    raiz = copiar_base(tmp_path / "repo")
     (raiz / "metadados" / "site" / "textos.yaml").write_text("- nao e um mapa\n", encoding="utf-8")
     assert main(["--raiz", str(raiz), "site", "--saida", str(tmp_path / "saida"), "--sem-imagens"]) == 1
     assert "textos.yaml" in capsys.readouterr().err
