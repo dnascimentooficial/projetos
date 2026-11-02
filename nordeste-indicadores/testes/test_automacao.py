@@ -37,11 +37,13 @@ class _Servidor:
     def __init__(self, respostas: dict[str, list[tuple[int, str]]]):
         self.respostas = respostas
         self.pedidos: list[tuple[str, str]] = []  # (metodo, caminho)
+        self.agentes: list[str | None] = []  # User-Agent de cada pedido
         servidor = self
 
         class Tratador(BaseHTTPRequestHandler):
             def _responder(self):
                 servidor.pedidos.append((self.command, self.path))
+                servidor.agentes.append(self.headers.get("User-Agent"))
                 fila = servidor.respostas.get(self.path)
                 if not fila:
                     status, corpo = 404, "nao existe"
@@ -140,6 +142,67 @@ def test_links_quebrados_consulta_cada_url_uma_vez(projeto, servidor):
     fichas = {i: replace(f, series=tuple(replace(x, url=s.url("/boa")) for x in f.series)) for i, f in fichas.items()}
     assert links_quebrados(fichas, timeout_s=5) == []
     assert len(s.pedidos) == 1
+
+
+def test_links_quebrados_e_conferir_publicado_se_identificam(projeto, servidor):
+    s = servidor({"/boa": [(200, _pagina("x"))]})
+    ficha = carregar_fichas(projeto.fichas)["pib_nominal"]
+    fichas = {ficha.id: replace(ficha, series=tuple(replace(x, url=s.url("/boa")) for x in ficha.series))}
+    links_quebrados(fichas, timeout_s=5)
+    conferir_publicado(s.url("/boa"), "x", tentativas=1, espera_s=0)
+    assert len(s.agentes) >= 2 and set(s.agentes) == {automacao.USER_AGENT}
+    assert "nordeste.dnascimento.com.br" in automacao.USER_AGENT
+
+
+class _RespostaOk:
+    status_code = 200
+
+    def close(self):
+        pass
+
+
+def _capturar_verify(monkeypatch) -> list[dict]:
+    """Troca requests.head/get por dublês que registram os argumentos e leem o arquivo de `verify` na hora."""
+    vistos: list[dict] = []
+
+    def falso(url, **kwargs):
+        verify = kwargs.get("verify")
+        conteudo = Path(verify).read_text(encoding="utf-8") if isinstance(verify, str) else None
+        vistos.append({"url": url, "verify": verify, "conteudo": conteudo})
+        return _RespostaOk()
+
+    monkeypatch.setattr(automacao.requests, "head", falso)
+    monkeypatch.setattr(automacao.requests, "get", falso)
+    return vistos
+
+
+def test_links_quebrados_usa_o_bundle_do_coletor_quando_a_serie_declara_ca_extra(projeto, tmp_path, monkeypatch):
+    padrao = tmp_path / "padrao.pem"
+    padrao.write_text("CERTIFICADOS-PADRAO\n", encoding="utf-8")
+    monkeypatch.setenv("REQUESTS_CA_BUNDLE", str(padrao))
+    (projeto.raiz / "metadados" / "certificados").mkdir(exist_ok=True)
+    (projeto.raiz / "metadados" / "certificados" / "extra.pem").write_text("CERTIFICADO-EXTRA\n", encoding="utf-8")
+    ficha = carregar_fichas(projeto.fichas)["pib_nominal"]
+    base = ficha.series[0]
+    sem = replace(base, url="https://exemplo.test/sem")
+    com = replace(base, url="https://exemplo.test/com", parametros={**base.parametros, "ca_extra": "metadados/certificados/extra.pem"})
+    fichas = {ficha.id: replace(ficha, series=(sem, com))}
+    vistos = _capturar_verify(monkeypatch)
+    assert links_quebrados(fichas, timeout_s=5, raiz=projeto.raiz) == []
+    por_url = {v["url"]: v for v in vistos}
+    assert por_url["https://exemplo.test/sem"]["verify"] is None  # padrao do requests
+    com_bundle = por_url["https://exemplo.test/com"]
+    assert com_bundle["conteudo"] == "CERTIFICADOS-PADRAO\nCERTIFICADO-EXTRA\n"  # bundle em uso mais o extra
+    assert com_bundle["verify"] is not False
+
+
+def test_links_quebrados_com_ca_extra_inexistente_lista_o_motivo(projeto, monkeypatch):
+    ficha = carregar_fichas(projeto.fichas)["pib_nominal"]
+    serie = replace(ficha.series[0], url="https://exemplo.test/x", parametros={"ca_extra": "metadados/nao-existe.pem"})
+    vistos = _capturar_verify(monkeypatch)
+    quebrados = links_quebrados({ficha.id: replace(ficha, series=(serie,))}, timeout_s=5, raiz=projeto.raiz)
+    assert [(i, u) for i, u, _ in quebrados] == [("pib_nominal", "https://exemplo.test/x")]
+    assert "nao-existe.pem" in quebrados[0][2] and vistos == []  # sem o certificado, nem tenta (e nao desliga o TLS)
 
 
 # --- agenda do INEP ---
@@ -614,3 +677,47 @@ def test_cli_auxiliar_links_lista_e_sai_com_1_se_ha_quebrado(projeto, servidor, 
     ficha.write_text(ficha.read_text(encoding="utf-8").replace("/boa", "/ruim"), encoding="utf-8")
     assert automacao.main(["links", "--raiz", str(projeto.raiz), "--timeout", "5"]) == 1
     assert "pib_nominal" in capsys.readouterr().out
+
+
+def test_cli_auxiliar_site_mudou(tmp_path, capsys):
+    a = _site(tmp_path / "a", BASE_DO_SITE)
+    igual = _site(tmp_path / "igual", {**BASE_DO_SITE, "og/index.png": b"outro Chromium"})
+    outro = _site(tmp_path / "outro", {**BASE_DO_SITE, "index.html": b"<html>!"})
+    assert automacao.main(["site-mudou", "--anterior", str(a), "--novo", str(igual)]) == 1
+    assert capsys.readouterr().out == "igual\n"
+    assert automacao.main(["site-mudou", "--anterior", str(a), "--novo", str(outro)]) == 0
+    assert capsys.readouterr().out == "mudou\n"
+    assert automacao.main(["site-mudou", "--anterior", str(tmp_path / "nao-existe"), "--novo", str(a)]) == 0
+    assert capsys.readouterr().out == "mudou\n"
+
+
+def test_cli_auxiliar_site_mudou_com_site_novo_inexistente_e_erro_distinto(tmp_path, capsys):
+    a = _site(tmp_path / "a", BASE_DO_SITE)
+    assert automacao.main(["site-mudou", "--anterior", str(a), "--novo", str(tmp_path / "nao-existe")]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == "" and "não existe" in captured.err
+
+
+def test_cli_auxiliar_pular_inep(capsys):
+    assert automacao.main(["pular-inep", "--hoje", "2026-11-15"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["--pular-indicador matriculas_basica", "--pular-indicador superior"]
+    for dia in ("2026-11-01", "2026-11-07"):  # primeira semana: coleta tudo, nada a pular
+        assert automacao.main(["pular-inep", "--hoje", dia]) == 0
+        assert capsys.readouterr().out == ""
+
+
+def test_cli_auxiliar_pular_inep_sem_hoje_usa_a_data_de_hoje(capsys, monkeypatch):
+    class Hoje(date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 11, 20)
+
+    monkeypatch.setattr(automacao, "date", Hoje)
+    assert automacao.main(["pular-inep"]) == 0
+    assert len(capsys.readouterr().out.splitlines()) == 2
+
+
+def test_cli_auxiliar_ajuda_do_anos_novos_avisa_que_sem_base_anterior_e_aproximado(capsys):
+    with pytest.raises(SystemExit):
+        automacao.main(["anos-novos", "--help"])
+    assert "aproximado" in capsys.readouterr().out
