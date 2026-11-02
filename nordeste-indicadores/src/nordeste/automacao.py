@@ -89,11 +89,24 @@ def _gh_ou_erro(*args: str) -> str:
     return resultado.stdout
 
 
-def _anexos_da_release(repo: str) -> set[str]:
-    """Nomes dos anexos da release `brutos`; se ela nao existe, cria (vazia) e devolve o conjunto vazio."""
+RELEASE_INEXISTENTE = "release not found"  # stderr do `gh release view` quando a tag nao tem release
+
+
+def _anexos_existentes(repo: str) -> set[str] | None:
+    """Nomes dos anexos da release `brutos`, ou None se ela nao existe. Outra falha do gh e ErroAutomacao."""
     visao = _gh("release", "view", RELEASE_DOS_BRUTOS, "--repo", repo, "--json", "assets")
     if visao.returncode == 0:
         return {a["name"] for a in json.loads(visao.stdout)["assets"]}
+    if RELEASE_INEXISTENTE in visao.stderr:
+        return None
+    raise ErroAutomacao(f"gh release view falhou ({visao.returncode}): {visao.stderr.strip()}")
+
+
+def _anexos_da_release(repo: str) -> set[str]:
+    """Nomes dos anexos da release `brutos`; se ela nao existe, cria (vazia) e devolve o conjunto vazio."""
+    existentes = _anexos_existentes(repo)
+    if existentes is not None:
+        return existentes
     _gh_ou_erro(
         "release", "create", RELEASE_DOS_BRUTOS, "--repo", repo, "--title", "Arquivos brutos das fontes",
         "--notes", "Arquivos brutos coletados das fontes oficiais, um anexo por coleta (indicador__serie__hash).",
@@ -101,28 +114,32 @@ def _anexos_da_release(repo: str) -> set[str]:
     return set()
 
 
-def baixar_brutos(repo: str, caminhos: Caminhos) -> None:
+def baixar_brutos(repo: str, caminhos: Caminhos) -> list[str]:
     """Baixa da release `brutos` os arquivos de `brutos_necessarios` que ainda nao estao em dados/brutos/.
 
-    O nome do arquivo leva o hash do conteudo: o que ja esta no disco nao e baixado de novo.
+    Devolve os anexos que faltaram (todos, se a release nao existe), em ordem: a execucao entao coleta tudo (spec 7).
+    A release nao e criada aqui; quem cria e `enviar_brutos`. O nome do arquivo leva o hash do conteudo: o que ja
+    esta no disco nao e baixado de novo.
     """
     faltam = [r for r in brutos_necessarios(caminhos) if not (caminhos.brutos / r).exists()]
     if not faltam:
-        return
-    na_release = _anexos_da_release(repo)
+        return []
+    na_release = _anexos_existentes(repo) or set()
     ausentes = [nome_do_anexo(r) for r in faltam if nome_do_anexo(r) not in na_release]
-    if ausentes:
-        raise ErroAutomacao(f"A release '{RELEASE_DOS_BRUTOS}' de {repo} não tem: {', '.join(ausentes)}.")
+    baixaveis = [r for r in faltam if nome_do_anexo(r) in na_release]
+    if not baixaveis:
+        return ausentes
     with tempfile.TemporaryDirectory() as pasta:
-        padroes = [arg for r in faltam for arg in ("--pattern", nome_do_anexo(r))]
+        padroes = [arg for r in baixaveis for arg in ("--pattern", nome_do_anexo(r))]
         _gh_ou_erro("release", "download", RELEASE_DOS_BRUTOS, "--repo", repo, "--dir", pasta, "--clobber", *padroes)
-        for relativo in faltam:
+        for relativo in baixaveis:
             baixado = Path(pasta) / nome_do_anexo(relativo)
             if not baixado.is_file():
                 raise ErroAutomacao(f"O gh não baixou {baixado.name}.")
             destino = caminhos.brutos / relativo
             destino.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(baixado, destino)
+    return ausentes
 
 
 def enviar_brutos(repo: str, caminhos: Caminhos) -> None:
@@ -340,7 +357,10 @@ def _parser() -> argparse.ArgumentParser:
         p.add_argument("--raiz", type=Path, default=RAIZ_PADRAO, help="pasta nordeste-indicadores")
         return p
 
-    for nome, ajuda in (("baixar-brutos", "baixa da release os brutos que faltam"), ("enviar-brutos", "sobe os brutos novos")):
+    for nome, ajuda in (
+        ("baixar-brutos", "baixa da release os brutos que faltam; sai com 1 se a release nao existe ou falta anexo"),
+        ("enviar-brutos", "sobe os brutos novos"),
+    ):
         com_raiz(comandos.add_parser(nome, help=ajuda)).add_argument("--repo", required=True, help="dono/repositorio")
     resumo = comandos.add_parser("resumo", help="imprime em Markdown as maiores variacoes (NE e BR)")
     resumo.add_argument("--mudancas", type=Path, required=True, help="dados/relatorios/mudancas.csv")
@@ -371,7 +391,11 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         if args.comando == "baixar-brutos":
-            baixar_brutos(args.repo, Caminhos(args.raiz))
+            ausentes = baixar_brutos(args.repo, Caminhos(args.raiz))
+            if ausentes:
+                print(f"A release '{RELEASE_DOS_BRUTOS}' de {args.repo} não existe ou não tem: {', '.join(ausentes)}. "
+                      "A coleta desta execução deve ser completa.", file=sys.stderr)
+                return 1
         elif args.comando == "enviar-brutos":
             enviar_brutos(args.repo, Caminhos(args.raiz))
         elif args.comando == "resumo":
@@ -399,7 +423,7 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"--pular-indicador {indicador}")
     except (ErroAutomacao, ErroFicha, OSError, ValueError) as erro:
         print(erro, file=sys.stderr)
-        return 2  # erro da propria etapa; 1 e a resposta "nao" de conferir, links e site-mudou
+        return 2  # erro da propria etapa; 1 e o "nao" de conferir, links e site-mudou e o "incompleto" de baixar-brutos
     return 0
 
 

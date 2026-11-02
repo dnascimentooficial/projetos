@@ -270,6 +270,9 @@ args = sys.argv[1:]
 with open(os.environ["GH_LOG"], "a", encoding="utf-8") as log:
     log.write(json.dumps(args) + "\\n")
 estado = Path(os.environ["GH_ESTADO"])
+if (estado / "quebrado").exists():
+    print("HTTP 401: Bad credentials (https://api.github.com/graphql)", file=sys.stderr)
+    sys.exit(1)
 if args[:2] == ["release", "view"]:
     if not (estado / "existe").exists():
         print("release not found", file=sys.stderr)
@@ -315,6 +318,10 @@ class GhFalso:
         monkeypatch.setenv("PATH", f"{bin_}:{__import__('os').environ['PATH']}")
         monkeypatch.setenv("GH_LOG", str(self.log))
         monkeypatch.setenv("GH_ESTADO", str(self.estado))
+
+    def quebrar(self) -> None:
+        """Toda chamada falha como credencial invalida (erro do gh, nao release ausente)."""
+        (self.estado / "quebrado").write_text("1")
 
     def release_existe(self) -> None:
         (self.estado / "existe").write_text("1")
@@ -412,11 +419,51 @@ def test_baixar_brutos_sem_o_que_falta_nao_chama_o_gh(tmp_path, gh):
     assert gh.chamadas == []
 
 
-def test_baixar_brutos_cria_a_release_se_faltar_e_avisa_do_anexo_ausente(tmp_path, gh):
+def test_baixar_brutos_sem_a_release_devolve_tudo_o_que_falta_sem_criar(tmp_path, gh):
+    """Spec 7: release ausente vira coleta completa; quem cria a release e o enviar-brutos."""
+    caminhos = _projeto_com_brutos(tmp_path / "raiz", {"a/s1/aaaaaaaa.zip": None, "b/s2/bbbbbbbb.json": None})
+    assert baixar_brutos("dono/repo", caminhos) == ["a__s1__aaaaaaaa.zip", "b__s2__bbbbbbbb.json"]
+    assert [c[:2] for c in gh.chamadas] == [["release", "view"]]
+
+
+def test_baixar_brutos_com_release_incompleta_baixa_o_que_ha_e_devolve_o_resto(tmp_path, gh):
+    gh.release_existe()
+    gh.anexar("b__s2__bbbbbbbb.json", b"dois")
+    caminhos = _projeto_com_brutos(tmp_path / "raiz", {"a/s1/aaaaaaaa.zip": None, "b/s2/bbbbbbbb.json": None})
+    assert baixar_brutos("dono/repo", caminhos) == ["a__s1__aaaaaaaa.zip"]
+    assert (caminhos.brutos / "b" / "s2" / "bbbbbbbb.json").read_bytes() == b"dois"
+    assert not (caminhos.brutos / "a" / "s1" / "aaaaaaaa.zip").exists()
+    (_, baixar) = gh.chamadas
+    assert [baixar[i + 1] for i, a in enumerate(baixar) if a == "--pattern"] == ["b__s2__bbbbbbbb.json"]
+
+
+def test_baixar_brutos_com_release_sem_nenhum_dos_anexos_nao_chama_o_download(tmp_path, gh):
+    gh.release_existe()
     caminhos = _projeto_com_brutos(tmp_path / "raiz", {"a/s1/aaaaaaaa.zip": None})
-    with pytest.raises(ErroAutomacao, match="a__s1__aaaaaaaa.zip"):
+    assert baixar_brutos("dono/repo", caminhos) == ["a__s1__aaaaaaaa.zip"]
+    assert [c[:2] for c in gh.chamadas] == [["release", "view"]]
+
+
+def test_baixar_brutos_com_gh_quebrado_e_erro_e_nao_release_ausente(tmp_path, gh):
+    gh.quebrar()
+    caminhos = _projeto_com_brutos(tmp_path / "raiz", {"a/s1/aaaaaaaa.zip": None})
+    with pytest.raises(ErroAutomacao, match="Bad credentials"):
         baixar_brutos("dono/repo", caminhos)
-    assert [c[:2] for c in gh.chamadas][:2] == [["release", "view"], ["release", "create"]]
+
+
+def test_cli_baixar_brutos_sai_com_0_completo_1_incompleto_e_2_erro(tmp_path, gh, capsys):
+    caminhos = _projeto_com_brutos(tmp_path / "raiz", {"a/s1/aaaaaaaa.zip": None})
+    argv = ["baixar-brutos", "--repo", "dono/repo", "--raiz", str(caminhos.raiz)]
+    assert automacao.main(argv) == 1  # release ausente
+    assert "a__s1__aaaaaaaa.zip" in capsys.readouterr().err
+    gh.release_existe()
+    assert automacao.main(argv) == 1  # release sem o anexo
+    gh.anexar("a__s1__aaaaaaaa.zip", b"um")
+    assert automacao.main(argv) == 0
+    (caminhos.brutos / "a" / "s1" / "aaaaaaaa.zip").unlink()
+    gh.quebrar()
+    assert automacao.main(argv) == 2
+    assert "Bad credentials" in capsys.readouterr().err
 
 
 def test_gh_que_falha_vira_erro_de_automacao_com_a_mensagem(tmp_path, monkeypatch):

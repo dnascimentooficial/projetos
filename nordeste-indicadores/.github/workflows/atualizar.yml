@@ -2,12 +2,18 @@ name: Atualizar
 
 # Publicação semanal: coleta, consolida, valida, publica a base na main, gera o site e, se ele mudou, publica o site
 # na branch site-publicado (o hPanel puxa essa branch pelo webhook). Códigos de saída de `python -m nordeste.automacao`:
-# 0 = sim/ok, 1 = "não" (conferir, links, site-mudou), 2 = erro da etapa; um 2 nunca é lido como "não".
+# 0 = sim/ok, 1 = "não" (conferir, links, site-mudou) ou "incompleto" (baixar-brutos), 2 = erro da etapa; um 2 nunca
+# é lido como 1.
 
 on:
   schedule:
     - cron: "0 6 * * 1" # segunda, 03h de Brasília
   workflow_dispatch:
+    inputs:
+      coleta_completa:
+        description: "Coletar tudo, inclusive o INEP fora da primeira semana do mês"
+        type: boolean
+        default: false
 
 concurrency: atualizar
 
@@ -38,16 +44,34 @@ jobs:
       - name: Instalar
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,site,ferramentas]"
+          pip install -e ".[site]"
           python -m playwright install --with-deps chromium
 
       - name: Baixar os brutos da release
-        run: python -m nordeste.automacao baixar-brutos --repo "$GH_REPO"
+        id: baixar_brutos
+        run: |
+          codigo=0
+          python -m nordeste.automacao baixar-brutos --repo "$GH_REPO" || codigo=$?
+          case "$codigo" in
+            0) echo "BRUTOS_INCOMPLETOS=nao" >> "$GITHUB_ENV" ;;
+            1)
+              echo "::warning::A release brutos não existe ou está incompleta: a coleta desta execução é completa."
+              echo "BRUTOS_INCOMPLETOS=sim" >> "$GITHUB_ENV"
+              ;;
+            *) exit "$codigo" ;;
+          esac
 
       - name: Coletar
         id: coletar
+        env:
+          COLETA_COMPLETA: ${{ inputs.coleta_completa }}
         run: |
-          pular=$(python -m nordeste.automacao pular-inep)
+          if [ "${COLETA_COMPLETA:-}" = true ] || [ "${BRUTOS_INCOMPLETOS:-}" = sim ]; then
+            pular="" # coleta completa (spec 7): sem brutos guardados, o INEP entra fora da primeira semana
+            echo "Coleta completa: o INEP também é coletado."
+          else
+            pular=$(python -m nordeste.automacao pular-inep)
+          fi
           # o relatorio da semana anterior nao vale: so um falhas_coleta.csv novo prova que a coleta chegou ao fim
           rm -f dados/relatorios/falhas_coleta.csv
           codigo=0
@@ -59,16 +83,23 @@ jobs:
             exit "$codigo"
           fi
 
+      - name: Enviar os brutos novos para a release
+        run: python -m nordeste.automacao enviar-brutos --repo "$GH_REPO"
+
       - name: Consolidar
         run: python -m nordeste consolidar
 
       - name: Ensaio da publicação
         id: ensaio
         run: |
+          # so um validacao.csv novo prova que a validacao rodou; sem ele, a falha e erro da etapa e nao reprovacao
+          rm -f dados/relatorios/validacao.csv
           codigo=0
           python -m nordeste publicar --ensaio 2> "$RUNNER_TEMP/ensaio.txt" || codigo=$?
           cat "$RUNNER_TEMP/ensaio.txt" >&2
-          if [ "$codigo" -ne 0 ]; then
+          if [ "$codigo" -ne 0 ] && [ ! -f dados/relatorios/validacao.csv ]; then
+            exit "$codigo"
+          elif [ "$codigo" -ne 0 ]; then
             {
               echo "A validação barrou a publicação desta semana: nada foi publicado."
               echo
@@ -98,12 +129,14 @@ jobs:
         run: python -m nordeste publicar
 
       - name: Commit dos dados na main
+        id: commit_dados
         run: |
           if [ -n "$(git status --porcelain dados/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
             git add dados/
-            git -c user.name="github-actions[bot]" \
-                -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
-                commit -q -m "dados: publicação automática da base"
+            git commit -q -m "dados: publicação automática da base"
+            git pull -q --rebase origin main # a main pode ter andado durante a execucao; conflito falha o job
             git push origin HEAD:main
           else
             echo "A base e os relatórios não mudaram."
@@ -129,6 +162,7 @@ jobs:
         run: python -m nordeste site --saida _site --relatorio site.json --anterior _anterior
 
       - name: Avisar fechos e cards suprimidos
+        id: avisar_suprimidos
         run: |
           python - > "$RUNNER_TEMP/suprimidos.txt" <<'PY'
           import json
@@ -145,10 +179,11 @@ jobs:
               echo "A condição que sustenta este texto deixou de valer com a base publicada (sha256 $sha)."
               echo "O site saiu sem ele. Releia o texto e a condição em metadados/site/."
             } > "$RUNNER_TEMP/corpo.md"
-            .github/scripts/abrir-issue.sh "$titulo" "$RUNNER_TEMP/corpo.md" < /dev/null
+            .github/scripts/abrir-issue.sh --so-se-nova "$titulo" "$RUNNER_TEMP/corpo.md" < /dev/null
           done < "$RUNNER_TEMP/suprimidos.txt"
 
       - name: Avisar anos novos
+        id: avisar_anos_novos
         run: |
           argumentos=(--mudancas dados/relatorios/mudancas.csv)
           if [ -f "$RUNNER_TEMP/base_anterior.csv" ]; then
@@ -167,7 +202,7 @@ jobs:
               echo
               python -m nordeste.automacao resumo --mudancas dados/relatorios/mudancas.csv
             } > "$RUNNER_TEMP/corpo.md"
-            .github/scripts/abrir-issue.sh "Ano novo na base: releia os textos" "$RUNNER_TEMP/corpo.md"
+            .github/scripts/abrir-issue.sh --so-se-nova "Ano novo na base: releia os textos" "$RUNNER_TEMP/corpo.md"
           fi
 
       - name: Publicar o site na branch site-publicado
@@ -194,9 +229,6 @@ jobs:
               commit -q -m "site: publicação automática"
           git -C _publicar push -q origin site-publicado
           echo "publicado=sim" >> "$GITHUB_OUTPUT"
-
-      - name: Enviar os brutos novos para a release
-        run: python -m nordeste.automacao enviar-brutos --repo "$GH_REPO"
 
       - name: Conferir o site no ar
         id: conferir
